@@ -1,295 +1,245 @@
-# Adapt Carers.hk-style Chatbot UI Todo
+# Carers.hk Chatbot UI Adaptation Checklist
 
-## Context
+## Goal
 
-Goal: adapt the existing ADP chat frontend into a public, embeddable chatbot experience visually similar to the carers.hk chatbot.
+Make the ADP chat frontend behave like the carers.hk chatbot:
 
-Recommended delivery approach: a JavaScript embed loader that creates an isolated iframe chatbot panel.
+- Bottom-right animated character launcher.
+- Compact floating chat panel.
+- Orange header with panel controls.
+- T&C gate shown as the first assistant message.
+- Disabled composer until T&C is accepted.
+- Public/no-login guest chat flow.
+- Production-ready third-party embed path.
 
-```html
-<script src="https://your-domain.com/chatbot-loader.js"></script>
-<script>
-  Chatbot.init({
-    container: "body",
-    appId: "xxx",
-    language: "zh-HK",
-    position: "bottom-right",
-    theme: "carers",
-    persistSession: true,
-  });
-</script>
-```
+## Current State
 
-## Feasibility Summary
+Already implemented in the reusable chat component:
 
-- The plan is workable in this project.
-- The repo already has a reusable chat component, overlay mode, internal chat state, SSE streaming, UMD build output, and a global JS mount API.
-- The main missing frontend pieces are:
-  - Carers.hk-style launcher and panel skin.
-  - Terms and conditions disclaimer gate.
-  - Public/no-login widget entry flow.
-  - Browser session persistence.
-  - Production `chatbot-loader.js`.
-  - Iframe wrapper and postMessage config bridge.
-  - Font-size compatibility API for host page A/A/A controls.
+- Carers-style GIF launcher assets.
+- Overlay panel support.
+- Orange header skin.
+- Carers-style assistant/user bubbles.
+- Hotline footer strip.
+- T&C synthetic assistant message.
+- Accept/Decline buttons.
+- Disabled composer until acceptance.
+- LocalStorage-backed T&C acceptance.
+- Synthetic user "接受"/"Accept" record and assistant greeting after acceptance.
+- Direct DOM embed loader at `client/packages/adp-chat-component/public/embed.js`.
+- Embed API for `init`, `update`, `open`, `close`, `toggle`, language/theme changes, launcher config, and accessibility options.
 
-### Restyle Current Chat Widget To Carers.hk Style
+Known gaps from local UI check:
 
-- [ ] Animated avatar launcher.
-- [ ] Orange header panel.
-- [ ] Terms and conditions disclaimer/accept screen.
-- [ ] Chat bubble styling.
-- [ ] Input bar styling.
-- [ ] Basic desktop/mobile layout.
+- `http://localhost:5174/#/` currently renders as a full-page chat, not the carers.hk bottom-right panel.
+- The local UI shows app/conversation load failure toasts.
+- The launcher needs the carers.hk speech-bubble prompt, not only the animated avatar.
+- The panel dimensions and density are still too wide for desktop parity.
+- The production embed architecture is not settled: existing direct DOM embed versus new iframe-isolated embed.
 
-### Make It Usable As A Public Widget Frontend
+## Phase 1: Confirm Delivery Mode
 
-Assumption: backend API already supports public/guest chat.
+Choose one delivery mode before more implementation.
 
-- [ ] Public/no-login frontend flow.
-- [ ] Existing conversation route support.
-- [ ] Browser session identity.
-- [ ] Persisted conversation ID/history pointer.
-- [ ] Responsive behavior.
-- [ ] Error/loading/empty states.
-- [ ] Basic QA across major browsers/OS.
-- [ ] A/A/A font-size compatibility via exposed JS API where iframe integration allows it.
+- [ ] Decide whether production embed must be iframe-isolated.
+- [ ] If iframe is required, keep `embed.js` only as legacy/direct mode and create a separate iframe loader.
+- [ ] If iframe is not required, rename/document the existing `ADPChatEmbed` direct DOM loader as the production embed path.
+- [ ] Document the final public API name: `ADPChatEmbed` or `Chatbot`.
+- [ ] Document the required backend public/guest API assumptions.
 
-### Third-party Embed Delivery Package
+Recommended default:
 
-- [ ] `chatbot-loader.js`.
-- [ ] Floating avatar launcher on third-party sites.
-- [ ] Isolated iframe panel.
-- [ ] Configurable language/app/theme.
-- [ ] Minimal integration docs.
-- [ ] Cross-site/mobile QA.
+- Use the existing direct DOM embed for the next UI parity pass.
+- Add iframe only if host-page CSS isolation, cookie isolation, or third-party deployment policy requires it.
 
-## Key Findings
+## Phase 2: Match Carers.hk Launcher
 
-### Existing Hosted App Auth Flow
+Reference behavior:
 
-The hosted Vue app currently assumes an authenticated session.
-
-- `client/packages/app/src/router/index.ts`
-  - Route guard checks `/account/info`.
-  - Redirects to `/login` if no `token` cookie is present.
-- `client/packages/app/src/service/login.ts`
-  - `isLoggedIn()` checks only the `token` cookie.
-- `client/packages/app/src/pages/Home.vue`
-  - Mounts `ADPChat` after route guard.
-  - Syncs selected conversation/application with the URL hash.
-
-Implication: the chatbot must be public, so the hosted app auth wrapper must be removed or bypassed for the chatbot entry. The public chatbot route/widget must not redirect to `/login` when no `token` cookie exists.
-
-Required frontend work:
-
-- [ ] Remove or bypass the route guard for the public chatbot entry in `client/packages/app/src/router/index.ts`.
-- [ ] Avoid calling `/account/info` as an auth gate before rendering the public chatbot.
-- [ ] Avoid redirecting unauthenticated public-widget users to `/login`.
-- [ ] Prefer mounting the reusable component directly for the public widget instead of using the hosted app login/router shell.
-
-### Existing Reusable Widget Foundation
-
-The reusable component already supports direct JS mounting.
-
-- `client/packages/adp-chat-component/src/main.ts`
-  - Exposes `init`, `update`, `getProps`, and `unmount`.
-  - Publishes `window.ADPChatComponent`.
-- `client/packages/adp-chat-component/public/example.html`
-  - Already demonstrates loading `adp-chat-component.umd.js` and `adp-chat-component.css`.
-- `client/packages/adp-chat-component/package.json`
-  - Builds both ES and UMD bundles.
-
-Implication: third-party embed is feasible, but current demo is direct DOM injection. The proposed production approach should add a loader that creates an iframe.
-
-### Current Launcher And Overlay
-
-Current UI already has a floating launcher and overlay panel.
-
-- `client/packages/adp-chat-component/src/App.vue`
-  - Props include `showToggleButton`, `isOverlay`, `width`, `height`, `isOpen`, `onOpenChange`, and `onOverlayChange`.
-  - Current launcher is `.toggle-btn`.
-  - Current panel is `.panel-park--overlay`.
-
-Implication: carers.hk-style avatar launcher and orange panel can be built by replacing/restyling these areas rather than rebuilding the chat from scratch.
-
-### Header, Chat Body, Input, And Bubbles
-
-Relevant components for visual restyle:
-
-- `client/packages/adp-chat-component/src/components/layout/MainLayout.vue`
-  - Header layout and close/action slots.
-- `client/packages/adp-chat-component/src/components/Chat/Index.vue`
-  - Chat list, empty state, sharing mode, footer composer.
-- `client/packages/adp-chat-component/src/components/Chat/ChatItem.vue`
-  - User/assistant message rendering and action buttons.
-- `client/packages/adp-chat-component/src/components/Chat/Sender.vue`
-  - Input bar, upload menu, voice button, send/stop button.
-
-Implication: the visual restyle is component-local and should not require changing the backend contract.
-
-### Terms And Conditions Gate
-
-No current T&C accept gate exists in the reusable component.
-
-Required behavior:
-
-- The T&C prompt should appear as the first AI chat response, not as a separate modal/full-screen disclaimer.
-- The AI T&C response should include `Accept` and `Decline` buttons inside the chat message area.
-- Until the user clicks `Accept`, the input box should be visually dimmed and disabled.
-- If the user clicks `Decline`, the chatbot should prompt the same T&C AI response again and keep the input disabled.
-- Only after `Accept` should the input box become active and normal chat begin.
-
-Best insertion options:
-
-- In `client/packages/adp-chat-component/src/components/layout/Index.vue`, inject a synthetic assistant record into `actualChatList` before normal conversation records when T&C is not accepted.
-- In `client/packages/adp-chat-component/src/components/Chat/ChatItem.vue`, add a dedicated T&C action-message rendering path with `Accept` and `Decline` buttons.
-- In `client/packages/adp-chat-component/src/components/Chat/Sender.vue`, add a disabled/dimmed mode controlled by T&C acceptance state.
+- Closed state shows a small animated character at bottom-right.
+- A small speech bubble says "想搵資訊?" near the character.
+- Launcher sits above other bottom/right page utilities without blocking them.
 
 Checklist:
 
-- [ ] Store acceptance in localStorage.
-- [ ] Add configurable T&C copy and button labels through widget config.
-- [ ] Render T&C as the first assistant/AI chat response.
-- [ ] Add `Accept` and `Decline` buttons to the T&C chat response.
-- [ ] Disable and dim the input box until acceptance.
-- [ ] On `Decline`, re-show the T&C AI response and keep input disabled.
-- [ ] On `Accept`, persist acceptance and enable the input box.
+- [ ] Add configurable launcher prompt text.
+- [ ] Render prompt bubble beside/above the GIF launcher.
+- [ ] Support Traditional Chinese and English launcher prompt copy.
+- [ ] Verify bottom-right positioning at desktop width.
+- [ ] Verify mobile positioning does not overlap browser chrome or page controls.
+- [ ] Add config for `launcherOffsetX` and `launcherOffsetY` defaults that match carers.hk more closely.
+- [ ] Ensure launcher remains visible when the chat panel is closed.
+- [ ] Ensure launcher is hidden or replaced cleanly when the chat panel is open.
 
-### Browser Session Persistence
+Files likely involved:
 
-Current component runtime state is in memory only.
+- `client/packages/adp-chat-component/src/App.vue`
+- `client/packages/adp-chat-component/public/embed.js`
+- `client/packages/adp-chat-component/src/model/type.ts`
 
-- `client/packages/adp-chat-component/src/components/layout/Index.vue`
-  - `conversationRuntimeStates`
-  - `currentConversationStateKey`
-  - `createPendingConversationKey`
+## Phase 3: Match Floating Panel Layout
 
-Needed additions:
+Reference behavior:
 
-- [ ] Generate `visitorId` or `sessionId` in browser.
-- [ ] Store accepted T&C state.
-- [ ] Store current app ID.
-- [ ] Store current conversation ID.
-- [ ] Optionally cache recent records until backend history is fetched.
+- Panel is anchored bottom-right.
+- Desktop panel is narrow, roughly 380px wide and 600px tall.
+- Header is compact orange with title on the left.
+- Header has minimize, expand, and close controls on the right.
+- Chat content scrolls inside the panel.
+- Footer composer and hotline strip stay fixed at the bottom of the panel.
 
-Suggested localStorage keys:
+Checklist:
 
-```text
-adp_chat_visitor_id
-adp_chat_accepted_terms
-adp_chat_app_id
-adp_chat_conversation_id
-adp_chat_font_scale
-```
+- [ ] Make overlay mode the default for public/widget use.
+- [ ] Tune default overlay width and height to carers.hk proportions.
+- [ ] Keep full-page mode available for hosted app/debug use.
+- [ ] Add or verify minimize control.
+- [ ] Add or verify expand/fullscreen control.
+- [ ] Add or verify close control.
+- [ ] Make the footer composer width match the panel instead of page width.
+- [ ] Keep hotline strip inside the panel footer in overlay mode.
+- [ ] Remove excess empty space above/below T&C card in overlay mode.
+- [ ] Verify desktop screenshot against carers.hk open-panel state.
+- [ ] Verify mobile screenshot uses a sensible near-fullscreen panel.
 
-### SSE Streaming
+Files likely involved:
 
-Frontend SSE support already exists.
-
-- `client/packages/adp-chat-component/src/service/api.ts`
-  - `sendMessage()` uses fetch adapter and stream response.
-- `client/packages/adp-chat-component/src/model/sseRequest-reasoning.ts`
-  - Parses SSE `data:` lines.
-- `client/packages/adp-chat-component/src/components/layout/Index.vue`
-  - Applies streaming events to runtime records.
-
-Note: deployment still needs backend/proxy support, such as nginx `proxy_buffering off`. That is not frontend implementation work, but frontend QA should verify streaming in the deployed environment.
-
-### Voice Input
-
-Voice input exists but language selection is not clearly configurable from the widget config today.
-
+- `client/packages/adp-chat-component/src/App.vue`
+- `client/packages/adp-chat-component/src/components/layout/MainLayout.vue`
+- `client/packages/adp-chat-component/src/components/Chat/Index.vue`
 - `client/packages/adp-chat-component/src/components/Chat/Sender.vue`
-  - Opens ASR WebSocket and records microphone audio.
+
+## Phase 4: Finalize T&C Gate Behavior
+
+Reference behavior:
+
+- T&C appears as the first assistant message.
+- Composer is disabled until acceptance.
+- Accept appends a user "接受"/"Accept" bubble.
+- Assistant then sends the greeting.
+- Decline keeps the composer disabled and keeps or re-shows the T&C prompt.
+- Refresh preserves acceptance.
+
+Already mostly implemented. Use this phase for hardening, not rebuilding.
+
+Checklist:
+
+- [ ] Confirm T&C is never blocked by app/conversation loading failures.
+- [ ] Confirm Accept appends the user acceptance record in local UI.
+- [ ] Confirm assistant greeting appears after acceptance.
+- [ ] Confirm composer placeholder changes from disabled copy to normal input copy.
+- [ ] Confirm Decline keeps input disabled.
+- [ ] Confirm Decline re-prompts or keeps the T&C message visible.
+- [ ] Confirm localStorage acceptance persists across refresh.
+- [ ] Decide acceptance scope: per app, per conversation, or global widget.
+- [ ] Remove duplicate or stale T&C implementation notes after scope is decided.
+
+Files likely involved:
+
 - `client/packages/adp-chat-component/src/components/layout/Index.vue`
-  - Reads `EnableVoiceInput` from system config.
+- `client/packages/adp-chat-component/src/components/Chat/Index.vue`
+- `client/packages/adp-chat-component/src/components/Chat/Sender.vue`
+
+## Phase 5: Public No-login Guest Flow
+
+Current issue:
+
+- Local UI shows app/conversation list load failure toasts.
+- The public chatbot should render usable T&C and guest chat without requiring a logged-in hosted app session.
+
+Checklist:
+
+- [ ] Add an explicit public/widget mode flag, for example `publicMode` or `guestMode`.
+- [ ] In public/widget mode, do not redirect unauthenticated users to `/login`.
+- [ ] In public/widget mode, do not show app list failure toasts before the chat can be used.
+- [ ] Provide a default application ID/name/avatar for guest mode.
+- [ ] Generate and persist a browser `visitorId`.
+- [ ] Persist current `conversationId` after the backend creates one.
+- [ ] Restore `conversationId` on refresh when valid.
+- [ ] Handle missing/expired conversation ID by starting a new guest conversation.
+- [ ] Show a user-readable error only when message sending fails.
+- [ ] Verify SSE streaming still works in guest mode.
+
+Files likely involved:
+
+- `client/packages/app/src/router/index.ts`
 - `client/packages/app/src/pages/Home.vue`
-  - Passes `asrUrlApi`.
+- `client/packages/adp-chat-component/src/components/layout/Index.vue`
+- `client/packages/adp-chat-component/src/service/api.ts`
+- `client/packages/adp-chat-component/public/embed.js`
 
-Needed if voice language is in scope:
+## Phase 6: Embed Package
 
-- [ ] Add widget config for ASR language.
-- [ ] Pass language into ASR URL request if backend supports it.
-- [ ] Verify EN / Cantonese / Mandarin behavior with backend ASR support.
+If keeping direct DOM embed:
 
-### A/A/A Font-size Compatibility
+- [ ] Document `ADPChatEmbed.init(config)`.
+- [ ] Document script-tag `data-*` options.
+- [ ] Add `destroy()` if production integrators need teardown.
+- [ ] Add `setFontScale("normal" | "large" | "x-large")` convenience API, or document current numeric accessibility API.
+- [ ] Add a static example page that simulates a third-party host.
+- [ ] Verify host CSS does not visibly break the widget.
 
-Iframe isolation means host page CSS will not automatically affect chatbot font size.
-
-Recommended approach:
-
-- [ ] Add `fontScale` config to loader.
-- [ ] Add public API:
-
-```js
-Chatbot.setFontScale("normal");
-Chatbot.setFontScale("large");
-Chatbot.setFontScale("x-large");
-```
-
-- [ ] Loader sends font scale changes into iframe via `postMessage`.
-- [ ] Iframe applies a class or CSS variable such as `--chatbot-font-scale`.
-
-## Proposed Implementation Checklist
-
-### Phase 1: Public Widget Entry
-
-- [ ] Decide whether the public widget uses the reusable component directly or a dedicated `widget.html` entry.
-- [ ] Add public widget config type.
-- [ ] Add localStorage session helper.
-- [ ] Restore `currentApplicationId` and `currentConversationId` from storage.
-- [ ] Persist conversation ID after new conversation is created.
-- [ ] Add no-login frontend mode that avoids hosted app `/login` routing.
-
-### Phase 2: Carers.hk Skin
-
-- [ ] Add `theme: "carers"` or equivalent style variant.
-- [ ] Replace current launcher icon with configurable animated avatar GIF/image.
-- [ ] Restyle overlay panel dimensions, border radius, shadow, and position.
-- [ ] Restyle header to orange bar.
-- [ ] Add hotline/info strip if required.
-- [ ] Restyle message bubbles and bot avatar.
-- [ ] Restyle input bar, upload button, mic button, and send button.
-- [ ] Verify desktop and mobile layouts.
-
-### Phase 3: Terms Gate
-
-- [ ] Add T&C state and localStorage persistence.
-- [ ] Add T&C copy/config props.
-- [ ] Render T&C prompt as the first AI chat response on first open.
-- [ ] Add `Accept` and `Decline` buttons inside the T&C chat response.
-- [ ] Disable and visually dim the input box until accepted.
-- [ ] On decline, prompt the T&C AI response again and keep input disabled.
-- [ ] On accept, persist acceptance and enable normal chat.
-- [ ] Add tests/manual QA for refresh persistence.
-
-### Phase 4: Embed Loader
+If adding iframe embed:
 
 - [ ] Create `chatbot-loader.js`.
-- [ ] Loader creates iframe with configured URL.
-- [ ] Loader passes config by query params or `postMessage`.
-- [ ] Loader exposes `Chatbot.init`.
-- [ ] Loader exposes `Chatbot.open`, `Chatbot.close`, `Chatbot.destroy`.
-- [ ] Loader exposes `Chatbot.setFontScale`.
-- [ ] Add iframe resize/position handling.
-- [ ] Add minimal third-party integration docs.
+- [ ] Loader creates bottom-right launcher in host page.
+- [ ] Loader creates iframe panel only when opened, or keeps it mounted if persistence requires it.
+- [ ] Loader passes config to iframe by query string or `postMessage`.
+- [ ] Iframe validates accepted message origins.
+- [ ] Loader exposes `init`, `open`, `close`, `toggle`, `destroy`, and `setFontScale`.
+- [ ] Iframe applies font scale via CSS variable.
+- [ ] Add a minimal hosted `widget.html` entry.
+- [ ] Add a static third-party integration example.
 
-### Phase 5: QA
+Do not implement both paths fully unless there is a concrete deployment need.
 
-- [ ] Desktop Chrome/Safari/Edge.
+## Phase 7: Visual QA
+
+Desktop checks:
+
+- [ ] Closed launcher matches carers.hk placement and prompt.
+- [ ] Open panel width/height matches carers.hk closely.
+- [ ] Header controls are visible and usable.
+- [ ] T&C card fits without awkward horizontal overflow.
+- [ ] Composer and hotline strip remain pinned at bottom.
+- [ ] Accept flow matches carers.hk.
+- [ ] User and assistant bubbles match color, border, and spacing closely.
+
+Mobile checks:
+
+- [ ] Launcher does not block important page controls.
+- [ ] Open panel uses safe viewport height.
+- [ ] Composer remains usable with virtual keyboard.
+- [ ] T&C buttons remain tappable.
+- [ ] Header controls remain tappable.
+
+Browser checks:
+
+- [ ] Chrome desktop.
+- [ ] Safari desktop.
+- [ ] Edge desktop.
 - [ ] iOS Safari.
 - [ ] Android Chrome.
-- [ ] Refresh persistence.
-- [ ] New tab behavior.
-- [ ] Embedded iframe on a simple static host page.
-- [ ] Host CSS conflict check.
-- [ ] Streaming response behavior check.
-- [ ] Error/loading/empty states.
 
-## Risks And Assumptions
+## Phase 8: Functional QA
 
-- Public/no-login chat requires backend API support. Frontend can hide login and persist browser state, but cannot bypass backend auth safely by itself.
-- True chat history across devices requires backend persistence.
-- Iframe is recommended for third-party delivery, but host A/A/A controls need explicit JS integration.
-- Voice language verification depends on backend ASR support and browser microphone permissions.
+- [ ] Fresh visitor sees T&C first.
+- [ ] Accept persists after refresh.
+- [ ] Decline does not enable input.
+- [ ] Message send creates or reuses a guest conversation.
+- [ ] Streaming response renders incrementally.
+- [ ] Network/API errors show a helpful message without breaking layout.
+- [ ] File upload button behavior is correct for public mode.
+- [ ] Voice button behavior is correct for public mode.
+- [ ] A/A/A font-size control works through the chosen embed API.
+- [ ] Widget can be mounted on a plain static HTML host page.
+
+## Suggested Next Implementation Order
+
+1. Make local `http://localhost:5174` run in the same overlay/widget mode as carers.hk.
+2. Fix or suppress public-mode app/conversation loading failures.
+3. Tighten launcher visual parity, including prompt bubble.
+4. Tighten overlay panel dimensions and footer/composer layout.
+5. Verify T&C accept/decline/refresh behavior.
+6. Finalize direct DOM versus iframe embed.
+7. Add integration docs and static host example.
