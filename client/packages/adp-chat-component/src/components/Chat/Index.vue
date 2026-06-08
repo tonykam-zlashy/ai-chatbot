@@ -1,246 +1,643 @@
 <!-- 聊天主界面组件，负责消息展示、发送、历史加载等 -->
 <template>
-    <!-- 聊天内容容器 -->
-    <div id="chat-content" class="chat-box">
-        <!-- 聊天组件 -->
-        <TChat ref="chatRef" :class="{ isChatting: isChatting }" :reverse="false" style="height: 100%; flex: 1; min-width: 0;" :clear-history="false"
-            @scroll="handleChatScroll" @clear="clearConfirm">
-            <!-- 默认问题提示 -->
-            <template v-if="chatList.length <= 0 && !messageLoading && !chatId">
-                <AppType
-                    :currentApplicationAvatar="currentApplicationAvatar"
-                    :currentApplicationName="currentApplicationName"
-                    :currentApplicationGreeting="currentApplicationGreeting"
-                    :currentApplicationOpeningQuestions="currentApplicationOpeningQuestions"
-                    :isMobile="isMobile"
-                    :isOverlay="isOverlay"
-                    @selectQuestion="getDefaultQuestion"
-                />
+  <!-- 聊天内容容器 -->
+  <div id="chat-content" class="chat-box">
+    <!-- 聊天组件 -->
+    <TChat
+      ref="chatRef"
+      :class="{ isChatting: isChatting }"
+      :reverse="false"
+      style="height: 100%; flex: 1; min-width: 0"
+      :clear-history="false"
+      @scroll="handleChatScroll"
+      @clear="clearConfirm"
+    >
+      <!-- 默认问题提示 -->
+      <template v-if="termsResolving">
+        <div
+          class="content selectable terms-splash-content"
+          :class="{ isMobile: isMobile }"
+        >
+          <img
+            class="terms-splash-avatar"
+            :src="assistantAvatar"
+            :alt="assistantName"
+          />
+        </div>
+      </template>
+      <template v-else-if="chatList.length <= 0 && !messageLoading && !chatId">
+        <AppType
+          :currentApplicationAvatar="currentApplicationAvatar"
+          :currentApplicationName="assistantName"
+          :currentApplicationGreeting="currentApplicationGreeting"
+          :currentApplicationOpeningQuestions="
+            currentApplicationOpeningQuestions
+          "
+          :isMobile="isMobile"
+          :isOverlay="isOverlay"
+          @selectQuestion="getDefaultQuestion"
+        />
+      </template>
+      <!-- 聊天消息列表 -->
+      <template v-else>
+        <div
+          class="content selectable"
+          :class="{ isMobile: isMobile, isFull: chatList.length <= 0 }"
+        >
+          <InfiniteLoading
+            v-if="chatId"
+            :identifier="chatId"
+            direction="top"
+            @infinite="infiniteHandler"
+          >
+            <template #spinner>
+              <div>
+                <TLoading size="small">
+                  <template #text>
+                    <span class="thinking-text">
+                      {{ `${i18n.loading}...` }}
+                    </span>
+                  </template>
+                  <template #indicator>
+                    <CustomizedIcon
+                      class="thinking-icon"
+                      name="thinking"
+                      :theme="theme"
+                      nativeIcon
+                    />
+                  </template>
+                </TLoading>
+              </div>
             </template>
-            <!-- 聊天消息列表 -->
-            <template v-else>
-                <div class="content selectable" :class="{ isMobile: isMobile, isFull: chatList.length <= 0 }">
-                    <InfiniteLoading v-if="chatId" :identifier="chatId" direction="top" @infinite="infiniteHandler">
-                        <template #spinner>
-                            <div>
-                                <TLoading size="small">
-                                    <template #text>
-                                        <span class="thinking-text">
-                                            {{ `${i18n.loading}...` }}
-                                        </span>
-                                    </template>
-                                    <template #indicator>
-                                        <CustomizedIcon class="thinking-icon" name="thinking" :theme="theme" nativeIcon />
-                                    </template>
-                                </TLoading>
-                            </div>
-                        </template>
-                        <template #no-more>
-                            <div></div>
-                        </template>
-                        <template #no-results>
-                            <div></div>
-                        </template>
-                    </InfiniteLoading>
-                    <div class="chat-item__content" v-for="(item, index) in chatList" :key="item.RecordId">
-                        <Checkbox class="share-checkbox" :checked="selectedIds?.includes(item.RecordId)"
-                            v-if="isSelecting" @change="(e) => onSelectIds(item.RecordId, e)" />
-                        <div style="width: 100%">
-                            <ChatItem 
-                                :isLastMsg="index === (chatList.length - 1)" 
-                                :item="item" 
-                                :index="index"
-                                :loading="loading" 
-                                :isStreamLoad="isChatting" 
-                                :isMobile="isMobile"
-                                :theme="theme"
-                                :mode="props.mode"
-                                :language="props.language"
-                                :i18n="chatItemI18n"
-                                @resend="onResend"
-                                @share="onShare"
-                                @rate="onRate"
-                                @copy="onCopy"
-                                @sendMessage="inputEnter"
-                                @widgetEvent="onWidgetEvent"
-                            />
-                        </div>
-                    </div>
+            <template #no-more>
+              <div></div>
+            </template>
+            <template #no-results>
+              <div></div>
+            </template>
+          </InfiniteLoading>
+          <div
+            class="chat-item__content"
+            v-for="(item, index) in chatList"
+            :key="item.RecordId"
+          >
+            <Checkbox
+              class="share-checkbox"
+              :checked="selectedIds?.includes(item.RecordId)"
+              v-if="isSelecting && !isSyntheticRecord(item)"
+              @change="(e) => onSelectIds(item.RecordId, e)"
+            />
+            <div style="width: 100%; padding-top: 16px">
+              <div
+                v-if="isTermsPromptRecord(item)"
+                class="terms-message-row"
+                :key="termsPromptKey"
+              >
+                <img
+                  class="terms-avatar"
+                  :src="assistantMessageAvatar"
+                  :alt="assistantName"
+                />
+                <div class="terms-message-card">
+                  <div class="terms-message-title">
+                    {{ termsCopy.title }}
+                  </div>
+                  <p>
+                    {{ termsCopy.intro }}
+                  </p>
+                  <ul class="terms-link-list">
+                    <li>
+                      <a
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        href="https://www.carers.hk/disclaimers"
+                      >
+                        {{ termsCopy.disclaimers }}
+                      </a>
+                    </li>
+                    <li>
+                      <a
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        href="https://www.carers.hk/copyright-statement"
+                      >
+                        {{ termsCopy.copyright }}
+                      </a>
+                    </li>
+                    <li>
+                      <a
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        href="https://www.carers.hk/personal-information-collection-statement"
+                      >
+                        {{ termsCopy.privacy }}
+                      </a>
+                    </li>
+                  </ul>
+                  <p>
+                    {{ termsCopy.acceptInstruction }}
+                  </p>
+                  <p>
+                    <template v-if="isEnglish">
+                      {{ termsCopy.scamNoticeBefore }}
+                    </template>
+                    <template v-else>
+                      {{ termsCopy.scamNoticeBefore }}
+                      <a href="tel:18222">「防騙易18222」</a>
+                      {{ termsCopy.scamNoticeAfter }}
+                    </template>
+                  </p>
+                  <div v-if="!termsAccepted" class="terms-actions">
+                    <button
+                      type="button"
+                      class="terms-btn terms-btn--primary"
+                      @click="emit('acceptTerms')"
+                    >
+                      {{ termsCopy.acceptButton }}
+                    </button>
+                    <button
+                      type="button"
+                      class="terms-btn terms-btn--secondary"
+                      @click="emit('declineTerms')"
+                    >
+                      {{ termsCopy.rejectButton }}
+                    </button>
+                  </div>
                 </div>
-            </template>
-            <!-- 底部发送区域 -->
-            <template #footer>
-                <!-- 回到底部按钮 -->
-                <BackToBottom 
-                    v-show="chatId && ((isShowToBottom && !isChatting) || hasUserScrolled)"
-                    :loading="isChatting" 
-                    :theme="theme"
-                    @click="handleClickBackToBottom" 
-                />
-                <TCard v-if="isSelecting" size="small" class="share-setting-container"  shadow
-                    bodyClassName="share-setting-card">
-                    <div class="share-setting-content">
-                        <TCheckbox :indeterminate="selectedIds.length !== chatList.length && selectedIds.length !== 0"
-                            :checked="checkall" @change="handleCheckAll">{{ i18n.checkAll }}</TCheckbox>
-                        <TDivider layout="vertical"></TDivider>
-                        <div class="share-text">
-                            {{ i18n.shareFor }}
-                            <div class="icon__share-copy" :class="{ disabled: selectedIds.length <= 0 }"
-                                @click="handleCopyShare()">
-                                <CustomizedIcon remote size="xs" name="basic_relation_line" :theme="theme" />
-                                <span>{{ i18n.copyUrl }}</span>
-                            </div>
-                        </div>
-                        <TDivider layout="vertical"></TDivider>
-                        <div class="icon__share-close" @click="handleCloseShare()">
-                            <span>{{ i18n.cancelShare }}</span>
-                        </div>
-                    </div>
-                </TCard>
+              </div>
+              <ChatItem
+                v-else
+                :isLastMsg="index === chatList.length - 1"
+                :item="item"
+                :index="index"
+                :loading="loading"
+                :isStreamLoad="isChatting"
+                :isMobile="isMobile"
+                :theme="theme"
+                :mode="props.mode"
+                :language="props.language"
+                :i18n="chatItemI18n"
+                :showActions="shouldShowActions(item)"
+                @resend="onResend"
+                @share="onShare"
+                @rate="onRate"
+                @copy="onCopy"
+                @sendMessage="inputEnter"
+                @widgetEvent="onWidgetEvent"
+              />
+            </div>
+          </div>
+        </div>
+      </template>
+      <!-- 底部发送区域 -->
+      <template #footer>
+        <!-- 回到底部按钮 -->
+        <BackToBottom
+          v-show="
+            chatId && ((isShowToBottom && !isChatting) || hasUserScrolled)
+          "
+          :loading="isChatting"
+          :theme="theme"
+          @click="handleClickBackToBottom"
+        />
+        <TCard
+          v-if="isSelecting"
+          size="small"
+          class="share-setting-container"
+          shadow
+          bodyClassName="share-setting-card"
+        >
+          <div class="share-setting-content">
+            <TCheckbox
+              :indeterminate="
+                selectedIds.length !== shareableChatList.length &&
+                selectedIds.length !== 0
+              "
+              :checked="checkall"
+              @change="handleCheckAll"
+              >{{ i18n.checkAll }}</TCheckbox
+            >
+            <TDivider layout="vertical"></TDivider>
+            <div class="share-text">
+              {{ i18n.shareFor }}
+              <div
+                class="icon__share-copy"
+                :class="{ disabled: selectedIds.length <= 0 }"
+                @click="handleCopyShare()"
+              >
+                <CustomizedIcon remote size="xs" name="basic_relation_line" :theme="theme" />
+                <span>{{ i18n.copyUrl }}</span>
+              </div>
+            </div>
+            <TDivider layout="vertical"></TDivider>
+            <div class="icon__share-close" @click="handleCloseShare()">
+              <span>{{ i18n.cancelShare }}</span>
+            </div>
+          </div>
+        </TCard>
 
-                <Sender 
-                    ref="senderRef" 
-                    :isStreamLoad="isChatting" 
-                    :isMobile="isMobile"
-                    :theme="theme"
-                    :mode="props.mode"
-                    :language="props.language"
-                    :i18n="senderI18n"
-                    :useInternalRecord="useInternalRecord"
-                    :asrUrlApi="asrUrlApi"
-                    :enableVoiceInput="props.enableVoiceInput"
-                    :isUploading="props.isUploading"
-                    @stop="onStop"
-                    @send="handleSend"
-                    @uploadFile="handleUploadFile"
-                    @startRecord="handleStartRecord"
-                    @stopRecord="handleStopRecord"
-                    @message="handleMessage"
-                />
-            </template>
-        </TChat>
-    </div>
+        <Sender
+          ref="senderRef"
+          :isStreamLoad="isChatting"
+          :isMobile="isMobile"
+          :theme="theme"
+          :mode="props.mode"
+          :language="props.language"
+          :i18n="senderI18n"
+          :useInternalRecord="useInternalRecord"
+          :asrUrlApi="asrUrlApi"
+          :enableVoiceInput="props.enableVoiceInput"
+          :enableFileUpload="props.enableFileUpload"
+          :isUploading="props.isUploading"
+          :disabled="termsResolving || !termsAccepted"
+          :disabledPlaceholder="termsCopy.inputDisabledPlaceholder"
+          @stop="onStop"
+          @send="handleSend"
+          @uploadFile="handleUploadFile"
+          @startRecord="handleStartRecord"
+          @stopRecord="handleStopRecord"
+          @message="handleMessage"
+        />
+      </template>
+    </TChat>
+  </div>
 </template>
 
 <script setup lang="tsx">
-import { ref, watch, computed, onMounted, onUnmounted, nextTick, toRefs } from 'vue'
-import InfiniteLoading from 'vue-infinite-loading'
-import { Chat as TChat } from '@tdesign-vue-next/chat'
-import { Checkbox, Loading as TLoading, Card as TCard, Checkbox as TCheckbox, Divider as TDivider } from 'tdesign-vue-next'
-import type { Record } from '../../model/chat-v2'
-import { ScoreValue } from '../../model/chat-v2'
-import type { FileProps } from '../../model/file';
-import { MessageCode } from '../../model/messages';
-import type { ChatRelatedProps, ChatI18n, ChatItemI18n, SenderI18n } from '../../model/type'
-import { chatRelatedPropsDefaults, defaultChatI18n, defaultChatI18nEn, defaultChatItemI18n, defaultChatItemI18nEn, defaultSenderI18n, defaultSenderI18nEn } from '../../model/type'
+import {
+  ref,
+  watch,
+  computed,
+  onMounted,
+  onUnmounted,
+  nextTick,
+  toRefs,
+} from "vue";
+import InfiniteLoading from "vue-infinite-loading";
+import { Chat as TChat } from "@tdesign-vue-next/chat";
+import {
+  Checkbox,
+  Loading as TLoading,
+  Card as TCard,
+  Checkbox as TCheckbox,
+  Divider as TDivider,
+} from "tdesign-vue-next";
+import type { Record } from "../../model/chat-v2";
+import { ScoreValue } from "../../model/chat-v2";
+import type { FileProps } from "../../model/file";
+import { MessageCode } from "../../model/messages";
+import type {
+  ChatRelatedProps,
+  ChatI18n,
+  ChatItemI18n,
+  SenderI18n,
+} from "../../model/type";
+import {
+  chatRelatedPropsDefaults,
+  defaultChatI18n,
+  defaultChatI18nEn,
+  defaultChatItemI18n,
+  defaultChatItemI18nEn,
+  defaultSenderI18n,
+  defaultSenderI18nEn,
+} from "../../model/type";
 
-import AppType from './AppType.vue'
-import Sender from './Sender.vue'
-import BackToBottom from './BackToBottom.vue'
-import ChatItem from './ChatItem.vue'
-import CustomizedIcon from '../CustomizedIcon.vue';
+import AppType from "./AppType.vue";
+import Sender from "./Sender.vue";
+import BackToBottom from "./BackToBottom.vue";
+import ChatItem from "./ChatItem.vue";
+import CustomizedIcon from "../CustomizedIcon.vue";
 
 export interface Props extends ChatRelatedProps {
-    /** 当前会话ID */
-    chatId?: string;
-    /** 聊天消息列表 */
-    chatList?: Record[];
-    /** 是否正在聊天中 */
-    isChatting?: boolean;
-    /** 当前应用ID */
-    currentApplicationId?: string;
-    /** 当前应用头像 */
-    currentApplicationAvatar?: string;
-    /** 当前应用名称 */
-    currentApplicationName?: string;
-    /** 当前应用欢迎语 */
-    currentApplicationGreeting?: string;
-    /** 当前应用推荐问题列表 */
-    currentApplicationOpeningQuestions?: string[];
-    /** 国际化文本 */
-    i18n?: ChatI18n;
-    /** ChatItem 国际化文本 */
-    chatItemI18n?: ChatItemI18n;
-    /** Sender 国际化文本 */
-    senderI18n?: SenderI18n;
-    /** 是否使用内部录音处理（API 模式） */
-    useInternalRecord?: boolean;
-    /** ASR URL API 路径 */
-    asrUrlApi?: string;
-    /** 是否启用语音输入 */
-    enableVoiceInput?: boolean;
-    /** 是否正在上传文件 */
-    isUploading?: boolean;
-    /** 是否显示遮罩层 */
-    isOverlay?: boolean;
+  /** 当前会话ID */
+  chatId?: string;
+  /** 聊天消息列表 */
+  chatList?: Record[];
+  /** 是否正在聊天中 */
+  isChatting?: boolean;
+  /** 当前应用ID */
+  currentApplicationId?: string;
+  /** 当前应用头像 */
+  currentApplicationAvatar?: string;
+  /** 当前应用名称 */
+  currentApplicationName?: string;
+  /** 当前应用欢迎语 */
+  currentApplicationGreeting?: string;
+  /** 当前应用推荐问题列表 */
+  currentApplicationOpeningQuestions?: string[];
+  /** 国际化文本 */
+  i18n?: ChatI18n;
+  /** ChatItem 国际化文本 */
+  chatItemI18n?: ChatItemI18n;
+  /** Sender 国际化文本 */
+  senderI18n?: SenderI18n;
+  /** 是否使用内部录音处理（API 模式） */
+  useInternalRecord?: boolean;
+  /** ASR URL API 路径 */
+  asrUrlApi?: string;
+  /** 是否启用语音输入 */
+  enableVoiceInput?: boolean;
+  /** 是否启用文件上传入口 */
+  enableFileUpload?: boolean;
+  /** 是否正在上传文件 */
+  isUploading?: boolean;
+  /** 是否显示遮罩层 */
+  isOverlay?: boolean;
+  /** 条款状态是否仍在初始化 */
+  termsResolving?: boolean;
+  /** 是否已接受条款 */
+  termsAccepted?: boolean;
+  /** 条款提示刷新 key */
+  termsPromptKey?: number;
 }
 
 const props = withDefaults(defineProps<Props>(), {
-    ...chatRelatedPropsDefaults,
-    chatId: '',
-    chatList: () => [],
-    isChatting: false,
-    currentApplicationId: '',
-    currentApplicationAvatar: '',
-    currentApplicationName: '',
-    currentApplicationGreeting: '',
-    currentApplicationOpeningQuestions: () => [],
-    i18n: () => ({}),
-    chatItemI18n: () => ({}),
-    senderI18n: () => ({}),
-    useInternalRecord: false,
-    asrUrlApi: '',
-    enableVoiceInput: true,
-    isUploading: false,
-    isOverlay: false
+  ...chatRelatedPropsDefaults,
+  chatId: "",
+  chatList: () => [],
+  isChatting: false,
+  currentApplicationId: "",
+  currentApplicationAvatar: "",
+  currentApplicationName: "",
+  currentApplicationGreeting: "",
+  currentApplicationOpeningQuestions: () => [],
+  i18n: () => ({}),
+  chatItemI18n: () => ({}),
+  senderI18n: () => ({}),
+  useInternalRecord: false,
+  asrUrlApi: "",
+  enableVoiceInput: true,
+  enableFileUpload: true,
+  isUploading: false,
+  isOverlay: false,
+  termsResolving: false,
+  termsAccepted: false,
+  termsPromptKey: 0,
 });
 
 // 解构 props 以便在模板中使用
 const {
-    chatId,
-    currentApplicationAvatar,
-    currentApplicationName,
-    currentApplicationGreeting,
-    currentApplicationOpeningQuestions,
-    isChatting,
-    isOverlay,
-    isMobile,
-    theme,
-    useInternalRecord,
-    asrUrlApi
+  chatId,
+  currentApplicationAvatar,
+  currentApplicationName,
+  currentApplicationGreeting,
+  currentApplicationOpeningQuestions,
+  isChatting,
+  isOverlay,
+  isMobile,
+  theme,
+  useInternalRecord,
+  asrUrlApi,
 } = toRefs(props);
 
 // 合并默认值和传入值（根据 language 选择对应语言的默认值）
 const i18n = computed(() => {
-    const defaults = props.language?.startsWith('en') ? defaultChatI18nEn : defaultChatI18n;
-    return { ...defaults, ...props.i18n };
+  const defaults = props.language?.startsWith("en")
+    ? defaultChatI18nEn
+    : defaultChatI18n;
+  return { ...defaults, ...props.i18n };
 });
 
 const chatItemI18n = computed(() => {
-    const defaults = props.language?.startsWith('en') ? defaultChatItemI18nEn : defaultChatItemI18n;
-    return { ...defaults, ...props.chatItemI18n };
+  const defaults = props.language?.startsWith("en")
+    ? defaultChatItemI18nEn
+    : defaultChatItemI18n;
+  return { ...defaults, ...props.chatItemI18n };
 });
 
 const senderI18n = computed(() => {
-    const defaults = props.language?.startsWith('en') ? defaultSenderI18nEn : defaultSenderI18n;
-    return { ...defaults, ...props.senderI18n };
+  const defaults = props.language?.startsWith("en")
+    ? defaultSenderI18nEn
+    : defaultSenderI18n;
+  return { ...defaults, ...props.senderI18n };
 });
 
 const emit = defineEmits<{
-    (e: 'send', query: string, fileList: FileProps[], conversationId: string, applicationId: string): void;
-    (e: 'stop'): void;
-    (e: 'loadMore', conversationId: string, lastRecordId: string): void;
-    (e: 'rate', conversationId: string, recordId: string, score: typeof ScoreValue[keyof typeof ScoreValue]): void;
-    (e: 'share', conversationId: string, applicationId: string, recordIds: string[]): void;
-    (e: 'copy', rowtext: string | undefined, content: string | undefined, type: string): void;
-    (e: 'uploadFile', files: File[]): void;
-    (e: 'startRecord'): void;
-    (e: 'stopRecord'): void;
-    (e: 'message', code: MessageCode, message: string): void;
-    (e: 'conversationChange', conversationId: string): void;
-    /** widget 事件（用于与 SSE/对话流交互） */
-    (e: 'widgetEvent', event: CustomEvent, widgetRunId: string, widgetId: string, recordId: string): void;
+  (
+    e: "send",
+    query: string,
+    fileList: FileProps[],
+    conversationId: string,
+    applicationId: string,
+  ): void;
+  (e: "stop"): void;
+  (e: "loadMore", conversationId: string, lastRecordId: string): void;
+  (
+    e: "rate",
+    conversationId: string,
+    recordId: string,
+    score: (typeof ScoreValue)[keyof typeof ScoreValue],
+  ): void;
+  (
+    e: "share",
+    conversationId: string,
+    applicationId: string,
+    recordIds: string[],
+  ): void;
+  (
+    e: "copy",
+    rowtext: string | undefined,
+    content: string | undefined,
+    type: string,
+  ): void;
+  (e: "uploadFile", files: File[]): void;
+  (e: "startRecord"): void;
+  (e: "stopRecord"): void;
+  (e: "message", code: MessageCode, message: string): void;
+  (e: "conversationChange", conversationId: string): void;
+  (e: "acceptTerms"): void;
+  (e: "declineTerms"): void;
+  /** widget 事件（用于与 SSE/对话流交互） */
+  (
+    e: "widgetEvent",
+    event: CustomEvent,
+    widgetRunId: string,
+    widgetId: string,
+    recordId: string,
+  ): void;
 }>();
+
+const termsAccepted = computed(() => props.termsAccepted);
+const termsPromptKey = computed(() => props.termsPromptKey);
+const termsResolving = computed(() => props.termsResolving);
+const TERMS_PROMPT_RECORD_ID_PREFIX = "local-terms-prompt";
+const TERMS_ACCEPT_RECORD_ID = "local-terms-accepted";
+const TERMS_ACCEPTED_GREETING_RECORD_ID = "local-terms-accepted-greeting";
+const syntheticBaseTime = Date.now();
+
+const isEnglish = computed(() => props.language?.startsWith("en"));
+const defaultAssistantName = computed(() =>
+  isEnglish.value ? "JimmyBuddy" : "阿尖",
+);
+const assistantAvatar = computed(() =>
+  isEnglish.value
+    ? "https://carers-webchat.aienchat.com/avatar-en-us-v5.gif"
+    : "https://carers-webchat.aienchat.com/avatar-zh-hk-v5.gif",
+);
+const assistantMessageAvatar = computed(() =>
+  isEnglish.value
+    ? "https://carers-webchat.aienchat.com/message-en-us-v5.gif"
+    : "https://carers-webchat.aienchat.com/message-zh-hk-v5.gif",
+);
+
+const normalizeAssistantName = (name?: string) => {
+  const trimmed = name?.trim();
+  if (
+    !trimmed ||
+    ["unknown", "unknown application"].includes(trimmed.toLowerCase())
+  ) {
+    return defaultAssistantName.value;
+  }
+  return trimmed;
+};
+
+const assistantName = computed(() =>
+  normalizeAssistantName(currentApplicationName.value),
+);
+
+const termsCopy = computed(() => {
+  if (isEnglish.value) {
+    return {
+      title: assistantName.value,
+      intro:
+        "Please read the following terms and conditions regarding the use of artificial intelligence chatbot dialogue system.",
+      disclaimers: "Disclaimers",
+      copyright: "Copyright statement",
+      privacy: "Privacy Policy and Personal Information Collection Statement",
+      acceptInstruction:
+        'If you agree to the terms and conditions of use, please click the "Accept" button. Clicking the accept button means that you have read, understood and agreed to the terms and conditions of use.',
+      scamNoticeBefore:
+        'Please note that the artificial intelligence chatbot dialogue system will not ask for any personal information from users. If you have any doubts, please call the Anti-deception Enquiry Hotline "Anti-Scam Helpline 18222" to seek help from the police. In addition, users must click "Accept" to use the artificial intelligence chatbot conversation system.',
+      scamNoticeAfter: "",
+      acceptButton: "ACCEPT",
+      rejectButton: "REJECT",
+      acceptedUserText: "Accept",
+      acceptedGreeting:
+        "Hello👋🏻 I'm JimmyBuddy. What kind of information are you looking for?",
+      inputDisabledPlaceholder: "Please accept T&C",
+    };
+  }
+
+  return {
+    title: `你好，我是${assistantName.value}`,
+    intro: "使用人工智能聊天機械人對話系統前，請先細閱並接受下列條款及細則。",
+    disclaimers: "免責聲明",
+    copyright: "版權聲明",
+    privacy: "私隱政策及個人資料收集聲明",
+    acceptInstruction:
+      "如同意使用條款及細則，請點擊「接受」按鈕，點擊接受按鈕後，即表示您已閱讀、理解和同意使用條款及細則。",
+    scamNoticeBefore:
+      "請注意，人工智能聊天機械人對話系統是不會向用戶索取任何個人資料。如有懷疑，請致電反詐騙諮詢熱線",
+    scamNoticeAfter:
+      "向警方求助。此外，用戶必須點擊「接受」按鈕，才能使用人工智能聊天機械人對話系統。",
+    acceptButton: "接受",
+    rejectButton: "拒絕",
+    acceptedUserText: "接受",
+    acceptedGreeting: "您好👋🏻 我係阿尖！請問您想搵咩資訊？",
+    inputDisabledPlaceholder: "請先接受條款與細則後繼續",
+  };
+});
+
+const createSyntheticTextRecord = (
+  role: "assistant" | "user",
+  recordId: string,
+  messageType: "reply" | "question",
+  text: string,
+  startTime: number,
+): Record => ({
+  Role: role,
+  RecordId: recordId,
+  ConversationId: props.chatId || props.currentApplicationId || "local-terms",
+  Status: "success",
+  StatusDesc: "",
+  Messages: [
+    {
+      Type: messageType,
+      MessageId: `${recordId}-message`,
+      Name: messageType,
+      Title: "",
+      Status: "success",
+      StatusDesc: "",
+      Contents: [{ Type: "text", Text: text }],
+    },
+  ],
+  ExtraInfo: {
+    RequestId: "",
+    TraceId: "",
+    Elapsed: 0,
+    StartTime: startTime,
+    IsFromSelf: role === "user",
+    CanRating: false,
+    CanFeedback: false,
+  },
+});
+
+const termsPromptText = computed(() => {
+  const body = [
+    termsCopy.value.title,
+    termsCopy.value.intro,
+    `${termsCopy.value.disclaimers}：https://www.carers.hk/disclaimers`,
+    `${termsCopy.value.copyright}：https://www.carers.hk/copyright-statement`,
+    `${termsCopy.value.privacy}：https://www.carers.hk/personal-information-collection-statement`,
+    termsCopy.value.acceptInstruction,
+  ];
+
+  if (isEnglish.value) {
+    body.push(termsCopy.value.scamNoticeBefore);
+  } else {
+    body.push(
+      `${termsCopy.value.scamNoticeBefore}「防騙易18222」${termsCopy.value.scamNoticeAfter}`,
+    );
+  }
+
+  return body.join("\n\n");
+});
+
+const syntheticTermsRecords = computed<Record[]>(() => {
+  if (props.termsResolving) {
+    return [];
+  }
+
+  const records: Record[] = [
+    createSyntheticTextRecord(
+      "assistant",
+      `${TERMS_PROMPT_RECORD_ID_PREFIX}-${props.termsPromptKey}`,
+      "reply",
+      termsPromptText.value,
+      syntheticBaseTime,
+    ),
+  ];
+
+  if (props.termsAccepted) {
+    records.push(
+      createSyntheticTextRecord(
+        "user",
+        TERMS_ACCEPT_RECORD_ID,
+        "question",
+        termsCopy.value.acceptedUserText,
+        syntheticBaseTime + 1,
+      ),
+      createSyntheticTextRecord(
+        "assistant",
+        TERMS_ACCEPTED_GREETING_RECORD_ID,
+        "reply",
+        termsCopy.value.acceptedGreeting,
+        syntheticBaseTime + 2,
+      ),
+    );
+  }
+
+  return records;
+});
+
+const isTermsPromptRecord = (item: Record) =>
+  item.RecordId.startsWith(TERMS_PROMPT_RECORD_ID_PREFIX);
+const isSyntheticRecord = (item: Record) =>
+  isTermsPromptRecord(item) ||
+  item.RecordId === TERMS_ACCEPT_RECORD_ID ||
+  item.RecordId === TERMS_ACCEPTED_GREETING_RECORD_ID;
+const shouldShowActions = (item: Record) =>
+  !isTermsPromptRecord(item) && item.RecordId !== TERMS_ACCEPT_RECORD_ID;
 
 /**
  * 内部聊天列表（用于本地状态管理）
@@ -250,161 +647,179 @@ const internalChatList = ref<Record[]>([]);
 /**
  * 计算属性：实际使用的聊天列表
  */
-const chatList = computed(() => props.chatList.length > 0 ? props.chatList : internalChatList.value);
+const conversationChatList = computed(() =>
+  props.chatList.length > 0 ? props.chatList : internalChatList.value,
+);
+const chatList = computed(() => [
+  ...syntheticTermsRecords.value,
+  ...conversationChatList.value,
+]);
+const shareableChatList = computed(() =>
+  chatList.value.filter((item) => !isSyntheticRecord(item)),
+);
 
 /**
  * 是否处于选择分享状态
  */
-const isSelecting = ref(false)
+const isSelecting = ref(false);
 
 /**
  * 选中的消息ID列表
  */
-const selectedIds = ref<string[]>([])
+const selectedIds = ref<string[]>([]);
 
 /**
  * 是否全选（根据 selectedIds 与 chatList 对比计算）
  */
-const checkall = computed(() => selectedIds.value.length > 0 && selectedIds.value.length === chatList.value.length);
+const checkall = computed(
+  () =>
+    selectedIds.value.length > 0 &&
+    selectedIds.value.length === shareableChatList.value.length,
+);
 
 const handleCheckAll = (checked: boolean) => {
-    if (checked) {
-        selectedIds.value = chatList.value.map(i => i.RecordId)
-    } else {
-        selectedIds.value = [];
-    }
-}
+  if (checked) {
+    selectedIds.value = shareableChatList.value.map((i) => i.RecordId);
+  } else {
+    selectedIds.value = [];
+  }
+};
 
 /**
  * 发送组件引用
  */
-const senderRef = ref<InstanceType<typeof Sender> | null>(null)
+const senderRef = ref<InstanceType<typeof Sender> | null>(null);
 
 /**
  * 聊天加载状态
  */
-const loading = ref(false)
+const loading = ref(false);
 
 /**
  * 消息加载状态
  */
-const messageLoading = ref(false)
+const messageLoading = ref(false);
 
 /**
  * 聊天组件引用
  */
-const chatRef = ref<{ scrollToBottom?: (options?: { behavior?: string }) => void } | null>(null)
+const chatRef = ref<{
+  scrollToBottom?: (options?: { behavior?: string }) => void;
+} | null>(null);
 
 /**
  * 是否显示回到底部按钮
  */
-const isShowToBottom = ref(false)
+const isShowToBottom = ref(false);
 
 /**
  * 上次滚动位置
  */
-const lastScrollTop = ref(0)
+const lastScrollTop = ref(0);
 
 /**
  * 用户是否手动滚动
  */
-const hasUserScrolled = ref(false)
+const hasUserScrolled = ref(false);
 
 /**
  * 滚动到底部
  */
 const backToBottom = () => {
-    if (!(chatRef.value && chatRef.value.scrollToBottom)) return;
-    if (hasUserScrolled.value) return;
-    chatRef.value.scrollToBottom({
-        behavior: 'smooth',
-    });
-}
+  if (!(chatRef.value && chatRef.value.scrollToBottom)) return;
+  if (hasUserScrolled.value) return;
+  chatRef.value.scrollToBottom({
+    behavior: "smooth",
+  });
+};
 
 /**
  * 点击回到底部按钮
  */
 const handleClickBackToBottom = () => {
-    hasUserScrolled.value = false;
-    backToBottom()
-}
+  hasUserScrolled.value = false;
+  backToBottom();
+};
 
 /**
  * 聊天滚动事件
  */
 const handleChatScroll = function ({ e }: { e: Event }) {
-    if (messageLoading.value) return;
-    const scrollTop = (e.target as HTMLElement).scrollTop
-    const clientHeight = (e.target as HTMLElement).clientHeight
-    const scrollHeight = (e.target as HTMLElement).scrollHeight
-    const isToBottom = clientHeight + scrollTop < scrollHeight - 2
-    isShowToBottom.value = isToBottom
+  if (messageLoading.value) return;
+  const scrollTop = (e.target as HTMLElement).scrollTop;
+  const clientHeight = (e.target as HTMLElement).clientHeight;
+  const scrollHeight = (e.target as HTMLElement).scrollHeight;
+  const isToBottom = clientHeight + scrollTop < scrollHeight - 2;
+  isShowToBottom.value = isToBottom;
 
-    if (lastScrollTop.value - scrollTop > 4 && props.isChatting) {
-        hasUserScrolled.value = true
-    }
-    if (!isToBottom) {
-        hasUserScrolled.value = false
-    }
-    lastScrollTop.value = scrollTop
-}
+  if (lastScrollTop.value - scrollTop > 4 && props.isChatting) {
+    hasUserScrolled.value = true;
+  }
+  if (!isToBottom) {
+    hasUserScrolled.value = false;
+  }
+  lastScrollTop.value = scrollTop;
+};
 
 /**
  * footer高度观察器
  */
-let footerResizeObserver: ResizeObserver | null = null
+let footerResizeObserver: ResizeObserver | null = null;
 
 /**
  * 更新footer高度CSS变量
  */
 const updateFooterHeight = () => {
-    const footer = document.querySelector('.t-chat__footer') as HTMLElement
-    if (footer) {
-        const height = footer.offsetHeight
-        document.documentElement.style.setProperty('--chat-footer-height', `${height + 60}px`)
-    }
-}
+  const footer = document.querySelector(".t-chat__footer") as HTMLElement;
+  if (footer) {
+    const height = footer.offsetHeight;
+    document.documentElement.style.setProperty(
+      "--chat-footer-height",
+      `${height + 60}px`,
+    );
+  }
+};
 
 onMounted(() => {
-    nextTick(() => {
-        const footer = document.querySelector('.t-chat__footer') as HTMLElement
-        if (footer) {
-            updateFooterHeight()
-            footerResizeObserver = new ResizeObserver(() => {
-                updateFooterHeight()
-            })
-            footerResizeObserver.observe(footer)
-        }
-    })
-})
+  nextTick(() => {
+    const footer = document.querySelector(".t-chat__footer") as HTMLElement;
+    if (footer) {
+      updateFooterHeight();
+      footerResizeObserver = new ResizeObserver(() => {
+        updateFooterHeight();
+      });
+      footerResizeObserver.observe(footer);
+    }
+  });
+});
 
 onUnmounted(() => {
-    if (footerResizeObserver) {
-        footerResizeObserver.disconnect()
-        footerResizeObserver = null
-    }
-})
+  if (footerResizeObserver) {
+    footerResizeObserver.disconnect();
+    footerResizeObserver = null;
+  }
+});
 
 /**
  * 设置默认问题
  */
 const getDefaultQuestion = (value: string) => {
-    inputEnter(value)
-}
+  inputEnter(value);
+};
 
 /**
  * 清空聊天
  */
 const clearConfirm = function () {
-    internalChatList.value = []
-}
+  internalChatList.value = [];
+};
 
 /**
  * 停止流式推理
  */
 const onStop = function () {
-    emit('stop');
-}
+  emit("stop");
+};
 
 /**
  * 是否正在加载更多
@@ -414,159 +829,201 @@ const isLoadingMore = ref(false);
 /**
  * 无限加载状态引用
  */
-const infiniteLoadingState = ref<{ loaded: () => void; complete: () => void } | null>(null)
+const infiniteLoadingState = ref<{
+  loaded: () => void;
+  complete: () => void;
+} | null>(null);
 
 /**
  * 无限加载处理函数
  */
-const infiniteHandler = function ($state: { loaded: () => void; complete: () => void }) {
-    // 如果没有 chatId，直接返回
-    if (!props.chatId) {
-        return
-    }
-    
-    // 如果正在聊天中，直接完成加载
-    if (props.isChatting) {
-        $state.complete()
-        return
-    }
-    
-    // 如果正在加载更多，忽略此次调用（不保存状态，让之前的加载继续）
-    if (isLoadingMore.value) {
-        return
-    }
-    
-    isLoadingMore.value = true
-    messageLoading.value = true
-    
-    // 保存状态引用，供外部调用
-    infiniteLoadingState.value = $state
-    
-    // 获取最早的记录ID
-    const firstRecord = chatList.value[0]
-    const lastRecordId = chatList.value.length > 0 && firstRecord ? (firstRecord.RecordId ?? '') : ''
-    
-    // 触发 loadMore 事件，由父组件处理数据加载
-    emit('loadMore', props.chatId, lastRecordId)
-}
+const infiniteHandler = function ($state: {
+  loaded: () => void;
+  complete: () => void;
+}) {
+  // 如果没有 chatId，直接返回
+  if (!props.chatId) {
+    return;
+  }
+
+  // 如果正在聊天中，直接完成加载
+  if (props.isChatting) {
+    $state.complete();
+    return;
+  }
+
+  // 如果正在加载更多，忽略此次调用（不保存状态，让之前的加载继续）
+  if (isLoadingMore.value) {
+    return;
+  }
+
+  isLoadingMore.value = true;
+  messageLoading.value = true;
+
+  // 保存状态引用，供外部调用
+  infiniteLoadingState.value = $state;
+
+  // 获取最早的记录ID
+  const firstRecord = conversationChatList.value[0];
+  const lastRecordId =
+    conversationChatList.value.length > 0 && firstRecord
+      ? (firstRecord.RecordId ?? "")
+      : "";
+
+  // 触发 loadMore 事件，由父组件处理数据加载
+  emit("loadMore", props.chatId, lastRecordId);
+};
 
 /**
  * 通知无限加载已加载更多数据
  */
 const notifyLoaded = () => {
-    isLoadingMore.value = false
-    messageLoading.value = false
-    infiniteLoadingState.value?.loaded()
-    infiniteLoadingState.value = null
-}
+  isLoadingMore.value = false;
+  messageLoading.value = false;
+  infiniteLoadingState.value?.loaded();
+  infiniteLoadingState.value = null;
+};
 
 /**
  * 通知无限加载已完成（没有更多数据）
  */
 const notifyComplete = () => {
-    isLoadingMore.value = false
-    messageLoading.value = false
-    infiniteLoadingState.value?.complete()
-    infiniteLoadingState.value = null
-}
+  isLoadingMore.value = false;
+  messageLoading.value = false;
+  infiniteLoadingState.value?.complete();
+  infiniteLoadingState.value = null;
+};
 
 /**
  * 发送消息
  */
-const inputEnter = function (queryVal: string | undefined, fileList?: FileProps[]) {
-    if (props.isChatting) {
-        return
-    }
-    if (!queryVal) return
-    
-    emit('send', queryVal, fileList || [], props.chatId, props.currentApplicationId);
-    senderRef.value && senderRef.value.changeSenderVal('', [])
-}
+const inputEnter = function (
+  queryVal: string | undefined,
+  fileList?: FileProps[],
+) {
+  if (!props.termsAccepted) {
+    return;
+  }
+  if (props.isChatting) {
+    return;
+  }
+  if (!queryVal) return;
+
+  emit(
+    "send",
+    queryVal,
+    fileList || [],
+    props.chatId,
+    props.currentApplicationId,
+  );
+  senderRef.value && senderRef.value.changeSenderVal("", []);
+};
 
 /**
  * 处理发送
  */
 const handleSend = (value: string, fileList: FileProps[]) => {
-    inputEnter(value, fileList);
-}
+  inputEnter(value, fileList);
+};
 
 const extractRecordText = (record: Record): string => {
-    const messages = record.Messages ?? [];
-    if (messages.length === 0) return '';
-    const target = record.Role === 'user'
-        ? (messages.find(msg => msg.Type === 'question') ?? messages[0])
-        : (messages.find(msg => msg.Type === 'reply') ?? messages[0]);
-    if (!target) return '';
-    return (target.Contents ?? []).map(content => content.Text ?? '').filter(text => text.length > 0).join('\n');
+  const messages = record.Messages ?? [];
+  if (messages.length === 0) return "";
+  const target =
+    record.Role === "user"
+      ? (messages.find((msg) => msg.Type === "question") ?? messages[0])
+      : (messages.find((msg) => msg.Type === "reply") ?? messages[0]);
+  if (!target) return "";
+  return (target.Contents ?? [])
+    .map((content) => content.Text ?? "")
+    .filter((text) => text.length > 0)
+    .join("\n");
 };
 
 /**
  * 重新发送消息
  */
 const onResend = (RelatedRecordId: string | undefined, recordId?: string) => {
-    let related: Record | undefined;
+  let related: Record | undefined;
 
-    if (RelatedRecordId) {
-        related = chatList.value.find((record: Record) => record.RecordId === RelatedRecordId);
+  if (RelatedRecordId) {
+    related = chatList.value.find(
+      (record: Record) => record.RecordId === RelatedRecordId,
+    );
+  }
+
+  // 当 RelatedRecordId 为空或找不到对应记录时，通过 assistant 自身的 recordId 定位后向前查找 user 消息
+  if (!related) {
+    let searchStart = chatList.value.length - 1;
+    if (recordId) {
+      const idx = chatList.value.findIndex(
+        (record: Record) => record.RecordId === recordId,
+      );
+      if (idx >= 0) searchStart = idx;
     }
-
-    // 当 RelatedRecordId 为空或找不到对应记录时，通过 assistant 自身的 recordId 定位后向前查找 user 消息
-    if (!related) {
-        let searchStart = chatList.value.length - 1;
-        if (recordId) {
-            const idx = chatList.value.findIndex((record: Record) => record.RecordId === recordId);
-            if (idx >= 0) searchStart = idx;
-        }
-        for (let i = searchStart; i >= 0; i--) {
-            if (chatList.value[i]?.Role === 'user') {
-                related = chatList.value[i];
-                break;
-            }
-        }
+    for (let i = searchStart; i >= 0; i--) {
+      if (chatList.value[i]?.Role === "user") {
+        related = chatList.value[i];
+        break;
+      }
     }
+  }
 
-    if (!related) return;
-    inputEnter(extractRecordText(related));
-}
+  if (!related) return;
+  inputEnter(extractRecordText(related));
+};
 
 /**
  * 关闭分享设置
  */
 const handleCloseShare = () => {
-    isSelecting.value = false
-    selectedIds.value = []
-}
+  isSelecting.value = false;
+  selectedIds.value = [];
+};
 
 /**
  * 打开分享设置
  */
 const onShare = async (RecordIds: string[]) => {
-    let _selectedList = chatList.value.filter(item => (item?.RelatedRecordId && RecordIds.includes(item?.RelatedRecordId)) || RecordIds.includes(item?.RecordId)).map(i => i.RecordId)
-    isSelecting.value = true
-    selectedIds.value = [...new Set([...selectedIds.value, ..._selectedList])]
-}
+  let _selectedList = chatList.value
+    .filter(
+      (item) =>
+        (item?.RelatedRecordId && RecordIds.includes(item?.RelatedRecordId)) ||
+        RecordIds.includes(item?.RecordId),
+    )
+    .map((i) => i.RecordId);
+  isSelecting.value = true;
+  selectedIds.value = [...new Set([...selectedIds.value, ..._selectedList])];
+};
 
 /**
  * 复制分享链接
  */
 const handleCopyShare = async () => {
-    if (selectedIds.value.length <= 0) return;
-    emit('share', props.chatId, props.currentApplicationId, selectedIds.value);
-}
+  if (selectedIds.value.length <= 0) return;
+  emit("share", props.chatId, props.currentApplicationId, selectedIds.value);
+};
 
 /**
  * 评分
  */
-const onRate = (record: Record, score: typeof ScoreValue[keyof typeof ScoreValue]) => {
-    emit('rate', props.chatId, record.RecordId, score);
-}
+const onRate = (
+  record: Record,
+  score: (typeof ScoreValue)[keyof typeof ScoreValue],
+) => {
+  emit("rate", props.chatId, record.RecordId, score);
+};
 
 /**
  * 复制
  */
-const onCopy = (rowtext: string | undefined, content: string | undefined, type: string) => {
-    emit('copy', rowtext, content, type);
-}
+const onCopy = (
+  rowtext: string | undefined,
+  content: string | undefined,
+  type: string,
+) => {
+  emit("copy", rowtext, content, type);
+};
 
 /**
  * 处理 widget 事件
@@ -575,243 +1032,366 @@ const onCopy = (rowtext: string | undefined, content: string | undefined, type: 
  * @param widgetId - widget id
  * @param recordId - 消息 record id
  */
-const onWidgetEvent = (event: CustomEvent, widgetRunId: string, widgetId: string, recordId: string) => {
-    emit('widgetEvent', event, widgetRunId, widgetId, recordId);
-}
+const onWidgetEvent = (
+  event: CustomEvent,
+  widgetRunId: string,
+  widgetId: string,
+  recordId: string,
+) => {
+  emit("widgetEvent", event, widgetRunId, widgetId, recordId);
+};
 
 /**
  * 选择/取消选择消息ID
  */
 const onSelectIds = (RecordId: string | undefined, checked: boolean) => {
-    if (!RecordId) return
-    if (checked) {
-        selectedIds.value.push(RecordId)
-    } else {
-        let newArray = selectedIds.value.filter(item => item !== RecordId);
-        selectedIds.value = [...newArray]
-    }
-}
+  if (!RecordId) return;
+  if (checked) {
+    selectedIds.value.push(RecordId);
+  } else {
+    let newArray = selectedIds.value.filter((item) => item !== RecordId);
+    selectedIds.value = [...newArray];
+  }
+};
 
 /**
  * 处理文件上传
  */
 const handleUploadFile = (files: File[]) => {
-    emit('uploadFile', files);
-}
+  emit("uploadFile", files);
+};
 
 /**
  * 处理开始录音
  */
 const handleStartRecord = () => {
-    emit('startRecord');
-}
+  emit("startRecord");
+};
 
 /**
  * 处理停止录音
  */
 const handleStopRecord = () => {
-    emit('stopRecord');
-}
+  emit("stopRecord");
+};
 
 /**
  * 处理消息提示
  */
 const handleMessage = (code: MessageCode, message: string) => {
-    emit('message', code, message);
-}
+  emit("message", code, message);
+};
 
 // 监听chatId变化
 watch(
-    () => props.chatId,
-    (newId) => {
-        isSelecting.value = false;
-        selectedIds.value = [];
-        isLoadingMore.value = false;
-        infiniteLoadingState.value = null;
-        emit('conversationChange', newId);
-    },
-    { immediate: true },
-)
+  () => props.chatId,
+  (newId) => {
+    isSelecting.value = false;
+    selectedIds.value = [];
+    isLoadingMore.value = false;
+    infiniteLoadingState.value = null;
+    emit("conversationChange", newId);
+  },
+  { immediate: true },
+);
 
 /**
  * 暴露给父组件的方法
  */
 defineExpose({
-    clearConfirm,
-    getSenderRef: () => senderRef.value,
-    notifyLoaded,
-    notifyComplete,
-    backToBottom,
-    setHasUserScrolled: (value: boolean) => { hasUserScrolled.value = value },
-})
+  clearConfirm,
+  getSenderRef: () => senderRef.value,
+  notifyLoaded,
+  notifyComplete,
+  backToBottom,
+  setHasUserScrolled: (value: boolean) => {
+    hasUserScrolled.value = value;
+  },
+});
 </script>
 
 <style scoped>
-.upload-loading{
-    position: absolute; 
-    bottom: var(--td-comp-margin-m); 
-    z-index:2
+.upload-loading {
+  position: absolute;
+  bottom: var(--td-comp-margin-m);
+  z-index: 2;
 }
 .chat-box {
-    height: 100%;
-    position: relative;
-    display: flex;
+  height: 100%;
+  position: relative;
+  display: flex;
+  background: #fff8e8;
 }
 
 .chat-item__content {
-    display: flex;
-    align-items: self-start;
+  display: flex;
+  align-items: self-start;
 }
 
 .share-setting-container {
-    z-index: 10;
-    position: absolute;
-    left: 50%;
-    transform: translateX(-50%);
-    top: calc((var(--td-size-4) + var(--td-size-1)) * -1);
-    translate: 0 -100%;
-    width: max-content;
+  z-index: 10;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  top: calc((var(--td-size-4) + var(--td-size-1)) * -1);
+  translate: 0 -100%;
+  width: max-content;
 }
 
 .share-setting-content {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-size: var(--td-font-size-link-medium);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: var(--td-font-size-link-medium);
 }
 
 .icon__share-copy {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    background: var(--td-bg-color-container-hover);
-    border-radius: var(--td-radius-default);
-    padding: var(--td-comp-paddingLR-xs) var(--td-comp-paddingLR-xl);
-    margin-left: var(--td-comp-paddingLR-l);
-    margin-right: var(--td-comp-paddingLR-xs);
-    cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--td-bg-color-container-hover);
+  border-radius: var(--td-radius-default);
+  padding: var(--td-comp-paddingLR-xs) var(--td-comp-paddingLR-xl);
+  margin-left: var(--td-comp-paddingLR-l);
+  margin-right: var(--td-comp-paddingLR-xs);
+  cursor: pointer;
 }
 
 .share-text {
-    display: flex;
-    align-items: center;
+  display: flex;
+  align-items: center;
 }
 
 .icon__share-copy.disabled {
-    cursor: not-allowed;
-    opacity: 0.4;
+  cursor: not-allowed;
+  opacity: 0.4;
 }
 
 .icon__share-copy span:nth-child(1) {
-    margin-right: var(--td-pop-padding-s);
+  margin-right: var(--td-pop-padding-s);
 }
 
 .icon__share-close {
-    cursor: pointer;
-    margin-left: var(--td-comp-margin-m);
-    padding-left: var(--td-comp-paddingLR-xxs);
+  cursor: pointer;
+  margin-left: var(--td-comp-margin-m);
+  padding-left: var(--td-comp-paddingLR-xxs);
 }
 
 .thinking-text {
-    color: var(--td-text-color-primary);
-    font-size: var(--td-font-size-link-medium);
-    margin-left: var(--td-comp-margin-xs)
+  color: var(--td-text-color-primary);
+  font-size: var(--td-font-size-link-medium);
+  margin-left: var(--td-comp-margin-xs);
 }
 
 .thinking-icon {
-    animation: rotate 2s linear infinite;
-    width: var(--td-comp-size-xs);
-    height: var(--td-comp-size-xs);
-    padding: 0;
+  animation: rotate 2s linear infinite;
+  width: var(--td-comp-size-xs);
+  height: var(--td-comp-size-xs);
+  padding: 0;
 }
 
 .content.isFull,
 .content.isFull .infinite-loading-container,
 .content.isFull .infinite-status-prompt {
-    height: 100%;
+  height: 100%;
 }
 
 :deep(.content.isFull .infinite-status-prompt) {
-    height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 :deep(.t-chat__footer) {
-    display: flex;
-    justify-content: center;
-    padding: 0 var(--td-comp-paddingLR-m);
+  display: flex;
+  justify-content: center;
+  padding: 0 12px;
+  background: #fff8e8;
 }
 
 :deep(.content .chat-item__content) {
-    padding-bottom: var(--td-comp-paddingLR-l);
-    margin-left: var(--td-size-4);
+  padding-bottom: var(--td-comp-paddingLR-l);
+  margin-left: var(--td-size-4);
 }
 
 :deep(.content .chat-item__content:last-child) {
-    padding-bottom: var(--td-comp-paddingLR-xl);
+  padding-bottom: max(var(--td-comp-paddingLR-xl), var(--chat-footer-height, 120px));
 }
 
 :deep(.t-chat__list) {
-    padding: 0 calc(var(--td-comp-paddingLR-xl) - var(--td-size-4));
-    overflow-y: scroll;
+  padding: 0 calc(var(--td-comp-paddingLR-xl) - var(--td-size-4))
+    var(--chat-footer-height, 120px);
+  overflow-y: scroll;
+  background: #fff8e8;
+}
+
+.terms-splash-content {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.terms-splash-avatar {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: #fff;
+  box-shadow: 0 8px 28px rgba(184, 66, 34, 0.18);
+}
+
+.terms-content {
+  align-items: flex-start;
+  padding: 18px 12px 0;
+}
+
+.terms-message-row {
+  display: flex;
+  align-items: flex-start;
+  width: 100%;
+  gap: 8px;
+}
+
+.terms-avatar {
+  width: 42px;
+  height: 42px;
+  flex: 0 0 42px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: #fff;
+}
+
+.terms-message-card {
+  max-width: min(100%, 310px);
+  padding: 12px;
+  border: 1px solid #b95a25;
+  border-radius: 14px 14px 14px 4px;
+  background: #fff;
+  color: #713614;
+  box-shadow: 0 2px 0 rgba(185, 90, 37, 0.08);
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.terms-message-title {
+  margin-bottom: 6px;
+  font-weight: 700;
+  color: #8e3d18;
+}
+
+.terms-message-card p {
+  margin: 0 0 8px;
+}
+
+.terms-message-card a {
+  color: #b84222;
+  font-weight: 700;
+  text-decoration: underline;
+}
+
+.terms-link-list {
+  margin: 0 0 10px;
+  padding-left: 20px;
+}
+
+.terms-link-list li + li {
+  margin-top: 3px;
+}
+
+.terms-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.terms-btn {
+  min-width: 76px;
+  height: 34px;
+  border-radius: 7px;
+  border: 1px solid #b84222;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.terms-btn--primary {
+  background: #b84222;
+  color: #fff;
+}
+
+.terms-btn--secondary {
+  background: #fff7e6;
+  color: #8e3d18;
 }
 
 /* 确保 AppType 组件容器有足够高度实现垂直居中 */
 :deep(.t-chat__list > div) {
-    height: 100%;
+  height: 100%;
 }
 
 :deep(.t-chat__list .content) {
-    width: 100%;
-    max-width: calc(800px + var(--td-size-4));
-    margin: 0 auto;
+  width: 100%;
+  max-width: calc(800px + var(--td-size-4));
+  margin: 0 auto;
 }
 
 :deep(.share-setting-content .t-card__body) {
-    padding: var(--td-comp-paddingLR-l) var(--td-size-10) var(--td-comp-paddingLR-l) var(--td-comp-paddingLR-xl);
+  padding: var(--td-comp-paddingLR-l) var(--td-size-10)
+    var(--td-comp-paddingLR-l) var(--td-comp-paddingLR-xl);
 }
 
 :deep(.share-setting-card) {
-    box-sizing: border-box;
-    box-shadow: 0px 0px 1px rgba(18, 19, 25, 0.08), 0px 0px 18px rgba(18, 19, 25, 0.08), 0px 16px 64px rgba(18, 19, 25, 0.16);
-    border-radius: var(--td-radius-medium);
-    padding: var(--td-comp-paddingLR-s) var(--td-size-10) var(--td-comp-paddingLR-s) var(--td-comp-paddingLR-xl) !important;
+  box-sizing: border-box;
+  box-shadow:
+    0px 0px 1px rgba(18, 19, 25, 0.08),
+    0px 0px 18px rgba(18, 19, 25, 0.08),
+    0px 16px 64px rgba(18, 19, 25, 0.16);
+  border-radius: 6px;
+  padding: var(--td-comp-paddingLR-s) var(--td-size-10)
+    var(--td-comp-paddingLR-s) var(--td-comp-paddingLR-xl) !important;
 }
 
 :deep(.share-setting-container) {
-    border: none;
-    box-sizing: border-box;
-    box-shadow: 0px 0px 1px rgba(18, 19, 25, 0.08), 0px 0px 18px rgba(18, 19, 25, 0.08), 0px 16px 64px rgba(18, 19, 25, 0.16);
-    border-radius: var(--td-radius-medium);
+  border: none;
+  box-sizing: border-box;
+  box-shadow:
+    0px 0px 1px rgba(18, 19, 25, 0.08),
+    0px 0px 18px rgba(18, 19, 25, 0.08),
+    0px 16px 64px rgba(18, 19, 25, 0.16);
+  border-radius: 6px;
 }
 
 .share-setting-content.isMobile {
-    font-size: var(--td-font-size-link-small);
+  font-size: var(--td-font-size-link-small);
 }
 
 .share-setting-content.isMobile .icon__share-copy {
-    padding: var(--td-comp-paddingLR-xxs) var(--td-comp-paddingLR-s);
-    margin-left: var(--td-comp-paddingLR-s);
-    margin-right: var(--td-comp-paddingLR-xxs);
+  padding: var(--td-comp-paddingLR-xxs) var(--td-comp-paddingLR-s);
+  margin-left: var(--td-comp-paddingLR-s);
+  margin-right: var(--td-comp-paddingLR-xxs);
 }
 
 .share-setting-content.isMobile .icon__share-copy :deep(svg) {
-    width: var(--td-font-size-body-medium);
-    height: var(--td-font-size-body-medium);
+  width: 14px;
+  height: 14px;
 }
 
 .share-setting-content.isMobile .icon__share-close {
-    margin-left: var(--td-comp-paddingLR-s);
-    padding-left: 0;
+  margin-left: var(--td-comp-paddingLR-s);
+  padding-left: 0;
 }
 
 :deep(.share-setting-container.isMobile .share-setting-card) {
-    padding: var(--td-comp-paddingLR-xs) var(--td-comp-paddingLR-s);
+  padding: var(--td-comp-paddingLR-xs) var(--td-comp-paddingLR-s);
 }
 
 :deep(.share-setting-container.isMobile) {
-    box-shadow: 0px 0px 1px rgba(18, 19, 25, 0.06), 0px 0px 8px rgba(18, 19, 25, 0.06), 0px 8px 32px rgba(18, 19, 25, 0.1);
+  box-shadow:
+    0px 0px 1px rgba(18, 19, 25, 0.06),
+    0px 0px 8px rgba(18, 19, 25, 0.06),
+    0px 8px 32px rgba(18, 19, 25, 0.1);
 }
 </style>

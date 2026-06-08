@@ -9,6 +9,18 @@
 
 </div>
 
+# Repository Ownership
+
+This project is customized from [TencentCloudADP/adp-chat-client](https://github.com/TencentCloudADP/adp-chat-client).
+Keep Tencent's repository configured as `upstream` so new upstream fixes can be fetched and merged when needed, while `origin` should point to this project's own repository.
+
+```bash
+git remote rename origin upstream
+git remote add origin https://github.com/YOUR_USERNAME/YOUR_REPO.git
+git fetch upstream
+git pull upstream main
+```
+
 # About
 
 **ADP-Chat-Client** is an open sourced AI Agent application conversation interface. It allows developers to quickly deploy AI agent applications developed on the [Tencent Cloud Agent Development Platform (Tencent Cloud ADP)](https://adp.tencentcloud.com/) as web applications (or embed them into mini-programs, Android, and iOS apps). The client supports real-time conversations, conversation history management, voice input, image understanding, interactive Widgets (charts, forms, etc.), third-party account system integration, and more. It supports fast deployment via Docker.

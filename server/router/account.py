@@ -7,7 +7,7 @@ from util.auth_cookie import add_auth_token_cookie
 from core.account import CoreAccount, CoreAccountProvider
 from core.error.account import AccountUnauthorized
 from config import tagentic_config
-from router import check_login, auto_login
+from router import ensure_login
 from app_factory import TAgenticApp
 app = TAgenticApp.get_app()
 
@@ -62,12 +62,7 @@ class AccountProviderListApi(HTTPMethodView):
 
 class AccountInfoApi(HTTPMethodView):
     async def get(self, request: Request):
-        on_response = None
-        if app.config.AUTO_CREATE_ACCOUNT:
-            # 自动创建账户
-            on_response = await auto_login(request)
-        else:
-            check_login(request)
+        on_response = await ensure_login(request)
 
         account = await CoreAccount.get(request.ctx.db, request.ctx.account_id)
 

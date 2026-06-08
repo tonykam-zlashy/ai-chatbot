@@ -40,6 +40,31 @@ export * from './mounters'
 // 存储已初始化的应用配置（用于 update）
 const mountedConfigs: Map<string, { props: ReturnType<typeof ref<Record<string, any>>>, containerId: string }> = new Map()
 
+function applyChatMountLayout(element: HTMLElement, config?: Partial<ChatConfig>) {
+  const isOverlay = config?.isOverlay === true
+
+  if (isOverlay) {
+    element.style.position = 'fixed'
+    element.style.inset = '0 auto auto 0'
+    element.style.width = '0'
+    element.style.height = '0'
+    element.style.overflow = 'visible'
+    element.style.background = 'transparent'
+    element.style.pointerEvents = 'none'
+    element.style.zIndex = '999'
+    return
+  }
+
+  element.style.position = ''
+  element.style.inset = ''
+  element.style.width = '100%'
+  element.style.height = '100%'
+  element.style.overflow = ''
+  element.style.background = ''
+  element.style.pointerEvents = ''
+  element.style.zIndex = ''
+}
+
 /**
  * 初始化完整聊天应用
  */
@@ -52,6 +77,7 @@ function init(container?: string, config?: ChatConfig) {
   
   const dummyDiv = createContainerElement(container, containerId)
   if (!dummyDiv) return
+  applyChatMountLayout(dummyDiv, config)
 
   // 如果传入 apiConfig，则配置 axios（apiConfig 现在直接是 AxiosRequestConfig）
   if (config?.apiConfig) {
@@ -111,6 +137,10 @@ function update(container?: string, config?: Partial<ChatConfig>) {
     mountedConfig.props.value = {
       ...mountedConfig.props.value,
       ...config
+    }
+    const mountElement = document.getElementById(mountedConfig.containerId)
+    if (mountElement) {
+      applyChatMountLayout(mountElement, mountedConfig.props.value)
     }
   }
 

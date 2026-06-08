@@ -4,6 +4,34 @@
  */
 import axios, { type AxiosInstance, type AxiosRequestConfig, type AxiosResponse } from 'axios';
 
+const DEVICE_ID_STORAGE_KEY = 'adp_chat_device_id';
+const DEVICE_ID_HEADER = 'X-Device-ID';
+
+const createDeviceId = (): string => {
+    if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+        return crypto.randomUUID();
+    }
+    return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 12)}`;
+};
+
+export const getDeviceId = (): string => {
+    if (typeof window === 'undefined') {
+        return '';
+    }
+
+    try {
+        const storage = window.localStorage;
+        let deviceId = storage.getItem(DEVICE_ID_STORAGE_KEY);
+        if (!deviceId) {
+            deviceId = createDeviceId();
+            storage.setItem(DEVICE_ID_STORAGE_KEY, deviceId);
+        }
+        return deviceId;
+    } catch {
+        return '';
+    }
+};
+
 // 默认配置
 const defaultConfig: AxiosRequestConfig = {
     timeout: 30000,
@@ -32,7 +60,26 @@ interface ResponseInterceptorHandler {
 const requestInterceptors: RequestInterceptorHandler[] = [];
 const responseInterceptors: ResponseInterceptorHandler[] = [];
 
+const applyDeviceIdInterceptor = (instance: AxiosInstance) => {
+    instance.interceptors.request.use((config) => {
+        const deviceId = getDeviceId();
+        if (!deviceId) {
+            return config;
+        }
+
+        config.headers = config.headers || {};
+        const headers = config.headers as any;
+        if (typeof headers.set === 'function') {
+            headers.set(DEVICE_ID_HEADER, deviceId);
+        } else if (!headers[DEVICE_ID_HEADER]) {
+            headers[DEVICE_ID_HEADER] = deviceId;
+        }
+        return config;
+    });
+};
+
 const applyStoredInterceptors = (instance: AxiosInstance) => {
+    applyDeviceIdInterceptor(instance);
     requestInterceptors.forEach(({ onFulfilled, onRejected }) => {
         instance.interceptors.request.use(onFulfilled, onRejected);
     });
@@ -41,6 +88,8 @@ const applyStoredInterceptors = (instance: AxiosInstance) => {
     });
     hasCustomResponseInterceptor = responseInterceptors.length > 0;
 };
+
+applyDeviceIdInterceptor(axiosInstance);
 
 /**
  * 配置 axios 实例

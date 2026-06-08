@@ -18,6 +18,58 @@ const { t } = useI18n();
 const currentApplicationId = ref<string>('');
 const currentConversationId = ref<string>('');
 
+const LAST_CHAT_STORAGE_KEY = 'adp_chat_last_conversation';
+
+type LastChatState = {
+    conversationId?: string;
+    applicationId?: string;
+};
+
+const hasBrowserStorage = () => typeof window !== 'undefined' && !!window.localStorage;
+
+const readLastChatState = (): LastChatState => {
+    if (!hasBrowserStorage()) {
+        return {};
+    }
+
+    try {
+        const rawValue = window.localStorage.getItem(LAST_CHAT_STORAGE_KEY);
+        if (!rawValue) {
+            return {};
+        }
+
+        const parsedValue = JSON.parse(rawValue) as LastChatState;
+        return {
+            conversationId: parsedValue.conversationId || '',
+            applicationId: parsedValue.applicationId || '',
+        };
+    } catch (error) {
+        console.warn('Failed to read last chat state from localStorage', error);
+        return {};
+    }
+};
+
+const persistLastChatState = (conversationId: string, applicationId?: string) => {
+    if (!hasBrowserStorage() || !conversationId) {
+        return;
+    }
+
+    const state: LastChatState = {
+        conversationId,
+        applicationId: applicationId || currentApplicationId.value || '',
+    };
+
+    window.localStorage.setItem(LAST_CHAT_STORAGE_KEY, JSON.stringify(state));
+};
+
+const clearLastChatState = () => {
+    if (!hasBrowserStorage()) {
+        return;
+    }
+
+    window.localStorage.removeItem(LAST_CHAT_STORAGE_KEY);
+};
+
 // API 配置 - 使用组件自动加载数据
 
 const apiConfig: ApiConfig = {
@@ -144,6 +196,30 @@ const updateFromUrl = () => {
     }
 }
 
+const tryRestoreLastConversation = (conversations: ChatConversation[]) => {
+    if (route.params.conversationId || currentConversationId.value) {
+        return false;
+    }
+
+    const storedState = readLastChatState();
+    if (!storedState.conversationId) {
+        return false;
+    }
+
+    const storedConversation = conversations.find((conversation) => conversation.Id === storedState.conversationId);
+    if (!storedConversation) {
+        clearLastChatState();
+        return false;
+    }
+
+    currentConversationId.value = storedConversation.Id;
+    currentApplicationId.value = storedConversation.ApplicationId || storedState.applicationId || currentApplicationId.value;
+    persistLastChatState(currentConversationId.value, currentApplicationId.value);
+    updateUrl();
+
+    return true;
+};
+
 // 监听路由参数变化
 watch(() => route.params.applicationId, () => updateFromUrl());
 watch(() => route.params.conversationId, () => updateFromUrl());
@@ -163,17 +239,20 @@ const updateUrl = () => {
 const handleSelectApplication = (app: Application) => {
     currentApplicationId.value = app.ApplicationId || '';
     currentConversationId.value = '';
+    clearLastChatState();
     updateUrl();
 };
 
 const handleSelectConversation = (conversation: ChatConversation) => {
     currentConversationId.value = conversation.Id;
     currentApplicationId.value = conversation.ApplicationId;
+    persistLastChatState(conversation.Id, conversation.ApplicationId);
     updateUrl();
 };
 
 const handleCreateConversation = () => {
     currentConversationId.value = '';
+    clearLastChatState();
     updateUrl();
 };
 
@@ -191,7 +270,21 @@ const handleLogout = () => {
 };
 
 // 数据加载完成回调
-const handleDataLoaded = (type: 'applications' | 'conversations' | 'chatList' | 'user', data: any) => {
+const handleDataLoaded = (type: 'applications' | 'conversations' | 'chatList' | 'user' | 'systemConfig', data: any) => {
+    if (type === 'conversations' && Array.isArray(data)) {
+        if (tryRestoreLastConversation(data)) {
+            return;
+        }
+
+        if (currentConversationId.value) {
+            const currentConversation = data.find((conversation: ChatConversation) => conversation.Id === currentConversationId.value);
+            if (currentConversation) {
+                currentApplicationId.value = currentConversation.ApplicationId || currentApplicationId.value;
+                persistLastChatState(currentConversation.Id, currentConversation.ApplicationId);
+            }
+        }
+    }
+
     // 初始化时从 URL 同步状态
     if (type === 'applications' && data.length > 0) {
         // 如果 URL 没有指定应用，默认选中第一个
@@ -205,6 +298,7 @@ const handleDataLoaded = (type: 'applications' | 'conversations' | 'chatList' | 
 // 会话变化回调
 const handleConversationChange = (conversationId: string) => {
     currentConversationId.value = conversationId;
+    persistLastChatState(conversationId, currentApplicationId.value);
     updateUrl();
 };
 </script>
@@ -216,7 +310,7 @@ const handleConversationChange = (conversationId: string) => {
         :theme="uiStore.theme || 'light'"
         :language="uiStore.language || 'zh'"
         :languageOptions="languageOptions"
-        :isSidePanelOverlay="uiStore.isMobile"
+        :isSidePanelOverlay="true"
         :showCloseButton="false"
         :showOverlayButton="false"
         :logoUrl="Logo"
@@ -228,6 +322,8 @@ const handleConversationChange = (conversationId: string) => {
         :chatI18n="chatI18n"
         :chatItemI18n="chatItemI18n"
         :senderI18n="senderI18n"
+        :enableVoiceInput="false"
+        :enableFileUpload="false"
         @selectApplication="handleSelectApplication"
         @selectConversation="handleSelectConversation"
         @createConversation="handleCreateConversation"

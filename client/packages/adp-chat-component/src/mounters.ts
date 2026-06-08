@@ -210,6 +210,8 @@ export interface ChatComponentConfig extends MountConfig {
   i18n?: any
   chatItemI18n?: any
   senderI18n?: any
+  enableVoiceInput?: boolean
+  enableFileUpload?: boolean
   onSend?: (query: string, fileList: any[], conversationId: string, applicationId: string) => void
   onStop?: () => void
   onLoadMore?: (conversationId: string, lastRecordId: string) => void
@@ -240,6 +242,8 @@ export interface ChatSenderConfig extends MountConfig {
   isMobile?: boolean
   theme?: 'light' | 'dark'
   i18n?: any
+  enableVoiceInput?: boolean
+  enableFileUpload?: boolean
   onSend?: (value: string, fileList: any[]) => void
   onStop?: () => void
   onUploadFile?: (files: File[]) => void
@@ -281,6 +285,10 @@ export interface ADPChatConfig extends MountConfig {
   isMobile?: boolean
   logoUrl?: string
   logoTitle?: string
+  launcherIconUrl?: string
+  launcherPosition?: 'bottom-right' | 'bottom-left' | 'top-right' | 'top-left'
+  launcherOffsetX?: string | number
+  launcherOffsetY?: string | number
   maxAppLen?: number
   showCloseButton?: boolean
   showOverlayButton?: boolean
@@ -289,6 +297,8 @@ export interface ADPChatConfig extends MountConfig {
   chatI18n?: any
   chatItemI18n?: any
   senderI18n?: any
+  enableVoiceInput?: boolean
+  enableFileUpload?: boolean
   apiConfig?: ApiConfig
   autoLoad?: boolean
   onOverlayChange?: (isOverlay: boolean) => void

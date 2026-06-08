@@ -6,7 +6,7 @@ import { ScoreValue } from '../../model/chat-v2';
 import type { CommonLayoutProps, ChatItemI18n, ChatMode } from '../../model/type';
 import { commonLayoutPropsDefaults, defaultChatItemI18n } from '../../model/type';
 import {  ChatItem as TChatItem } from '@tdesign-vue-next/chat';
-import { Tooltip, Loading as TLoading, Link as TLink, Dialog as TDialog } from 'tdesign-vue-next';
+import { Loading as TLoading, Link as TLink, Dialog as TDialog } from 'tdesign-vue-next';
 import OptionCard from '../Common/OptionCard.vue';
 import MdContent from '../Common/MdContent.vue';
 import MessageFileCard from '../Common/MessageFileCard.vue';
@@ -69,9 +69,16 @@ type QuoteInfoLike = QuoteInfo;
 type ReferenceLike = ReferenceV2;
 
 const record = ref(props.item as ChatRecord);
-const expandStatus = ref(false);
 const referenceDialogVisible = ref(false);
 const activeReference = ref<ReferenceLike | null>(null);
+const assistantMessageAvatar = computed(() =>
+    props.language?.startsWith('en')
+        ? 'https://carers-webchat.aienchat.com/message-en-us-v5.gif'
+        : 'https://carers-webchat.aienchat.com/message-zh-hk-v5.gif'
+);
+const assistantMessageAvatarAlt = computed(() =>
+    props.language?.startsWith('en') ? 'JimmyBuddy' : '阿尖'
+);
 
 // 监听 props.item 变化，同步到 record
 // 这是必要的，因为 placeholder 消息的 RecordId 会在 SSE 返回后被更新
@@ -251,6 +258,10 @@ const reasoningContents = computed(() => {
         .filter((text) => text.length > 0);
 });
 
+const showCompactThinking = computed(() => {
+    return props.isLastMsg && props.isStreamLoad && !displayText.value && !useClawRender.value;
+});
+
 const collectFromMessageContents = <T,>(message: Message | undefined, picker: (content: Content) => T[] | undefined): T[] => {
     const values: T[] = [];
     for (const content of message?.Contents ?? []) {
@@ -419,64 +430,8 @@ const share = async (target: RecordV2) => {
     emit('share', shareList);
 };
 
-/**
- * 渲染推理模块的头部自定义内容
- */
-const renderHeader = () => {
-    const endText = expandStatus.value ? i18n.value.deepThinkingFinished : i18n.value.deepThinkingExpand;
-    return (
-        <div class="collapsed-thinking-text">
-            <CustomizedIcon 
-                remote 
-                name="arrow_up_small_line" 
-                showHoverBg={false} 
-                size="xs" 
-                theme={props.theme}
-                class={['thinking-arrow-icon', { 'thinking-arrow--expanded': expandStatus.value }]}
-            />
-            <span>{endText}</span>
-        </div>
-    );
-};
-
-/**
- * 渲染推理内容
- */
-const renderReasoningContent = (contents: string[]) => {
-    if (contents.length === 0) return <div></div>;
-    return (
-        <div>
-            {contents.map((content, index) => (
-            <MdContent 
-                content={content} 
-                role="system" 
-                theme={props.theme} 
-                mode={props.mode}
-                language={props.language}
-                key={index} 
-            />
-            ))}
-        </div>
-    );
-};
-
 const renderReasoning = () => {
-    if (reasoningContents.value.length === 0) {
-        return false;
-    }
-    return {
-        collapsed: props.isLastMsg && !props.isStreamLoad,
-        expandIcon: () => null,
-        expandIconPlacement: 'right' as const,
-        onExpandChange: (e: boolean) => {
-            expandStatus.value = e;
-        },
-        collapsePanelProps: {
-            expandIcon: false,
-            header: renderHeader(),
-            content: renderReasoningContent(reasoningContents.value),
-        },
-    };
+    return false;
 };
 
 const getReferenceUrl = (reference: ReferenceLike) => {
@@ -547,26 +502,33 @@ const referenceDialogTitle = computed(() => {
     <div v-if="isFromSelf && isWidgetAction" class="widget-action-row">
         <WidgetActionTag :text="i18n.actionPerformed" />
     </div>
-    <!-- 聊天项组件 -->
-    <TChatItem v-else animation="skeleton" :role="isFromSelf ? 'user' : 'assistant'" :text-loading="false"
-        :reasoning="renderReasoning()" >
-        <!-- 内容插槽 -->
-        <template #content>
-            <div v-if="isLastMsg && isStreamLoad && !displayText && reasoningContents.length === 0 && !useClawRender" class="loading-container">
-                <TLoading  size="small">
-                    <template #text>
-                        <span class="thinking-text">
-                            {{ `${i18n.thinking}...` }}
-                        </span>
-                    </template>
-                    <template #indicator>
-                        <CustomizedIcon class="thinking-icon" name="thinking" :theme="theme" nativeIcon :showHoverBg="false"/>
-                    </template>
-                </TLoading>
-            </div>
-            <div v-else>
-                <!-- 普通用户消息 -->
-                <div v-if="isFromSelf" class="user-message">
+    <div v-else class="chat-message-row" :class="{ 'chat-message-row--assistant': !isFromSelf, 'chat-message-row--user': isFromSelf }">
+        <img
+            v-if="!isFromSelf"
+            class="assistant-message-avatar"
+            :src="assistantMessageAvatar"
+            :alt="assistantMessageAvatarAlt"
+        />
+        <!-- 聊天项组件 -->
+        <TChatItem class="chat-message-item" animation="skeleton" :role="isFromSelf ? 'user' : 'assistant'" :text-loading="false"
+            :reasoning="renderReasoning()" >
+            <!-- 内容插槽 -->
+            <template #content>
+                <div v-if="showCompactThinking" class="loading-container">
+                    <TLoading  size="small">
+                        <template #text>
+                            <span class="thinking-text">
+                                {{ `${i18n.thinking}...` }}
+                            </span>
+                        </template>
+                        <template #indicator>
+                            <CustomizedIcon class="thinking-icon" name="thinking" :theme="theme" nativeIcon :showHoverBg="false"/>
+                        </template>
+                    </TLoading>
+                </div>
+                <div v-else>
+                    <!-- 普通用户消息 -->
+                    <div v-if="isFromSelf" class="user-message">
                     <!-- 图片附件：独立于文字气泡展示（claw 模式下已在文本中渲染） -->
                     <div v-if="imageAttachments.length > 0 && mode !== 'claw'" class="image-attachments">
                         <img
@@ -706,46 +668,16 @@ const referenceDialogTitle = computed(() => {
                         </li>
                     </ol>
                 </div>
-            </div>
-        </template>
-        <!-- 操作按钮插槽 -->
-        <template #actions v-if="showActions" >
-            <div v-show="!isStreamLoad || !isLastMsg" class="actions-container" :class="{ isMobile: isMobile }">
-                <Tooltip :content="i18n.copy" destroyOnClose showArrow theme="default">
-                    <CustomizedIcon remote :size="isMobile ? 'm' : 's'" class="control-icon copy-icon icon" name="basic_copy_line" :theme="theme"
-                        @click="(e: any) => copyContent(e, displayText, 'assistant')" />
-                </Tooltip>
-                <Tooltip :content="i18n.replay" destroyOnClose showArrow theme="default">
-                    <CustomizedIcon remote :size="isMobile ? 'm' : 's'" class="control-icon icon" name="basic_refresh_line" :theme="theme"
-                        @click="emit('resend', item.RelatedRecordId, item.RecordId)" />
-                </Tooltip>
-                <Tooltip :content="i18n.share" destroyOnClose showArrow theme="default">
-                    <CustomizedIcon remote :size="isMobile ? 'm' : 's'" class="control-icon share-icon icon" name="basic_forward_line" :theme="theme" @click="share(item)" />
-                </Tooltip>
-                <Tooltip :content="i18n.good" destroyOnClose showArrow theme="default">
-                    <CustomizedIcon remote
-                        :size="isMobile ? 'm' : 's'"
-                        :class="{ disabled: !canRate || (isRated() && recordScore !== ScoreValue.Like), 'not-allowed': isRated() || !canRate }"
-                        class="control-icon icon"
-                        :name="recordScore === ScoreValue.Like ? 'basic_thumbsup_fill' : 'basic_thumbsup_line'"
-                        :theme="theme" @click="rate(item, ScoreValue.Like)" />
-                </Tooltip>
-                <Tooltip :content="i18n.bad" destroyOnClose showArrow theme="default">
-                    <CustomizedIcon remote
-                        :size="isMobile ? 'm' : 's'"
-                        :class="{ disabled: !canRate || (isRated() && recordScore !== ScoreValue.Dislike), 'not-allowed': isRated() || !canRate }"
-                        class="control-icon icon"
-                        :name="recordScore === ScoreValue.Dislike ? 'basic_thumbsdown_fill' : 'basic_thumbsdown_line'"
-                        :theme="theme" @click="rate(item, ScoreValue.Dislike)" />
-                </Tooltip>
-                <Tooltip :content="i18n.aiDisclaimer" destroyOnClose showArrow theme="default">
-                    <CustomizedIcon remote :size="isMobile ? 'm' : 's'" class="control-icon icon" name="basic_tips_line" :theme="theme" />
-                </Tooltip>
-                <span v-if="replyTime" class="actions-divider"></span>
-                <span v-if="replyTime" class="actions-time">{{ replyTime }}</span>
-            </div>
-        </template>
-    </TChatItem>
+                </div>
+            </template>
+            <!-- 操作按钮插槽 -->
+            <template #actions v-if="showActions && !isFromSelf && replyTime" >
+                <div v-show="!isStreamLoad || !isLastMsg" class="actions-container" :class="{ isMobile: isMobile }">
+                    <span class="actions-time">{{ replyTime }}</span>
+                </div>
+            </template>
+        </TChatItem>
+    </div>
     <TDialog
         v-model:visible="referenceDialogVisible"
         :header="referenceDialogTitle"
@@ -799,6 +731,34 @@ const referenceDialogTitle = computed(() => {
     align-items: center;
 }
 
+.chat-message-row {
+    display: flex;
+    align-items: flex-start;
+    width: 100%;
+}
+
+.chat-message-row--assistant {
+    gap: 8px;
+}
+
+.chat-message-row--user {
+    justify-content: flex-end;
+}
+
+.chat-message-item {
+    min-width: 0;
+    flex: 1;
+}
+
+.assistant-message-avatar {
+    width: 42px;
+    height: 42px;
+    flex: 0 0 42px;
+    border-radius: 50%;
+    object-fit: cover;
+    background: #fff;
+}
+
 /* 用户消息的复制和分享图标样式 */
 .user-message {
     display: flex;
@@ -844,7 +804,7 @@ const referenceDialogTitle = computed(() => {
     display: flex;
     align-items: center;
     list-style: none;
-    padding: var(--td-pop-padding-s);
+    padding: 2px 0 0;
     overflow: hidden;
     position: relative;
     padding-left: 0;
@@ -858,8 +818,8 @@ const referenceDialogTitle = computed(() => {
 .actions-time {
     font-size: var(--td-font-size-link-small);
     color: var(--td-text-color-placeholder);
-    line-height: var(--td-line-height-body-small);
-    margin-left: var(--td-comp-margin-m);
+    line-height: 18px;
+    margin-left: 0;
     white-space: nowrap;
 }
 .collapsed-thinking-text{

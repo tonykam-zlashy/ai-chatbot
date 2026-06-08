@@ -46,6 +46,7 @@ function toggleThought(msgId: string) {
 }
 
 const count = computed(() => (props.messages || []).length);
+const canExpand = computed(() => count.value > 0);
 
 /**
  * 根据 ToolName 返回工具分类
@@ -171,6 +172,7 @@ const titleText = computed(() => {
 });
 
 function toggle() {
+    if (!canExpand.value) return;
     expanded.value = !expanded.value;
 }
 
@@ -184,6 +186,7 @@ function extractText(msg: Message): string {
         .filter(t => t.length > 0)
         .join('\n');
 }
+
 </script>
 
 <template>
@@ -195,8 +198,8 @@ function extractText(msg: Message): string {
         }"
     >
         <!-- 标题栏 -->
-        <div class="collapsible-group__header" @click="toggle">
-            <span class="collapsible-group__arrow" :class="{ 'collapsible-group__arrow--expanded': isExpanded }">
+        <div class="collapsible-group__header" :class="{ 'collapsible-group__header--static': !canExpand }" @click="toggle">
+            <span v-if="canExpand" class="collapsible-group__arrow" :class="{ 'collapsible-group__arrow--expanded': isExpanded }">
                 <CustomizedIcon remote name="arrow_up_small_line" :showHoverBg="false" size="xs" :theme="theme" />
             </span>
             <span class="collapsible-group__title">{{ titleText }}</span>
@@ -204,7 +207,7 @@ function extractText(msg: Message): string {
         </div>
 
         <!-- 展开后的内容区域 -->
-        <div v-show="isExpanded" class="collapsible-group__content">
+        <div v-show="isExpanded && canExpand" class="collapsible-group__content">
             <template v-for="(msg, idx) in messages" :key="msg.MessageId || ('cg-' + idx)">
                 <!-- tool_call / task_execution 类型：使用独立的工具渲染组件 -->
                 <ToolCallItem
@@ -267,6 +270,14 @@ function extractText(msg: Message): string {
 
 .collapsible-group__header:hover {
     background: var(--td-bg-color-container-hover);
+}
+
+.collapsible-group__header--static {
+    cursor: default;
+}
+
+.collapsible-group__header--static:hover {
+    background: transparent;
 }
 
 .collapsible-group__title {

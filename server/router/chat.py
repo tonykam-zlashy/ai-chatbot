@@ -7,7 +7,7 @@ from sanic.request.types import Request
 from sanic.response import ResponseStream
 from sanic.exceptions import SanicException
 
-from router import login_required, check_login
+from router import login_required, ensure_login
 from core.chat import CoreChat
 from core.conversation import CoreConversation
 from core.share import CoreShareConversation
@@ -41,7 +41,8 @@ class ChatMessageApi(HTTPMethodView):
                 args['Contents'],
                 args['ConversationId'],
                 args['SearchNetwork'],
-                args['CustomVariables']
+                args['CustomVariables'],
+                getattr(request.ctx, 'guest_device_id', None)
             ):
                 await response.write(data)
         return ResponseStream(streaming_fn, content_type='text/event-stream; charset=utf-8')
@@ -56,13 +57,17 @@ class ChatMessageListApi(HTTPMethodView):
         args = parser.parse_args(request)
 
         if args["ConversationId"] is not None:
-            check_login(request)
+            on_response = await ensure_login(request)
             application_id = await CoreConversation.get_application_id(
                 request.ctx.db,
                 request.ctx.account_id,
                 args['ConversationId']
             )
             vendor_app = app.get_vendor_app(application_id)
+            vendor_account_id = await CoreChat.resolve_vendor_account_id(
+                request.ctx.account_id,
+                getattr(request.ctx, 'guest_device_id', None)
+            )
 
             # 判断是否为 claw 模式：优先从 apps_info 缓存查找，找不到时动态获取
             is_claw = False
@@ -101,7 +106,7 @@ class ChatMessageListApi(HTTPMethodView):
                 # claw 模式：通过 DescribeConversationMessageList 获取完整 V2 数据
                 result = await vendor_app.get_messages_v2(
                     request.ctx.db,
-                    request.ctx.account_id,
+                    vendor_account_id,
                     args['ConversationId'],
                     app.config.CHAT_MESSAGE_PAGE_SIZE,
                     args['LastRecordId']
@@ -118,7 +123,7 @@ class ChatMessageListApi(HTTPMethodView):
                 # standard 模式：通过 GetMsgRecord 获取历史消息
                 records = await vendor_app.get_messages(
                     request.ctx.db,
-                    request.ctx.account_id,
+                    vendor_account_id,
                     args['ConversationId'],
                     app.config.CHAT_MESSAGE_PAGE_SIZE,
                     args['LastRecordId']
@@ -129,7 +134,10 @@ class ChatMessageListApi(HTTPMethodView):
                         'Records': records,
                     }
                 }
-            return sanic.json(resp)
+            response = sanic.json(resp)
+            if on_response:
+                response = on_response(response)
+            return response
 
         if args["ShareId"] is not None:
             if args['LastRecordId'] is not None:

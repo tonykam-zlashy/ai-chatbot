@@ -1191,6 +1191,7 @@ class TCADP(BaseVendor):
     async def upload(self, db: AsyncSession, request: Request, account_id: str, mime_type: str, mode: str = 'standard') -> str:
         action = "DescribeStorageCredential"
         file_type = self._resolve_file_type(mime_type)
+        is_image = mime_type.startswith('image/')
 
         # claw/agent 模式使用 BotBizId='0' + IsPublic=True，确保文件在公有桶中可被 Claw Agent 下载
         if mode == 'claw':
@@ -1205,10 +1206,11 @@ class TCADP(BaseVendor):
             payload = {
                 "AppId": self.config.get('AppId', ''),
                 "FileType": file_type,
-                "IsPublic": True,
+                "IsPublic": is_image,
                 "TypeKey": 'realtime',
             }
-            resp = await tc_request(self.tc_config(), action, payload)
+        logging.info(f"DescribeStorageCredential mode={mode}, payload={payload}")
+        resp = await tc_request(self.tc_config(), action, payload)
         resp = resp['Response']
         if 'Error' in resp:
             logging.error(resp)

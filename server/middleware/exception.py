@@ -5,6 +5,7 @@ from sanic import json
 from sanic import exceptions
 
 from app_factory import TAgenticApp
+from middleware.database import cleanup_session
 app = TAgenticApp.get_app()
 
 
@@ -22,4 +23,5 @@ def format_exception(exception):
 @app.exception(Exception)
 async def catch_anything(request, exception):
     body, status_code = format_exception(exception)
+    await cleanup_session(request)
     return json(body, status=status_code)

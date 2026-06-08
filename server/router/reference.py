@@ -4,7 +4,7 @@ from sanic.request.types import Request
 from sanic.exceptions import SanicException
 from sanic_restful_api import reqparse
 
-from router import check_login
+from router import ensure_login
 from core.share import CoreShareConversation
 from app_factory import TAgenticApp
 
@@ -35,7 +35,7 @@ class ReferenceDetailApi(HTTPMethodView):
         else:
             if not application_id:
                 raise SanicException("ApplicationId or ShareId is required", status_code=400)
-            check_login(request)
+            on_response = await ensure_login(request)
             account_id = request.ctx.account_id
 
         vendor_app = app.get_vendor_app(application_id)
@@ -44,7 +44,10 @@ class ReferenceDetailApi(HTTPMethodView):
         except NotImplementedError as error:
             raise SanicException(str(error), status_code=501) from error
 
-        return json({"References": references})
+        response = json({"References": references})
+        if not share_id and on_response:
+            response = on_response(response)
+        return response
 
 
 app.add_route(ReferenceDetailApi.as_view(), "/reference/detail")

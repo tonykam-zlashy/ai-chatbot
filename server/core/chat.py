@@ -1,4 +1,5 @@
 import logging
+from typing import Optional
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from config import tagentic_config
@@ -13,10 +14,16 @@ logger = logging.getLogger(__name__)
 
 class CoreChat:
     @staticmethod
-    async def resolve_vendor_account_id(account_id: str) -> str:
+    async def resolve_vendor_account_id(account_id: str, guest_device_id: Optional[str] = None) -> str:
         async with db_connection() as db:
             account = await CoreAccount.get(db, account_id)
             account_third_party = await CoreAccount.get_third_party(db, account_id)
+
+        is_public_guest = account_third_party is None and account and not account.Email and not account.Password
+        if is_public_guest:
+            if guest_device_id:
+                return f"guest_{guest_device_id}"
+            return str(account.Id if account else account_id)
 
         customer_id = (
             account_third_party.OpenId
@@ -37,6 +44,7 @@ class CoreChat:
         conversation_id: str,
         search_network: bool,
         custom_variables: dict,
+        guest_device_id: Optional[str] = None,
     ):
         title_source = extract_text_from_contents(contents).strip()
         if not title_source:
@@ -70,7 +78,7 @@ class CoreChat:
         if conversation_id is None or conversation_id == '':
             is_new_conversation = True
 
-        vendor_account_id = await CoreChat.resolve_vendor_account_id(account_id)
+        vendor_account_id = await CoreChat.resolve_vendor_account_id(account_id, guest_device_id)
         async for message in vendor_app.chat(
             vendor_account_id,
             contents,

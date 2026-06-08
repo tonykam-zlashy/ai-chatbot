@@ -1,7 +1,33 @@
 import axios from 'axios';
-import router from '@/router'
-import { logout } from '@/service/login';
 import { getBaseURL } from '@/utils/url';
+
+const DEVICE_ID_STORAGE_KEY = 'adp_chat_device_id';
+const DEVICE_ID_HEADER = 'X-Device-ID';
+
+const createDeviceId = (): string => {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
+  }
+  return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 12)}`;
+}
+
+const getDeviceId = (): string => {
+  if (typeof window === 'undefined') {
+    return '';
+  }
+
+  try {
+    const storage = window.localStorage;
+    let deviceId = storage.getItem(DEVICE_ID_STORAGE_KEY);
+    if (!deviceId) {
+      deviceId = createDeviceId();
+      storage.setItem(DEVICE_ID_STORAGE_KEY, deviceId);
+    }
+    return deviceId;
+  } catch {
+    return '';
+  }
+}
 
 // 创建axios实例
 const instance = axios.create({
@@ -16,6 +42,16 @@ const instance = axios.create({
 // 请求拦截器
 instance.interceptors.request.use(
   (config) => {
+    const deviceId = getDeviceId();
+    if (deviceId) {
+      config.headers = config.headers || {};
+      const headers = config.headers as any;
+      if (typeof headers.set === 'function') {
+        headers.set(DEVICE_ID_HEADER, deviceId);
+      } else if (!headers[DEVICE_ID_HEADER]) {
+        headers[DEVICE_ID_HEADER] = deviceId;
+      }
+    }
     return config
   },
   (error) => {
@@ -57,9 +93,6 @@ instance.interceptors.response.use(
       console.error('Network Error:', error.message)
     }
     console.log('[error] axio',error)
-    if (error.response && error.response.status === 401) {
-      logout(() => router.replace({ name: 'login' }));
-    }
     return Promise.reject(error)
   },
 )

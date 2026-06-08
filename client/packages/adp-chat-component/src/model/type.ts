@@ -485,6 +485,14 @@ export interface ChatConfig extends ChatRelatedProps, OverlayProps {
   onOpenChange?: (isOpen: boolean) => void
   /** 是否显示悬浮切换按钮 */
   showToggleButton?: boolean
+  /** 悬浮切换按钮图标 URL（支持 gif/png/webp/svg） */
+  launcherIconUrl?: string
+  /** 悬浮切换按钮位置 */
+  launcherPosition?: 'bottom-right' | 'bottom-left' | 'top-right' | 'top-left'
+  /** 悬浮切换按钮水平边距 */
+  launcherOffsetX?: string | number
+  /** 悬浮切换按钮垂直边距 */
+  launcherOffsetY?: string | number
   /** AI警告文本 */
   aiWarningText?: string
   /** 侧边栏国际化文本 */

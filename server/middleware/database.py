@@ -8,6 +8,30 @@ app = TAgenticApp.get_app()
 _base_model_db_ctx = ContextVar("db")
 
 
+async def cleanup_session(request):
+    if getattr(request.ctx, "db_closed", False):
+        return
+
+    request.ctx.db_closed = True
+    db = getattr(request.ctx, "db", None)
+    token = getattr(request.ctx, "db_ctx_token", None)
+
+    try:
+        if db is not None:
+            try:
+                if db.in_transaction():
+                    await db.rollback()
+            finally:
+                await db.close()
+    finally:
+        if token is not None:
+            try:
+                _base_model_db_ctx.reset(token)
+            except RuntimeError:
+                pass
+            request.ctx.db_ctx_token = None
+
+
 @app.middleware("request")
 async def inject_session(request):
     request.ctx.db = app.config['sessionmaker']()
@@ -16,9 +40,7 @@ async def inject_session(request):
 
 @app.middleware("response")
 async def close_session(request, response):
-    if hasattr(request.ctx, "db_ctx_token"):
-        await request.ctx.db.close()
-        _base_model_db_ctx.reset(request.ctx.db_ctx_token)
+    await cleanup_session(request)
 
 
 @app.listener('before_server_start')
