@@ -58,8 +58,8 @@ Please ensure the machine meets the minimum requirements:
 This project is built with Vue 3 and Vite, which requires modern browser support:
 
 | <img src="https://cdnjs.cloudflare.com/ajax/libs/browser-logos/75.0.1/chrome/chrome_48x48.png" alt="Chrome" width="24"> Chrome | <img src="https://cdnjs.cloudflare.com/ajax/libs/browser-logos/75.0.1/firefox/firefox_48x48.png" alt="Firefox" width="24"> Firefox | <img src="https://cdnjs.cloudflare.com/ajax/libs/browser-logos/75.0.1/safari/safari_48x48.png" alt="Safari" width="24"> Safari | <img src="https://cdnjs.cloudflare.com/ajax/libs/browser-logos/75.0.1/edge/edge_48x48.png" alt="Edge" width="24"> Edge | <img src="https://cdnjs.cloudflare.com/ajax/libs/browser-logos/75.0.1/safari-ios/safari-ios_48x48.png" alt="iOS Safari" width="24"> iOS Safari | <img src="https://cdnjs.cloudflare.com/ajax/libs/browser-logos/75.0.1/chrome/chrome_48x48.png" alt="Android Chrome" width="24"> Android |
-| :---: | :---: | :---: | :---: | :---: | :---: |
-| >= 87 | >= 78 | >= 14 | >= 88 | >= 14 | >= 87 |
+| :----------------------------------------------------------------------------------------------------------------------------: | :--------------------------------------------------------------------------------------------------------------------------------: | :----------------------------------------------------------------------------------------------------------------------------: | :--------------------------------------------------------------------------------------------------------------------: | :--------------------------------------------------------------------------------------------------------------------------------------------: | :-------------------------------------------------------------------------------------------------------------------------------------: |
+|                                                             >= 87                                                              |                                                               >= 78                                                                |                                                             >= 14                                                              |                                                         >= 88                                                          |                                                                     >= 14                                                                      |                                                                  >= 87                                                                  |
 
 > ⚠️ **Note**: Internet Explorer is **NOT** supported. Vue 3 has dropped IE11 support.
 
@@ -79,19 +79,20 @@ cd adp-chat-client
 ```bash
 bash script/init_env_tencentos.sh
 ```
+
 > For Ubuntu Server 24.04:
 
 ```bash
 bash script/init_env_ubuntu.sh
 ```
 
-3. Copy the ```.env.example``` file to the deploy folder:
+3. Copy the `.env.example` file to the deploy folder:
 
 ```bash
 cp server/.env.example deploy/default/.env
 ```
 
-4. Edit the ```deploy/default/.env``` file:
+4. Edit the `deploy/default/.env` file:
 
 You need to fill in the following credentials and application keys based on your Tencent Cloud account and ADP platform information:
 
@@ -117,22 +118,26 @@ SECRET_KEY=
 ```
 
 > ⚠️ **Note**:
+>
 > 1. The content of APP_CONFIGS is in JSON format. Please adhere to JSON specifications, e.g., the last item should not end with a comma, and // comments are not supported.
 > 2. Comment: Can be filled in freely for easy identification of the corresponding agent application.
 > 3. International: If the agent application is developed on the [ADP](https://adp.tencentcloud.com/), set the value to true.
-> 4. ApplicationId: Access any ADP application and check the appid in the application URL. For example, if an application's link is `https://adp.tencentcloud.com/adp/#/app/knowledge/app-config?appid=197******768&appType=knowledge_qa&spaceId=default_space`, then its ApplicationId is 197******768.
+> 4. ApplicationId: Access any ADP application and check the appid in the application URL. For example, if an application's link is `https://adp.tencentcloud.com/adp/#/app/knowledge/app-config?appid=197******768&appType=knowledge_qa&spaceId=default_space`, then its ApplicationId is 197**\*\***768.
 > 5. Vendor: Fixed to "Tencent", other options may be available for other platforms in the future.
 
 5. Build docker image
+
 ```bash
 # Build image (The initial deployment requires packing, and it needs to be rerun after code changes, no need to repack if you only modify the .env file).
 sudo make pack
 ```
 
 6. Start the container
+
 ```bash
 sudo make deploy
 ```
+
 Open the browser and navigate to http://localhost:8000 to view the login page.
 
 > ⚠️ **Warning:** For production environment, you need to apply for an SSL certificate through your own domain and deploy it over HTTPS using nginx for reverse proxy or other methods. If deployed over HTTP, certain features (such as voice recognition, message copying, etc.) may not function properly.
@@ -141,7 +146,7 @@ Open the browser and navigate to http://localhost:8000 to view the login page.
 
 This system supports integration with existing account systems. Here, we demonstrate the [URL Redirection](#URL-Redirection) login method:
 
-``` bash
+```bash
 sudo make url
 ```
 
@@ -150,7 +155,8 @@ The above command retrieves the login URL. Open this URL in the browser for logi
 If OAuth login is configured, you can log in by opening http://localhost:8000 in the browser.
 
 8. Troubleshooting
-``` bash
+
+```bash
 # Check if the containers are running. Normally, there should be 2 containers: adp-chat-client-default, adp-chat-client-db-default
 sudo docker ps
 
@@ -165,6 +171,7 @@ sudo make logs
 ## Service Configuration
 
 To use the system, enable/configure the following services:
+
 1. Dialogue title generation: [Tencent Cloud DeepSeek OpenAI API](https://www.tencentcloud.com/document/product/1255/70381).
 2. Voice input: [Speech Recognition: Settings](https://www.tencentcloud.com/products/asr), enable: Real-time speech recognition for the required region.
 3. App Permission: Make sure the account associated with your TC_SECRET_ID/TC_SECRET_KEY has permission to access the applications you’ve added. For details, see the [platform-side user permissions documentation](https://www.tencentcloud.com/document/product/1254/73347).
@@ -176,16 +183,19 @@ To use the system, enable/configure the following services:
 ### GitHub OAuth
 
 GitHub OAuth is supported by default. You can can configure it as needed:
+
 ```
 # you can obtain it from https://github.com/settings/developers
 OAUTH_GITHUB_CLIENT_ID=
 OAUTH_GITHUB_SECRET=
 ```
+
 > 📝 **Note**：When creating a GitHub OAuth application, fill in the callback URL as：SERVICE_API_URL+/oauth/callback/github, for example: http://localhost:8000/oauth/callback/github
 
 ### Microsoft Entra ID OAuth
 
 Microsoft Entra ID OAuth is supported by default. You can can configure it as needed:
+
 ```
 # you can obtain it from https://entra.microsoft.com
 OAUTH_MICROSOFT_ENTRA_CLIENT_ID=
@@ -193,6 +203,7 @@ OAUTH_MICROSOFT_ENTRA_SECRET=
 # Endpoint (optional, if you have a tenant id, default: common), see: https://learn.microsoft.com/en-us/entra/identity-platform/authentication-national-cloud
 OAUTH_MICROSOFT_ENTRA_ENDPOINT=common
 ```
+
 > 📝 **Note**：When creating a Microsoft Entra ID OAuth application, fill in the callback URL as：SERVICE_API_URL+/oauth/callback/ms_entra_id, for example: http://localhost:8000/oauth/callback/ms_entra_id
 
 ### Other OAuth providers
@@ -209,16 +220,17 @@ If you have an existing account system but do not implement a standard OAuth flo
 
 ###### Parameter details:
 
-| Parameter | Description |
-| :----------- | :-----------|
-| url | https://your-domain.com/account/customer?CustomerId=&Name=&Timestamp=&ExtraInfo=&Code= |
-| CustomerId | Your account system's uid |
-| Name | Your account system's username (optional) |
-| Timestamp | Current timestamp |
-| ExtraInfo | User information |
-| Code | Signature, SHA256(HMAC(CUSTOMER_ACCOUNT_SECRET_KEY, CustomerId + Name + ExtraInfo + str(Timestamp))) |
+| Parameter  | Description                                                                                          |
+| :--------- | :--------------------------------------------------------------------------------------------------- |
+| url        | https://your-domain.com/account/customer?CustomerId=&Name=&Timestamp=&ExtraInfo=&Code=               |
+| CustomerId | Your account system's uid                                                                            |
+| Name       | Your account system's username (optional)                                                            |
+| Timestamp  | Current timestamp                                                                                    |
+| ExtraInfo  | User information                                                                                     |
+| Code       | Signature, SHA256(HMAC(CUSTOMER_ACCOUNT_SECRET_KEY, CustomerId + Name + ExtraInfo + str(Timestamp))) |
 
 > 📝 **Note**:
+>
 > 1. The parameters above must be URL-encoded, for more details you can refer to the CoreAccount.customer_auth in `server/core/account.py` file, and generate_customer_account_url in `server/main.py` file for URL generation method.
 > 2. Configure CUSTOMER_ACCOUNT_SECRET_KEY in the .env file, a random string that can be generated using the uuidgen command.
 
@@ -262,7 +274,7 @@ make init_server
 
 - node >= 20
 
-``` bash
+```bash
 curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash
 source ~/.bashrc
 nvm install v22
@@ -288,16 +300,16 @@ make dev
 
 ### Architecture
 
-| Component | Description |
-| :----------- | :-----------|
-| config | Configuration system |
-| core | Core logic, not bound to specific protocols (e.g., HTTP or stdio) |
-| middleware | Middleware for the Sanic server |
-| model | ORM definitions for entities, e.g., Account |
-| router | Externally exposed HTTP endpoints, typically wrapping core logic |
-| static | Static files |
-| test | Testing |
-| util | Other utility classes |
+| Component  | Description                                                       |
+| :--------- | :---------------------------------------------------------------- |
+| config     | Configuration system                                              |
+| core       | Core logic, not bound to specific protocols (e.g., HTTP or stdio) |
+| middleware | Middleware for the Sanic server                                   |
+| model      | ORM definitions for entities, e.g., Account                       |
+| router     | Externally exposed HTTP endpoints, typically wrapping core logic  |
+| static     | Static files                                                      |
+| test       | Testing                                                           |
+| util       | Other utility classes                                             |
 
 # Advanced Topics
 
@@ -311,9 +323,9 @@ ADP_VISITOR_ID_TYPE=NAME
 
 Supported values:
 
-| Value | Behavior |
-| --- | --- |
-| `NAME` | Default. Use the user's display name as `VisitorId`. |
+| Value         | Behavior                                                                     |
+| ------------- | ---------------------------------------------------------------------------- |
+| `NAME`        | Default. Use the user's display name as `VisitorId`.                         |
 | `CUSTOMER_ID` | Use the `CustomerId` bound during account-system integration as `VisitorId`. |
 
 This setting only changes the `VisitorId` sent to ADP. Local session, conversation ownership, and permission checks still use this system's internal account ID.
@@ -423,12 +435,14 @@ Restart the server container and reload the nginx configuration after changing t
 If you want to deploy the application to a subpath (e.g., /chat), you need to combine it with nginx's rewrite functionality. Here's an example of deploying to `https://example.com/chat`:
 
 .env
+
 ```
 SERVICE_API_URL=https://example.com/chat
 SERVER_HTTP_PORT=8000
 ```
 
 nginx.conf
+
 ```
 http {
     server {
