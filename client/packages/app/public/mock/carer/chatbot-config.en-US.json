@@ -2,11 +2,11 @@
   "appId": "carers-poc",
   "language": "en-US",
   "assistant": {
-    "name": "test",
-    "headerTitle": "test",
+    "name": "JimmyBuddy",
+    "headerTitle": "JimmyBuddy",
     "launcherAvatarUrl": "https://carers-webchat.aienchat.com/avatar-en-us-v5.gif",
     "messageAvatarUrl": "https://carers-webchat.aienchat.com/message-en-us-v5.gif",
-    "greeting": "Hello👋🏻 I'm test. What kind of information are you looking for?"
+    "greeting": "Hello👋🏻 I'm JimmyBuddy. What kind of information are you looking for?"
   },
   "launcher": {
     "enabled": true,
@@ -22,15 +22,15 @@
   },
   "theme": {
     "mode": "carers",
-    "headerBackground": "linear-gradient(rgb(55, 194, 132) 0%, rgb(55, 126, 51) 100%)",
+    "headerBackground": "linear-gradient(rgb(255, 194, 132) 0%, rgb(255, 126, 51) 100%)",
     "surfaceBackground": "#ffffff",
-    "primaryAction": "rgb(55, 126, 51)",
-    "bubbleBorder": "rgb(55, 126, 51)",
-    "userBubbleBackground": "rgb(55, 126, 51)",
+    "primaryAction": "rgb(185, 67, 25)",
+    "bubbleBorder": "rgb(185, 67, 25)",
+    "userBubbleBackground": "rgb(185, 67, 25)",
     "userBubbleText": "#ffffff",
     "userBubbleBorder": "none",
     "assistantBubbleBackground": "rgb(255, 239, 214)",
-    "assistantText": "rgb(55, 126, 51)",
+    "assistantText": "rgb(185, 67, 25)",
     "timestampText": "rgb(119, 119, 119)"
   },
   "terms": {

@@ -59,8 +59,10 @@ export interface ChatbotThemeConfig {
   bubbleBorder: string
   userBubbleBackground?: string
   userBubbleText?: string
+  userBubbleBorder?: string
   assistantBubbleBackground?: string
   assistantText?: string
+  timestampText?: string
 }
 
 export interface ChatbotTermsLinkConfig {

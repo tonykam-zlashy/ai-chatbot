@@ -51,7 +51,7 @@
       }
 
       .demo-language button[aria-pressed="true"] {
-        background: #b84222;
+        background: rgb(185, 67, 25);
         color: #fff;
       }
 
@@ -99,9 +99,9 @@
         position: fixed;
         z-index: 1000;
         overflow: hidden;
-        border: 1px solid #f6b36c;
+        border: 1px solid rgb(185, 67, 25);
         border-radius: 10px 10px 0 0;
-        background: #fff8e8;
+        background: #fff;
         box-shadow: 0 6px 28px rgba(79, 42, 18, 0.22);
       }
 
@@ -131,7 +131,7 @@
         width: 100%;
         height: 100%;
         border: 0;
-        background: #fff8e8;
+        background: #fff;
       }
 
       @media (max-width: 520px) {
@@ -211,6 +211,9 @@
 
           panel.style.width = (config.panel.width || 380) + 'px';
           panel.style.height = (config.panel.height || 600) + 'px';
+          panel.style.background = config.theme.surfaceBackground || '#fff';
+          panel.style.borderColor = config.theme.bubbleBorder || 'rgb(185, 67, 25)';
+          iframe.style.background = config.theme.surfaceBackground || '#fff';
           panel.dataset.mobileMode = config.panel.mobileMode || 'fullscreen';
           applyPosition(
             panel,
@@ -222,7 +225,7 @@
         }
 
         function loadConfig(language) {
-          return fetch('./chatbot-config.' + language + '.json', { cache: 'no-store' })
+          return fetch('./carer/chatbot-config.' + language + '.json', { cache: 'no-store' })
             .then(function (response) {
               if (!response.ok) throw new Error('Failed to load fixture');
               return response.json();
@@ -234,7 +237,7 @@
           launcher.hidden = true;
           panel.hidden = false;
           if (!iframe.src) {
-            iframe.src = '/';
+            iframe.src = '../index#/';
           } else {
             postConfig();
           }

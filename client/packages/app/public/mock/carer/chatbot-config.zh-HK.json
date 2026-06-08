@@ -2,11 +2,11 @@
   "appId": "carers-poc",
   "language": "zh-HK",
   "assistant": {
-    "name": "test",
-    "headerTitle": "test",
+    "name": "阿尖",
+    "headerTitle": "阿尖",
     "launcherAvatarUrl": "https://carers-webchat.aienchat.com/avatar-zh-hk-v5.gif",
     "messageAvatarUrl": "https://carers-webchat.aienchat.com/message-zh-hk-v5.gif",
-    "greeting": "您好👋🏻 我係阿test！請問您想搵咩資訊？"
+    "greeting": "您好👋🏻 我係阿尖！請問您想搵咩資訊？"
   },
   "launcher": {
     "enabled": true,
@@ -22,15 +22,15 @@
   },
   "theme": {
     "mode": "carers",
-    "headerBackground": "linear-gradient(rgb(55, 194, 132) 0%, rgb(55, 126, 51) 100%)",
+    "headerBackground": "linear-gradient(rgb(255, 194, 132) 0%, rgb(255, 126, 51) 100%)",
     "surfaceBackground": "#ffffff",
-    "primaryAction": "rgb(55, 126, 51)",
-    "bubbleBorder": "rgb(55, 126, 51)",
-    "userBubbleBackground": "rgb(55, 126, 51)",
+    "primaryAction": "rgb(185, 67, 25)",
+    "bubbleBorder": "rgb(185, 67, 25)",
+    "userBubbleBackground": "rgb(185, 67, 25)",
     "userBubbleText": "#ffffff",
     "userBubbleBorder": "none",
     "assistantBubbleBackground": "rgb(255, 239, 214)",
-    "assistantText": "rgb(55, 126, 51)",
+    "assistantText": "rgb(185, 67, 25)",
     "timestampText": "rgb(119, 119, 119)"
   },
   "terms": {
