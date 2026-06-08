@@ -1,0 +1,78 @@
+{
+  "appId": "carers-poc",
+  "language": "zh-HK",
+  "assistant": {
+    "name": "阿尖",
+    "headerTitle": "阿尖",
+    "launcherAvatarUrl": "https://carers-webchat.aienchat.com/avatar-zh-hk-v5.gif",
+    "messageAvatarUrl": "https://carers-webchat.aienchat.com/message-zh-hk-v5.gif",
+    "greeting": "您好👋🏻 我係阿尖！請問您想搵咩資訊？"
+  },
+  "launcher": {
+    "enabled": true,
+    "prompt": "想搵資訊?",
+    "position": "bottom-right",
+    "offsetX": 22,
+    "offsetY": 16
+  },
+  "panel": {
+    "width": 380,
+    "height": 600,
+    "mobileMode": "fullscreen"
+  },
+  "theme": {
+    "mode": "carers",
+    "headerBackground": "#f7943d",
+    "surfaceBackground": "#fff8e8",
+    "primaryAction": "#b84222",
+    "bubbleBorder": "#b95a25",
+    "userBubbleBackground": "#b84222",
+    "userBubbleText": "#ffffff",
+    "assistantBubbleBackground": "#ffffff",
+    "assistantText": "#713614"
+  },
+  "terms": {
+    "enabled": true,
+    "storageScope": "global",
+    "titleTemplate": "你好，我是{{assistantName}}",
+    "intro": "使用人工智能聊天機械人對話系統前，請先細閱並接受下列條款及細則。",
+    "links": [
+      { "label": "免責聲明", "url": "https://www.carers.hk/disclaimers" },
+      {
+        "label": "版權聲明",
+        "url": "https://www.carers.hk/copyright-statement"
+      },
+      {
+        "label": "私隱政策及個人資料收集聲明",
+        "url": "https://www.carers.hk/personal-information-collection-statement"
+      }
+    ],
+    "acceptInstruction": "如同意使用條款及細則，請點擊「接受」按鈕，點擊接受按鈕後，即表示您已閱讀、理解和同意使用條款及細則。",
+    "scamNoticeBefore": "請注意，人工智能聊天機械人對話系統是不會向用戶索取任何個人資料。如有懷疑，請致電反詐騙諮詢熱線",
+    "scamHotlineLabel": "「防騙易18222」",
+    "scamHotlineUrl": "tel:18222",
+    "scamNoticeAfter": "向警方求助。此外，用戶必須點擊「接受」按鈕，才能使用人工智能聊天機械人對話系統。",
+    "acceptButton": "接受",
+    "declineButton": "拒絕",
+    "acceptedUserText": "接受"
+  },
+  "composer": {
+    "disabledPlaceholder": "請先接受條款與細則後繼續",
+    "enabledPlaceholder": "請輸入 (唔好俾個人資料呀!)"
+  },
+  "hotline": {
+    "number": "182 183",
+    "label": "24小時照顧者支援專線",
+    "description": "如需要社工協助，請致電182183。",
+    "url": "tel:182183"
+  },
+  "features": {
+    "termsGate": true,
+    "fileUpload": true,
+    "voiceInput": true,
+    "mockChat": true
+  },
+  "mockChat": {
+    "reply": "呢個係FE POC 回覆，正式聊天功能會喺BE整合階段接入。"
+  }
+}

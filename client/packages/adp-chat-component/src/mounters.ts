@@ -6,6 +6,7 @@
 import { createApp, type App, type Component } from 'vue'
 import { configureAxios } from './service/httpService'
 import type { ApiConfig } from './service/api'
+import type { ChatbotConfig } from './model/type'
 
 // 导入组件
 import AIWarning from './components/AIWarning.vue'
@@ -285,7 +286,10 @@ export interface ADPChatConfig extends MountConfig {
   isMobile?: boolean
   logoUrl?: string
   logoTitle?: string
+  frontendPocMode?: boolean
+  chatbotConfig?: ChatbotConfig
   launcherIconUrl?: string
+  launcherPrompt?: string
   launcherPosition?: 'bottom-right' | 'bottom-left' | 'top-right' | 'top-left'
   launcherOffsetX?: string | number
   launcherOffsetY?: string | number

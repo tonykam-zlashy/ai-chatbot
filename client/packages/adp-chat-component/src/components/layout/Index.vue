@@ -50,7 +50,8 @@ import type {
     FilePreviewI18n,
     ThemeProps,
     OverlayProps,
-    ChatMode
+    ChatMode,
+    ChatbotConfig
 } from '../../model/type';
 import { 
     defaultLanguageOptions,
@@ -132,6 +133,10 @@ export interface Props extends ThemeProps, OverlayProps {
     apiConfig?: ApiConfig;
     /** 是否自动加载数据（仅在使用 apiConfig 时生效） */
     autoLoad?: boolean;
+    /** Frontend-only POC mode: skips backend loading and uses local mock chat behavior */
+    frontendPocMode?: boolean;
+    /** Public chatbot config contract for fixture/API-driven UI */
+    chatbotConfig?: ChatbotConfig;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -161,6 +166,7 @@ const props = withDefaults(defineProps<Props>(), {
     enableFileUpload: true,
     apiConfig: () => ({}),
     autoLoad: true,
+    frontendPocMode: false,
 });
 
 const emit = defineEmits<{
@@ -196,9 +202,10 @@ const { theme } = toRefs(props);
 const sidebarVisible = ref(!props.isSidePanelOverlay);
 const mainLayoutRef = ref<InstanceType<typeof MainLayout> | null>(null);
 const filePreviewLayoutRef = ref<InstanceType<typeof FilePreviewLayout> | null>(null);
-const TERMS_ACCEPTED_STORAGE_PREFIX = 'adp_chat_carers_terms_accepted';
-const isEnglish = computed(() => props.language?.startsWith('en'));
-const defaultApplicationName = computed(() => isEnglish.value ? 'JimmyBuddy' : '阿尖');
+const TERMS_ACCEPTED_STORAGE_PREFIX = 'adp_chat_terms_accepted';
+const actualLanguageValue = computed(() => props.chatbotConfig?.language || props.language || 'zh-CN');
+const isEnglish = computed(() => actualLanguageValue.value?.startsWith('en'));
+const defaultApplicationName = computed(() => props.chatbotConfig?.assistant.name || (isEnglish.value ? 'Assistant' : '助手'));
 const actualAiWarningText = computed(() => {
     if (props.aiWarningText === DEFAULT_AI_WARNING_TEXT_ZH && isEnglish.value) {
         return DEFAULT_AI_WARNING_TEXT_EN;
@@ -206,10 +213,34 @@ const actualAiWarningText = computed(() => {
     return props.aiWarningText;
 });
 const acceptTermsFirstMessage = computed(() =>
-    isEnglish.value
+    props.chatbotConfig?.composer.disabledPlaceholder ||
+    (isEnglish.value
         ? 'Please accept the terms and conditions to continue using the chatbot.'
-        : '請先接受條款與細則後繼續使用。'
+        : '請先接受條款與細則後繼續使用。')
 );
+
+const termsGateEnabled = computed(() =>
+    props.chatbotConfig?.features.termsGate !== false &&
+    props.chatbotConfig?.terms.enabled !== false
+);
+
+const mockChatEnabled = computed(() =>
+    props.frontendPocMode && props.chatbotConfig?.features.mockChat !== false
+);
+
+const configApplication = computed<Application | undefined>(() => {
+    const config = props.chatbotConfig;
+    if (!config) return undefined;
+
+    return {
+        ApplicationId: config.appId,
+        Name: config.assistant.headerTitle || config.assistant.name,
+        Avatar: config.assistant.messageAvatarUrl,
+        Greeting: config.assistant.greeting,
+        OpeningQuestions: [],
+        Pattern: 'standard',
+    };
+});
 
 const normalizeApplicationName = (name?: string) => {
     const trimmed = name?.trim();
@@ -306,7 +337,7 @@ const internalConversations = ref<ChatConversation[]>([]);
 const internalUser = ref<{ avatarUrl?: string; avatarName?: string; name?: string }>({});
 const internalCurrentApplication = ref<Application | undefined>(undefined);
 const internalCurrentConversation = ref<ChatConversation | undefined>(undefined);
-const applicationsResolved = ref(!props.autoLoad);
+const applicationsResolved = ref(!props.autoLoad || props.frontendPocMode);
 
 // 用于确保 applications 列表加载完成后再判断模式
 let resolveApplicationsReady: () => void;
@@ -442,11 +473,12 @@ const stopConversationStream = (key: string) => {
     state.isChatting = false;
 };
 
-// 判断是否使用 API 模式（始终启用）
-const useApiMode = computed(() => true);
+// POC mode keeps the visual widget interactive without requiring backend APIs.
+const useApiMode = computed(() => !props.frontendPocMode);
 
 // 是否启用语音输入
-const enableVoiceInput = computed(() => props.enableVoiceInput && internalSystemConfig.value.EnableVoiceInput);
+const enableVoiceInput = computed(() => props.enableVoiceInput && props.chatbotConfig?.features.voiceInput !== false && internalSystemConfig.value.EnableVoiceInput);
+const enableFileUpload = computed(() => props.enableFileUpload && props.chatbotConfig?.features.fileUpload !== false);
 
 // 合并默认值和传入值的 chatI18n（根据 language 选择对应语言的默认值）
 const mergedChatI18n = computed(() => {
@@ -527,7 +559,7 @@ const hydrateReferences = async (
 
 // 实际使用的数据（优先使用 props，否则使用内部数据）
 const actualApplications = computed(() => 
-    props.applications.length > 0 ? props.applications : internalApplications.value
+    props.applications.length > 0 ? props.applications : (configApplication.value ? [configApplication.value] : internalApplications.value)
 );
 const actualConversations = computed(() => 
     props.conversations.length > 0 ? props.conversations : internalConversations.value
@@ -539,7 +571,7 @@ const actualUser = computed(() =>
     (props.user && Object.keys(props.user).length > 0) ? props.user : internalUser.value
 );
 const actualCurrentApplication = computed(() => 
-    props.currentApplication || internalCurrentApplication.value
+    props.currentApplication || configApplication.value || internalCurrentApplication.value
 );
 const actualCurrentConversation = computed(() => 
     props.currentConversation || internalCurrentConversation.value
@@ -566,6 +598,11 @@ const currentConversationTitle = computed(() => {
     return activeConversation?.Title?.trim() || '';
 });
 const currentTermsSectionKey = computed(() => {
+    if (!termsGateEnabled.value) return 'disabled';
+    const storageScope = props.chatbotConfig?.terms.storageScope || 'conversation';
+    const appKey = props.chatbotConfig?.appId || currentApplicationId.value || 'pending';
+    if (storageScope === 'global') return `global:${appKey}`;
+    if (storageScope === 'application') return `application:${appKey}`;
     const conversationId = currentConversationId.value || currentConversationStateKey.value;
     if (conversationId) return `conversation:${conversationId}`;
     if (currentApplicationId.value) return `application:${currentApplicationId.value}:new`;
@@ -605,6 +642,7 @@ watch(
 );
 
 const handleAcceptTerms = () => {
+    if (!termsGateEnabled.value) return;
     const storageKey = currentTermsStorageKey.value;
     termsAccepted.value = true;
     lastAcceptedTermsStorageKey.value = storageKey;
@@ -617,6 +655,7 @@ const handleAcceptTerms = () => {
 };
 
 const handleDeclineTerms = () => {
+    if (!termsGateEnabled.value) return;
     const storageKey = currentTermsStorageKey.value;
     termsAccepted.value = false;
     termsPromptKey.value += 1;
@@ -732,6 +771,68 @@ const loadSystemConfig = async () => {
 const handleInternalSend = async (query: string, fileList: FileProps[], conversationId: string, applicationId: string) => {
     if (isUploading.value) return;
     if (!useApiMode.value) {
+        if (props.frontendPocMode && mockChatEnabled.value) {
+            const streamConversationKey = currentConversationStateKey.value || 'poc-conversation';
+            currentConversationStateKey.value = streamConversationKey;
+            const streamState = ensureConversationRuntimeState(streamConversationKey);
+            if (!streamState) return;
+
+            const timestamp = Date.now();
+            const baseExtraInfo = (isFromSelf: boolean, offset = 0) => ({
+                RequestId: '',
+                TraceId: '',
+                Elapsed: 0,
+                StartTime: timestamp + offset,
+                IsFromSelf: isFromSelf,
+                CanRating: false,
+                CanFeedback: false,
+            });
+            const createTextRecord = (
+                role: 'assistant' | 'user',
+                recordId: string,
+                messageType: 'reply' | 'question',
+                text: string,
+                offset = 0,
+            ): Record => ({
+                Role: role,
+                RecordId: recordId,
+                ConversationId: streamConversationKey,
+                Status: 'success',
+                StatusDesc: '',
+                Messages: [{
+                    Type: messageType,
+                    MessageId: `${recordId}-message`,
+                    Name: messageType,
+                    Title: '',
+                    Status: 'success',
+                    StatusDesc: '',
+                    Contents: [{ Type: 'text', Text: text }],
+                }],
+                ExtraInfo: baseExtraInfo(role === 'user', offset),
+            });
+
+            streamState.records.push(
+                createTextRecord('user', `poc-user-${timestamp}`, 'question', query),
+                createTextRecord(
+                    'assistant',
+                    `poc-assistant-${timestamp}`,
+                    'reply',
+                    props.chatbotConfig?.mockChat.reply || (
+                        isEnglish.value
+                            ? 'This is a frontend POC reply. The real chatbot backend will be connected later.'
+                            : '這是前端 POC 回覆，正式聊天功能會在後端整合階段接入。'
+                    ),
+                    1,
+                ),
+            );
+            nextTick(() => {
+                mainLayoutRef.value?.getChatRef()?.backToBottom();
+            });
+            return;
+        }
+        if (props.frontendPocMode) {
+            return;
+        }
         emit('send', query, fileList, conversationId, applicationId);
         return;
     }
@@ -1612,8 +1713,9 @@ defineExpose({
                 :isChatting="actualIsChatting"
                 :isMobile="isMobile"
                 :theme="theme"
-                :language="props.language"
+                :language="actualLanguageValue"
                 :mode="chatMode"
+                :chatbotConfig="props.chatbotConfig"
                 :showSidebarToggle="!sidebarVisible"
                 :aiWarningText="actualAiWarningText"
                 :i18n="props.chatI18n"
@@ -1622,11 +1724,11 @@ defineExpose({
                 :useInternalRecord="useApiMode"
                 :asrUrlApi="mergedApiDetailConfig.asrUrlApi"
                 :enableVoiceInput="enableVoiceInput"
-                :enableFileUpload="props.enableFileUpload"
+                :enableFileUpload="enableFileUpload"
                 :isUploading="isUploading"
                 :isOverlay="props.isOverlay"
                 :termsResolving="termsResolving"
-                :termsAccepted="termsAccepted"
+                :termsAccepted="!termsGateEnabled || termsAccepted"
                 :termsPromptKey="termsPromptKey"
                 @toggleSidebar="handleToggleSidebar"
                 @createConversation="handleCreateConversation"

@@ -1,22 +1,29 @@
 <script setup lang="ts">
-import { ADPChat, type ApiConfig, type Application, type ChatConversation } from 'adp-chat-component';
-import { onMounted, computed, ref, watch } from 'vue'
+import { ADPChat, type ApiConfig, type Application, type ChatConversation, type ChatbotConfig } from 'adp-chat-component';
+import { onMounted, onUnmounted, computed, ref, watch } from 'vue'
 import { useUiStore } from '@/stores/ui'
 import { logout } from '@/service/login';
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n';
 import { languageMap } from '@/i18n';
 import { getBaseURL } from '@/utils/url';
+import { loadChatbotConfigFixture } from '@/utils/chatbotConfig';
 import Logo from '@/assets/img/favicon.png';
 
 const router = useRouter()
 const uiStore = useUiStore()
 const route = useRoute()
 const { t } = useI18n();
+const FRONTEND_POC_MODE = true;
 
 // 当前选中的应用和会话（用于 URL 同步）
 const currentApplicationId = ref<string>('');
 const currentConversationId = ref<string>('');
+const chatbotConfig = ref<ChatbotConfig | null>(null);
+const chatbotConfigLoading = ref(false);
+const chatbotConfigError = ref('');
+const externalPocConfigReceived = ref(false);
+const embedHostMode = ref(false);
 
 const LAST_CHAT_STORAGE_KEY = 'adp_chat_last_conversation';
 
@@ -148,8 +155,8 @@ const chatItemI18n = computed(() => ({
 
 // Sender 国际化
 const senderI18n = computed(() => ({
-    placeholder: t('conversation.input.placeholder'),
-    placeholderMobile: t('conversation.input.placeholderMobile'),
+    placeholder: chatbotConfig.value?.composer.enabledPlaceholder || t('conversation.input.placeholder'),
+    placeholderMobile: chatbotConfig.value?.composer.enabledPlaceholder || t('conversation.input.placeholderMobile'),
     uploadImg: t('sender.uploadImg'),
     startRecord: t('sender.startRecord'),
     stopRecord: t('sender.stopRecord'),
@@ -166,6 +173,64 @@ const senderI18n = computed(() => ({
     mediaStreamSourceNotSupport: t('sender.mediaStreamSourceNotSupport'),
 }));
 
+const pocApplication = computed<Application | undefined>(() => {
+    const config = chatbotConfig.value;
+    if (!config) return undefined;
+
+    return {
+        ApplicationId: config.appId,
+        Name: config.assistant.headerTitle || config.assistant.name,
+        Avatar: config.assistant.messageAvatarUrl,
+        Greeting: config.assistant.greeting,
+        OpeningQuestions: [],
+        Pattern: 'standard',
+    };
+});
+
+const pocLanguage = computed(() => chatbotConfig.value?.language || (uiStore.language === 'en' ? 'en-US' : 'zh-HK'));
+const pocTheme = computed(() => chatbotConfig.value ? 'light' : (uiStore.theme || 'light'));
+const pocFeatureFlags = computed(() => chatbotConfig.value?.features || {
+    termsGate: true,
+    fileUpload: false,
+    voiceInput: false,
+    mockChat: false,
+});
+
+const loadPocConfig = async () => {
+    if (!FRONTEND_POC_MODE || externalPocConfigReceived.value) return;
+
+    chatbotConfigLoading.value = true;
+    chatbotConfigError.value = '';
+
+    try {
+        const config = await loadChatbotConfigFixture(uiStore.language);
+        if (!externalPocConfigReceived.value) {
+            chatbotConfig.value = config;
+        }
+    } catch (error) {
+        chatbotConfig.value = null;
+        chatbotConfigError.value = error instanceof Error ? error.message : 'Failed to load chatbot fixture';
+    } finally {
+        chatbotConfigLoading.value = false;
+    }
+};
+
+const handlePocConfigMessage = (event: MessageEvent) => {
+    if (!FRONTEND_POC_MODE || event.source !== window.parent) return;
+    const data = event.data as { type?: string; config?: ChatbotConfig };
+    if (data?.type !== 'adp-chatbot-config' || !data.config) return;
+
+    externalPocConfigReceived.value = true;
+    embedHostMode.value = true;
+    chatbotConfig.value = data.config;
+    chatbotConfigError.value = '';
+    chatbotConfigLoading.value = false;
+};
+
+watch(() => uiStore.language, () => {
+    void loadPocConfig();
+}, { immediate: true });
+
 /**
  * 页面挂载时执行的生命周期钩子
  * 1. 获取用户信息
@@ -174,9 +239,14 @@ const senderI18n = computed(() => ({
  */
 onMounted(async () => {
     console.log('[onMounted]');
+    window.addEventListener('message', handlePocConfigMessage);
 
     // url参数 -> store
     updateFromUrl();
+});
+
+onUnmounted(() => {
+    window.removeEventListener('message', handlePocConfigMessage);
 });
 
 /**
@@ -304,26 +374,37 @@ const handleConversationChange = (conversationId: string) => {
 </script>
 
 <template>
+    <div v-if="FRONTEND_POC_MODE && chatbotConfigLoading" class="poc-status">
+        {{ t('common.loading') }}
+    </div>
+    <div v-else-if="FRONTEND_POC_MODE && chatbotConfigError" class="poc-status poc-status--error">
+        {{ chatbotConfigError }}
+    </div>
     <ADPChat
-        :apiConfig="apiConfig"
-        :autoLoad="true"
-        :theme="uiStore.theme || 'light'"
-        :language="uiStore.language || 'zh'"
-        :languageOptions="languageOptions"
-        :isSidePanelOverlay="true"
-        :showCloseButton="false"
-        :showOverlayButton="false"
-        :logoUrl="Logo"
-        :currentApplicationId="currentApplicationId"
-        :currentConversationId="currentConversationId"
+        v-else
+	        :apiConfig="apiConfig"
+	        :autoLoad="!FRONTEND_POC_MODE"
+	        :frontendPocMode="FRONTEND_POC_MODE"
+            :chatbotConfig="chatbotConfig || undefined"
+	        :theme="pocTheme"
+	        :language="FRONTEND_POC_MODE ? pocLanguage : (uiStore.language || 'zh')"
+	        :languageOptions="languageOptions"
+	        :isOverlay="false"
+	        :isSidePanelOverlay="true"
+	        :showCloseButton="!(FRONTEND_POC_MODE && embedHostMode)"
+	        :showOverlayButton="!(FRONTEND_POC_MODE && embedHostMode)"
+	        :logoUrl="Logo"
+	        :currentApplication="FRONTEND_POC_MODE ? pocApplication : undefined"
+	        :currentApplicationId="FRONTEND_POC_MODE ? (pocApplication?.ApplicationId || '') : currentApplicationId"
+	        :currentConversationId="FRONTEND_POC_MODE ? '' : currentConversationId"
         :aiWarningText="t('common.aiWarning')"
         :createConversationText="t('conversation.createConversation')"
         :sideI18n="sideI18n"
         :chatI18n="chatI18n"
         :chatItemI18n="chatItemI18n"
         :senderI18n="senderI18n"
-        :enableVoiceInput="false"
-        :enableFileUpload="false"
+	        :enableVoiceInput="FRONTEND_POC_MODE ? pocFeatureFlags.voiceInput : true"
+	        :enableFileUpload="FRONTEND_POC_MODE ? pocFeatureFlags.fileUpload : true"
         @selectApplication="handleSelectApplication"
         @selectConversation="handleSelectConversation"
         @createConversation="handleCreateConversation"
@@ -336,4 +417,22 @@ const handleConversationChange = (conversationId: string) => {
 </template>
 
 <style scoped>
+:global(html),
+:global(body),
+:global(#app) {
+    background: #fbf2df !important;
+}
+
+.poc-status {
+    display: grid;
+    min-height: 100vh;
+    place-items: center;
+    background: #fbf2df;
+    color: #6f3516;
+    font-size: 14px;
+}
+
+.poc-status--error {
+    color: #b84222;
+}
 </style>

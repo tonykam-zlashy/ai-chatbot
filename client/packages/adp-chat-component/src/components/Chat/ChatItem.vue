@@ -3,7 +3,7 @@
 import { ref, computed, watch } from 'vue';
 import type { Content, Message, QuoteInfo, Record as RecordV2, Reference as ReferenceV2, FileInfo } from '../../model/chat-v2';
 import { ScoreValue } from '../../model/chat-v2';
-import type { CommonLayoutProps, ChatItemI18n, ChatMode } from '../../model/type';
+import type { CommonLayoutProps, ChatItemI18n, ChatMode, ChatbotConfig } from '../../model/type';
 import { commonLayoutPropsDefaults, defaultChatItemI18n } from '../../model/type';
 import {  ChatItem as TChatItem } from '@tdesign-vue-next/chat';
 import { Loading as TLoading, Link as TLink, Dialog as TDialog } from 'tdesign-vue-next';
@@ -36,6 +36,8 @@ interface Props extends CommonLayoutProps {
     language?: string;
     /** 聊天模式：claw-简化模式, standard-标准模式 */
     mode?: ChatMode;
+    /** Public chatbot config contract for fixture/API-driven UI */
+    chatbotConfig?: ChatbotConfig;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -72,12 +74,10 @@ const record = ref(props.item as ChatRecord);
 const referenceDialogVisible = ref(false);
 const activeReference = ref<ReferenceLike | null>(null);
 const assistantMessageAvatar = computed(() =>
-    props.language?.startsWith('en')
-        ? 'https://carers-webchat.aienchat.com/message-en-us-v5.gif'
-        : 'https://carers-webchat.aienchat.com/message-zh-hk-v5.gif'
+    props.chatbotConfig?.assistant.messageAvatarUrl || ''
 );
 const assistantMessageAvatarAlt = computed(() =>
-    props.language?.startsWith('en') ? 'JimmyBuddy' : '阿尖'
+    props.chatbotConfig?.assistant.name || (props.language?.startsWith('en') ? 'Assistant' : '助手')
 );
 
 // 监听 props.item 变化，同步到 record
@@ -750,10 +750,42 @@ const referenceDialogTitle = computed(() => {
     flex: 1;
 }
 
+.chat-message-row--assistant .chat-message-item {
+    flex: 0 1 auto;
+    max-width: min(100%, 312px);
+}
+
+.chat-message-row--assistant :deep(.t-chat__content) {
+    margin-left: 0;
+    width: auto;
+    max-width: 100%;
+}
+
+.chat-message-row--assistant :deep(.t-chat__detail) {
+    width: auto;
+    max-width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--adp-chat-bubble-border, #b95a25);
+    border-radius: 12px 12px 12px 3px;
+    background: var(--adp-chat-assistant-bubble-background, #fff);
+    color: var(--adp-chat-assistant-text, #713614);
+    box-shadow: 0 2px 0 rgba(185, 90, 37, 0.08);
+}
+
+.chat-message-row--assistant :deep(.markdown-body) {
+    color: var(--adp-chat-assistant-text, #713614);
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.chat-message-row--assistant :deep(.markdown-body p) {
+    margin: 0;
+}
+
 .assistant-message-avatar {
-    width: 42px;
-    height: 42px;
-    flex: 0 0 42px;
+    width: 34px;
+    height: 34px;
+    flex: 0 0 34px;
     border-radius: 50%;
     object-fit: cover;
     background: #fff;

@@ -69,6 +69,48 @@
     return result;
   }
 
+  function mapChatbotConfig(config) {
+    if (!config || !config.chatbotConfig) return config;
+
+    var chatbotConfig = config.chatbotConfig;
+    var assistant = chatbotConfig.assistant || {};
+    var launcher = chatbotConfig.launcher || {};
+    var panel = chatbotConfig.panel || {};
+    var features = chatbotConfig.features || {};
+
+    return mergeConfig(config, {
+      language: chatbotConfig.language || config.language,
+      width: panel.width || config.width,
+      height: panel.height || config.height,
+      launcherIconUrl: assistant.launcherAvatarUrl || config.launcherIconUrl,
+      launcherPrompt: launcher.prompt !== undefined ? launcher.prompt : config.launcherPrompt,
+      launcherPosition: launcher.position || config.launcherPosition,
+      launcherOffsetX: launcher.offsetX !== undefined ? launcher.offsetX : config.launcherOffsetX,
+      launcherOffsetY: launcher.offsetY !== undefined ? launcher.offsetY : config.launcherOffsetY,
+      showToggleButton: launcher.enabled !== false && config.showToggleButton !== false,
+      enableVoiceInput: features.voiceInput !== false,
+      enableFileUpload: features.fileUpload !== false,
+      currentApplication: {
+        ApplicationId: chatbotConfig.appId || '',
+        Name: assistant.headerTitle || assistant.name || '',
+        Avatar: assistant.messageAvatarUrl || '',
+        Greeting: assistant.greeting || '',
+        OpeningQuestions: [],
+        Pattern: 'standard'
+      }
+    });
+  }
+
+  function fetchJson(url) {
+    if (!url) return Promise.resolve(null);
+    return fetch(url, { cache: 'no-store' }).then(function (response) {
+      if (!response.ok) {
+        throw new Error('Failed to load chatbot config: ' + response.status);
+      }
+      return response.json();
+    });
+  }
+
   function loadStylesheet(href) {
     var selector = 'link[data-adp-chat-embed-css="' + href + '"]';
     if (document.querySelector(selector)) return;
@@ -218,7 +260,7 @@
       width: toSize(getAttr('width', ''), 400),
       height: toSize(getAttr('height', ''), '80vh'),
       logoTitle: getAttr('logo-title', 'ADP Chat'),
-      launcherIconUrl: getAttr('launcher-icon-url', getAttr('avatar-url', 'https://carers-webchat.aienchat.com/avatar-zh-hk-v5.gif')),
+      launcherIconUrl: getAttr('launcher-icon-url', getAttr('avatar-url', '')),
       launcherPosition: getAttr('launcher-position', 'bottom-right'),
       launcherOffsetX: toSize(getAttr('launcher-offset-x', ''), 18),
       launcherOffsetY: toSize(getAttr('launcher-offset-y', ''), 18),
@@ -241,7 +283,8 @@
     return {
       assetBase: assetBase,
       containerSelector: ensureContainer(getAttr('container', '')),
-      config: mergeConfig(mergeConfig(defaults, globalConfig), inlineConfig)
+      config: mergeConfig(mergeConfig(defaults, globalConfig), inlineConfig),
+      configUrl: getAttr('config-url', '')
     };
   }
 
@@ -253,12 +296,21 @@
     var config = mergeConfig(built.config, overrideConfig || {});
 
     state.containerSelector = built.containerSelector;
-    state.config = config;
-    applyAccessibility(state.accessibility);
-
     loadStylesheet(cssUrl);
 
-    return loadScript(jsUrl).then(function () {
+    return fetchJson(built.configUrl).then(function (chatbotConfig) {
+      if (chatbotConfig) {
+        config = mergeConfig(config, {
+          frontendPocMode: true,
+          autoLoad: false,
+          chatbotConfig: chatbotConfig
+        });
+      }
+      config = mapChatbotConfig(config);
+      state.config = config;
+      applyAccessibility(state.accessibility);
+      return loadScript(jsUrl);
+    }).then(function () {
       if (!window.ADPChatComponent || typeof window.ADPChatComponent.init !== 'function') {
         throw new Error('ADPChatComponent.init is not available');
       }
@@ -280,7 +332,7 @@
   window.ADPChatEmbed = {
     init: init,
     update: function (config) {
-      state.config = mergeConfig(state.config || {}, config || {});
+      state.config = mapChatbotConfig(mergeConfig(state.config || {}, config || {}));
       applyAccessibility(state.accessibility);
       if (window.ADPChatComponent && state.mounted) {
         return window.ADPChatComponent.update(state.containerSelector, state.config);

@@ -87,7 +87,7 @@
               v-if="isSelecting && !isSyntheticRecord(item)"
               @change="(e) => onSelectIds(item.RecordId, e)"
             />
-            <div style="width: 100%; padding-top: 16px">
+            <div class="chat-item__inner">
               <div
                 v-if="isTermsPromptRecord(item)"
                 class="terms-message-row"
@@ -106,31 +106,9 @@
                     {{ termsCopy.intro }}
                   </p>
                   <ul class="terms-link-list">
-                    <li>
-                      <a
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        href="https://www.carers.hk/disclaimers"
-                      >
-                        {{ termsCopy.disclaimers }}
-                      </a>
-                    </li>
-                    <li>
-                      <a
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        href="https://www.carers.hk/copyright-statement"
-                      >
-                        {{ termsCopy.copyright }}
-                      </a>
-                    </li>
-                    <li>
-                      <a
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        href="https://www.carers.hk/personal-information-collection-statement"
-                      >
-                        {{ termsCopy.privacy }}
+                    <li v-for="link in termsCopy.links" :key="link.url">
+                      <a target="_blank" rel="noopener noreferrer" :href="link.url">
+                        {{ link.label }}
                       </a>
                     </li>
                   </ul>
@@ -138,14 +116,15 @@
                     {{ termsCopy.acceptInstruction }}
                   </p>
                   <p>
-                    <template v-if="isEnglish">
-                      {{ termsCopy.scamNoticeBefore }}
+                    {{ termsCopy.scamNoticeBefore }}
+                    <a
+                      v-if="termsCopy.scamHotlineLabel && termsCopy.scamHotlineUrl"
+                      :href="termsCopy.scamHotlineUrl"
+                    >{{ termsCopy.scamHotlineLabel }}</a>
+                    <template v-else-if="termsCopy.scamHotlineLabel">
+                      {{ termsCopy.scamHotlineLabel }}
                     </template>
-                    <template v-else>
-                      {{ termsCopy.scamNoticeBefore }}
-                      <a href="tel:18222">「防騙易18222」</a>
-                      {{ termsCopy.scamNoticeAfter }}
-                    </template>
+                    {{ termsCopy.scamNoticeAfter }}
                   </p>
                   <div v-if="!termsAccepted" class="terms-actions">
                     <button
@@ -160,7 +139,7 @@
                       class="terms-btn terms-btn--secondary"
                       @click="emit('declineTerms')"
                     >
-                      {{ termsCopy.rejectButton }}
+                      {{ termsCopy.declineButton }}
                     </button>
                   </div>
                 </div>
@@ -177,6 +156,7 @@
                 :mode="props.mode"
                 :language="props.language"
                 :i18n="chatItemI18n"
+                :chatbotConfig="chatbotConfig"
                 :showActions="shouldShowActions(item)"
                 @resend="onResend"
                 @share="onShare"
@@ -249,7 +229,7 @@
           :enableVoiceInput="props.enableVoiceInput"
           :enableFileUpload="props.enableFileUpload"
           :isUploading="props.isUploading"
-          :disabled="termsResolving || !termsAccepted"
+          :disabled="termsEnabled && (termsResolving || !termsAccepted)"
           :disabledPlaceholder="termsCopy.inputDisabledPlaceholder"
           @stop="onStop"
           @send="handleSend"
@@ -291,6 +271,7 @@ import type {
   ChatI18n,
   ChatItemI18n,
   SenderI18n,
+  ChatbotConfig,
 } from "../../model/type";
 import {
   chatRelatedPropsDefaults,
@@ -349,6 +330,8 @@ export interface Props extends ChatRelatedProps {
   termsAccepted?: boolean;
   /** 条款提示刷新 key */
   termsPromptKey?: number;
+  /** Public chatbot config contract for fixture/API-driven UI */
+  chatbotConfig?: ChatbotConfig;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -466,18 +449,18 @@ const TERMS_ACCEPTED_GREETING_RECORD_ID = "local-terms-accepted-greeting";
 const syntheticBaseTime = Date.now();
 
 const isEnglish = computed(() => props.language?.startsWith("en"));
+const termsEnabled = computed(() =>
+  props.chatbotConfig?.features.termsGate !== false &&
+  props.chatbotConfig?.terms.enabled !== false,
+);
 const defaultAssistantName = computed(() =>
-  isEnglish.value ? "JimmyBuddy" : "阿尖",
+  props.chatbotConfig?.assistant.name || (isEnglish.value ? "Assistant" : "助手"),
 );
 const assistantAvatar = computed(() =>
-  isEnglish.value
-    ? "https://carers-webchat.aienchat.com/avatar-en-us-v5.gif"
-    : "https://carers-webchat.aienchat.com/avatar-zh-hk-v5.gif",
+  props.chatbotConfig?.assistant.messageAvatarUrl || currentApplicationAvatar.value || "",
 );
 const assistantMessageAvatar = computed(() =>
-  isEnglish.value
-    ? "https://carers-webchat.aienchat.com/message-en-us-v5.gif"
-    : "https://carers-webchat.aienchat.com/message-zh-hk-v5.gif",
+  props.chatbotConfig?.assistant.messageAvatarUrl || assistantAvatar.value,
 );
 
 const normalizeAssistantName = (name?: string) => {
@@ -496,45 +479,33 @@ const assistantName = computed(() =>
 );
 
 const termsCopy = computed(() => {
-  if (isEnglish.value) {
-    return {
-      title: assistantName.value,
-      intro:
-        "Please read the following terms and conditions regarding the use of artificial intelligence chatbot dialogue system.",
-      disclaimers: "Disclaimers",
-      copyright: "Copyright statement",
-      privacy: "Privacy Policy and Personal Information Collection Statement",
-      acceptInstruction:
-        'If you agree to the terms and conditions of use, please click the "Accept" button. Clicking the accept button means that you have read, understood and agreed to the terms and conditions of use.',
-      scamNoticeBefore:
-        'Please note that the artificial intelligence chatbot dialogue system will not ask for any personal information from users. If you have any doubts, please call the Anti-deception Enquiry Hotline "Anti-Scam Helpline 18222" to seek help from the police. In addition, users must click "Accept" to use the artificial intelligence chatbot conversation system.',
-      scamNoticeAfter: "",
-      acceptButton: "ACCEPT",
-      rejectButton: "REJECT",
-      acceptedUserText: "Accept",
-      acceptedGreeting:
-        "Hello👋🏻 I'm JimmyBuddy. What kind of information are you looking for?",
-      inputDisabledPlaceholder: "Please accept T&C",
-    };
-  }
+  const config = props.chatbotConfig;
+  const fallbackTitle = isEnglish.value ? assistantName.value : `你好，我是${assistantName.value}`;
+  const titleTemplate = config?.terms.titleTemplate || fallbackTitle;
 
   return {
-    title: `你好，我是${assistantName.value}`,
-    intro: "使用人工智能聊天機械人對話系統前，請先細閱並接受下列條款及細則。",
-    disclaimers: "免責聲明",
-    copyright: "版權聲明",
-    privacy: "私隱政策及個人資料收集聲明",
-    acceptInstruction:
-      "如同意使用條款及細則，請點擊「接受」按鈕，點擊接受按鈕後，即表示您已閱讀、理解和同意使用條款及細則。",
-    scamNoticeBefore:
-      "請注意，人工智能聊天機械人對話系統是不會向用戶索取任何個人資料。如有懷疑，請致電反詐騙諮詢熱線",
-    scamNoticeAfter:
-      "向警方求助。此外，用戶必須點擊「接受」按鈕，才能使用人工智能聊天機械人對話系統。",
-    acceptButton: "接受",
-    rejectButton: "拒絕",
-    acceptedUserText: "接受",
-    acceptedGreeting: "您好👋🏻 我係阿尖！請問您想搵咩資訊？",
-    inputDisabledPlaceholder: "請先接受條款與細則後繼續",
+    title: titleTemplate.replace("{{assistantName}}", assistantName.value),
+    intro: config?.terms.intro || (isEnglish.value
+      ? "Please read and accept the terms and conditions before use."
+      : "使用前請先細閱並接受下列條款及細則。"),
+    links: config?.terms.links || [],
+    acceptInstruction: config?.terms.acceptInstruction || (isEnglish.value
+      ? "Click Accept if you agree to the terms and conditions."
+      : "如同意使用條款及細則，請點擊接受按鈕。"),
+    scamNoticeBefore: config?.terms.scamNoticeBefore || "",
+    scamHotlineLabel: config?.terms.scamHotlineLabel || "",
+    scamHotlineUrl: config?.terms.scamHotlineUrl || "",
+    scamNoticeAfter: config?.terms.scamNoticeAfter || "",
+    acceptButton: config?.terms.acceptButton || (isEnglish.value ? "ACCEPT" : "接受"),
+    declineButton: config?.terms.declineButton || (isEnglish.value ? "REJECT" : "拒絕"),
+    acceptedUserText: config?.terms.acceptedUserText || (isEnglish.value ? "Accept" : "接受"),
+    acceptedGreeting:
+      config?.assistant.greeting ||
+      currentApplicationGreeting.value ||
+      (isEnglish.value ? "Hello" : "您好"),
+    inputDisabledPlaceholder:
+      config?.composer.disabledPlaceholder ||
+      (isEnglish.value ? "Please accept T&C" : "請先接受條款與細則後繼續"),
   };
 });
 
@@ -576,25 +547,22 @@ const termsPromptText = computed(() => {
   const body = [
     termsCopy.value.title,
     termsCopy.value.intro,
-    `${termsCopy.value.disclaimers}：https://www.carers.hk/disclaimers`,
-    `${termsCopy.value.copyright}：https://www.carers.hk/copyright-statement`,
-    `${termsCopy.value.privacy}：https://www.carers.hk/personal-information-collection-statement`,
+    ...termsCopy.value.links.map((link) => `${link.label}: ${link.url}`),
     termsCopy.value.acceptInstruction,
   ];
 
-  if (isEnglish.value) {
-    body.push(termsCopy.value.scamNoticeBefore);
-  } else {
-    body.push(
-      `${termsCopy.value.scamNoticeBefore}「防騙易18222」${termsCopy.value.scamNoticeAfter}`,
-    );
-  }
+  const scamNotice = [
+    termsCopy.value.scamNoticeBefore,
+    termsCopy.value.scamHotlineLabel,
+    termsCopy.value.scamNoticeAfter,
+  ].filter(Boolean).join("");
+  if (scamNotice) body.push(scamNotice);
 
   return body.join("\n\n");
 });
 
 const syntheticTermsRecords = computed<Record[]>(() => {
-  if (props.termsResolving) {
+  if (!termsEnabled.value || props.termsResolving) {
     return [];
   }
 
@@ -775,7 +743,7 @@ const updateFooterHeight = () => {
     const height = footer.offsetHeight;
     document.documentElement.style.setProperty(
       "--chat-footer-height",
-      `${height + 60}px`,
+      `${height + 18}px`,
     );
   }
 };
@@ -901,7 +869,7 @@ const inputEnter = function (
   queryVal: string | undefined,
   fileList?: FileProps[],
 ) {
-  if (!props.termsAccepted) {
+  if (termsEnabled.value && !props.termsAccepted) {
     return;
   }
   if (props.isChatting) {
@@ -1120,12 +1088,17 @@ defineExpose({
   height: 100%;
   position: relative;
   display: flex;
-  background: #fff8e8;
+  background: var(--adp-chat-surface-background, #fff8e8);
 }
 
 .chat-item__content {
   display: flex;
   align-items: self-start;
+}
+
+.chat-item__inner {
+  width: 100%;
+  padding-top: 10px;
 }
 
 .share-setting-container {
@@ -1206,24 +1179,23 @@ defineExpose({
 :deep(.t-chat__footer) {
   display: flex;
   justify-content: center;
-  padding: 0 12px;
-  background: #fff8e8;
+  padding: 0 10px;
+  background: var(--adp-chat-surface-background, #fff8e8);
 }
 
 :deep(.content .chat-item__content) {
-  padding-bottom: var(--td-comp-paddingLR-l);
-  margin-left: var(--td-size-4);
+  padding-bottom: 8px;
+  margin-left: 0;
 }
 
 :deep(.content .chat-item__content:last-child) {
-  padding-bottom: max(var(--td-comp-paddingLR-xl), var(--chat-footer-height, 120px));
+  padding-bottom: max(12px, var(--chat-footer-height, 96px));
 }
 
 :deep(.t-chat__list) {
-  padding: 0 calc(var(--td-comp-paddingLR-xl) - var(--td-size-4))
-    var(--chat-footer-height, 120px);
+  padding: 2px 10px var(--chat-footer-height, 96px);
   overflow-y: scroll;
-  background: #fff8e8;
+  background: var(--adp-chat-surface-background, #fff8e8);
 }
 
 .terms-splash-content {
@@ -1252,28 +1224,28 @@ defineExpose({
   display: flex;
   align-items: flex-start;
   width: 100%;
-  gap: 8px;
+  gap: 6px;
 }
 
 .terms-avatar {
-  width: 42px;
-  height: 42px;
-  flex: 0 0 42px;
+  width: 34px;
+  height: 34px;
+  flex: 0 0 34px;
   border-radius: 50%;
   object-fit: cover;
   background: #fff;
 }
 
 .terms-message-card {
-  max-width: min(100%, 310px);
-  padding: 12px;
-  border: 1px solid #b95a25;
-  border-radius: 14px 14px 14px 4px;
-  background: #fff;
-  color: #713614;
+  max-width: min(100%, 296px);
+  padding: 11px 12px;
+  border: 1px solid var(--adp-chat-bubble-border, #b95a25);
+  border-radius: 12px 12px 12px 3px;
+  background: var(--adp-chat-assistant-bubble-background, #fff);
+  color: var(--adp-chat-assistant-text, #713614);
   box-shadow: 0 2px 0 rgba(185, 90, 37, 0.08);
-  font-size: 14px;
-  line-height: 1.55;
+  font-size: 13px;
+  line-height: 1.5;
 }
 
 .terms-message-title {
@@ -1283,18 +1255,18 @@ defineExpose({
 }
 
 .terms-message-card p {
-  margin: 0 0 8px;
+  margin: 0 0 7px;
 }
 
 .terms-message-card a {
-  color: #b84222;
+  color: var(--adp-chat-primary-action, #b84222);
   font-weight: 700;
   text-decoration: underline;
 }
 
 .terms-link-list {
-  margin: 0 0 10px;
-  padding-left: 20px;
+  margin: 0 0 9px;
+  padding-left: 18px;
 }
 
 .terms-link-list li + li {
@@ -1309,16 +1281,16 @@ defineExpose({
 
 .terms-btn {
   min-width: 76px;
-  height: 34px;
+  height: 32px;
   border-radius: 7px;
-  border: 1px solid #b84222;
-  font-size: 14px;
+  border: 1px solid var(--adp-chat-primary-action, #b84222);
+  font-size: 13px;
   font-weight: 700;
   cursor: pointer;
 }
 
 .terms-btn--primary {
-  background: #b84222;
+  background: var(--adp-chat-primary-action, #b84222);
   color: #fff;
 }
 
@@ -1334,7 +1306,7 @@ defineExpose({
 
 :deep(.t-chat__list .content) {
   width: 100%;
-  max-width: calc(800px + var(--td-size-4));
+  max-width: 100%;
   margin: 0 auto;
 }
 

@@ -782,11 +782,11 @@ defineExpose({
 <style scoped>
 .sender-container {
   width: 100%;
-  max-width: 800px;
+  max-width: 100%;
   display: flex;
   flex-direction: column;
-  border: 1px solid #df9a65;
-  border-radius: 12px;
+  border: 1px solid var(--adp-chat-bubble-border, #df9a65);
+  border-radius: 10px;
   background: var(--td-bg-color-container, #fff);
   transition:
     border-color 0.2s,
@@ -795,7 +795,7 @@ defineExpose({
 }
 
 .sender-container.is-focused {
-  border-color: #b84222;
+  border-color: var(--adp-chat-primary-action, #b84222);
   box-shadow: 0 0 0 2px rgba(184, 66, 34, 0.12);
 }
 
@@ -817,7 +817,8 @@ defineExpose({
 
 /* 编辑器区域 */
 .sender-editor-area {
-  max-height: 200px;
+  max-height: 96px;
+  min-height: 40px;
   overflow-y: auto;
   overflow-x: hidden;
 }
@@ -827,7 +828,7 @@ defineExpose({
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 4px 8px 8px;
+  padding: 2px 8px 7px;
   background: transparent;
 }
 
@@ -862,7 +863,7 @@ defineExpose({
 }
 
 .plus-btn:hover {
-  background-color: rgba(184, 66, 34, 0.08);
+  background-color: color-mix(in srgb, var(--adp-chat-primary-action, #b84222) 8%, transparent);
 }
 
 .plus-btn.disabled {
@@ -917,7 +918,7 @@ defineExpose({
 /* 录音按钮 */
 .recording-icon:hover {
   cursor: pointer;
-  color: #b84222;
+  color: var(--adp-chat-primary-action, #b84222);
 }
 
 .recording-icon {

@@ -26,6 +26,106 @@ export interface UserInfo {
 }
 
 // ============================================================
+// Public chatbot configuration contract
+// ============================================================
+
+export interface ChatbotAssistantConfig {
+  name: string
+  headerTitle?: string
+  launcherAvatarUrl: string
+  messageAvatarUrl: string
+  greeting: string
+}
+
+export interface ChatbotLauncherConfig {
+  enabled: boolean
+  prompt?: string
+  position: 'bottom-right' | 'bottom-left' | 'top-right' | 'top-left'
+  offsetX: number
+  offsetY: number
+}
+
+export interface ChatbotPanelConfig {
+  width: number
+  height: number
+  mobileMode: 'fullscreen' | 'panel'
+}
+
+export interface ChatbotThemeConfig {
+  mode?: string
+  headerBackground: string
+  surfaceBackground: string
+  primaryAction: string
+  bubbleBorder: string
+  userBubbleBackground?: string
+  userBubbleText?: string
+  assistantBubbleBackground?: string
+  assistantText?: string
+}
+
+export interface ChatbotTermsLinkConfig {
+  label: string
+  url: string
+}
+
+export interface ChatbotTermsConfig {
+  enabled: boolean
+  storageScope: 'global' | 'application' | 'conversation'
+  titleTemplate: string
+  intro: string
+  links: ChatbotTermsLinkConfig[]
+  acceptInstruction: string
+  scamNoticeBefore: string
+  scamHotlineLabel?: string
+  scamHotlineUrl?: string
+  scamNoticeAfter?: string
+  acceptButton: string
+  declineButton: string
+  acceptedUserText: string
+}
+
+export interface ChatbotComposerConfig {
+  disabledPlaceholder: string
+  enabledPlaceholder: string
+}
+
+export interface ChatbotHotlineConfig {
+  number: string
+  label: string
+  description?: string
+  url?: string
+}
+
+export interface ChatbotFeatureConfig {
+  termsGate: boolean
+  fileUpload: boolean
+  voiceInput: boolean
+  mockChat: boolean
+}
+
+export interface ChatbotMockChatConfig {
+  reply: string
+}
+
+/**
+ * Frontend POC contract. The same field names are expected to map to a future
+ * public chatbot config API response.
+ */
+export interface ChatbotConfig {
+  appId: string
+  language: string
+  assistant: ChatbotAssistantConfig
+  launcher: ChatbotLauncherConfig
+  panel: ChatbotPanelConfig
+  theme: ChatbotThemeConfig
+  terms: ChatbotTermsConfig
+  composer: ChatbotComposerConfig
+  hotline: ChatbotHotlineConfig
+  features: ChatbotFeatureConfig
+  mockChat: ChatbotMockChatConfig
+}
+
+// ============================================================
 // 公共 Props 接口 - 用于组件间共享的 props 定义
 // ============================================================
 
@@ -439,6 +539,10 @@ export const getI18nByLanguage = (language: string) => {
 
 export interface ChatConfig extends ChatRelatedProps, OverlayProps {
   container?: string
+  /** Frontend-only POC mode: skips backend loading and can use local mock chat behavior */
+  frontendPocMode?: boolean
+  /** Public chatbot config contract for fixture/API-driven UI */
+  chatbotConfig?: ChatbotConfig
   /** 是否为浮层模式：true-使用 width/height 浮动在容器上，false-宽高100%撑满容器 */
   isOverlay?: boolean
   /** 宽度（仅在 isOverlay 为 true 时生效） */
@@ -487,6 +591,8 @@ export interface ChatConfig extends ChatRelatedProps, OverlayProps {
   showToggleButton?: boolean
   /** 悬浮切换按钮图标 URL（支持 gif/png/webp/svg） */
   launcherIconUrl?: string
+  /** 悬浮切换按钮提示文案 */
+  launcherPrompt?: string
   /** 悬浮切换按钮位置 */
   launcherPosition?: 'bottom-right' | 'bottom-left' | 'top-right' | 'top-left'
   /** 悬浮切换按钮水平边距 */

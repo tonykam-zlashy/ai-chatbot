@@ -35,6 +35,7 @@ export { default as OptionCard } from './components/Common/OptionCard.vue'
 export { default as RecordIcon } from './components/Common/RecordIcon.vue'
 
 // Layout 组件导出
+export { default as ADPChatWidget } from './App.vue'
 export { default as ADPChat } from './components/layout/Index.vue'
 export { default as MainLayout } from './components/layout/MainLayout.vue'
 export { default as SideLayout } from './components/layout/SideLayout.vue'
@@ -59,6 +60,16 @@ export type {
     ChatI18n,
     ChatItemI18n,
     SenderI18n,
+    ChatbotConfig,
+    ChatbotAssistantConfig,
+    ChatbotLauncherConfig,
+    ChatbotPanelConfig,
+    ChatbotThemeConfig,
+    ChatbotTermsConfig,
+    ChatbotComposerConfig,
+    ChatbotHotlineConfig,
+    ChatbotFeatureConfig,
+    ChatbotMockChatConfig,
 } from './model/type'
 export {
     themePropsDefaults,

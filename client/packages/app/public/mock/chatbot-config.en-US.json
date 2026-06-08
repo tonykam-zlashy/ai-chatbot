@@ -1,0 +1,72 @@
+{
+  "appId": "carers-poc",
+  "language": "en-US",
+  "assistant": {
+    "name": "JimmyBuddy",
+    "headerTitle": "JimmyBuddy",
+    "launcherAvatarUrl": "https://carers-webchat.aienchat.com/avatar-en-us-v5.gif",
+    "messageAvatarUrl": "https://carers-webchat.aienchat.com/message-en-us-v5.gif",
+    "greeting": "Hello👋🏻 I'm JimmyBuddy. What kind of information are you looking for?"
+  },
+  "launcher": {
+    "enabled": true,
+    "prompt": "Need info?",
+    "position": "bottom-right",
+    "offsetX": 22,
+    "offsetY": 16
+  },
+  "panel": {
+    "width": 380,
+    "height": 600,
+    "mobileMode": "fullscreen"
+  },
+  "theme": {
+    "mode": "carers",
+    "headerBackground": "#f7943d",
+    "surfaceBackground": "#fff8e8",
+    "primaryAction": "#b84222",
+    "bubbleBorder": "#b95a25",
+    "userBubbleBackground": "#b84222",
+    "userBubbleText": "#ffffff",
+    "assistantBubbleBackground": "#ffffff",
+    "assistantText": "#713614"
+  },
+  "terms": {
+    "enabled": true,
+    "storageScope": "global",
+    "titleTemplate": "{{assistantName}}",
+    "intro": "Please read the following terms and conditions regarding the use of the artificial intelligence chatbot dialogue system.",
+    "links": [
+      { "label": "Disclaimers", "url": "https://www.carers.hk/disclaimers" },
+      { "label": "Copyright statement", "url": "https://www.carers.hk/copyright-statement" },
+      { "label": "Privacy Policy and Personal Information Collection Statement", "url": "https://www.carers.hk/personal-information-collection-statement" }
+    ],
+    "acceptInstruction": "If you agree to the terms and conditions of use, please click the Accept button. Clicking the accept button means that you have read, understood and agreed to the terms and conditions of use.",
+    "scamNoticeBefore": "Please note that the artificial intelligence chatbot dialogue system will not ask for any personal information from users. If you have any doubts, please call the Anti-deception Enquiry Hotline",
+    "scamHotlineLabel": "Anti-Scam Helpline 18222",
+    "scamHotlineUrl": "tel:18222",
+    "scamNoticeAfter": "to seek help from the police. In addition, users must click Accept to use the artificial intelligence chatbot conversation system.",
+    "acceptButton": "ACCEPT",
+    "declineButton": "REJECT",
+    "acceptedUserText": "Accept"
+  },
+  "composer": {
+    "disabledPlaceholder": "Please accept T&C",
+    "enabledPlaceholder": "Type here (no personal information)"
+  },
+  "hotline": {
+    "number": "182 183",
+    "label": "24-Hour Designated Hotline for Carer Support",
+    "description": "Call 182183 if you need assistance from a social worker.",
+    "url": "tel:182183"
+  },
+  "features": {
+    "termsGate": true,
+    "fileUpload": true,
+    "voiceInput": true,
+    "mockChat": true
+  },
+  "mockChat": {
+    "reply": "This is a frontend POC reply. The real chatbot backend will be connected later."
+  }
+}

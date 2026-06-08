@@ -9,6 +9,7 @@ static file server
 """
 app.static('/static/app/index', './static/app/index.html', name='index')
 app.static('/static/app0/index', './static/app0/index.html', name='index0')
+app.static('/mock', './static/app/mock', name='app_mock')
 app.static('/static', './static', name='static')
 
 

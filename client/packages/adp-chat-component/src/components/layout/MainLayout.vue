@@ -12,7 +12,7 @@ import CreateConversation from '../CreateConversation.vue';
 import { Avatar as TAvatar, Layout as TLayout, Content as TContent, Header as THeader, Footer as TFooter } from 'tdesign-vue-next';
 
 // TAvatar, TLayout, TContent, THeader, TFooter 已导入，模板中使用对应组件
-import type { ChatRelatedProps, ChatI18n, ChatItemI18n, SenderI18n } from '../../model/type';
+import type { ChatRelatedProps, ChatI18n, ChatItemI18n, SenderI18n, ChatbotConfig } from '../../model/type';
 import { chatRelatedPropsDefaults, defaultChatI18n } from '../../model/type';
 
 export interface Props extends ChatRelatedProps {
@@ -66,6 +66,8 @@ export interface Props extends ChatRelatedProps {
     termsAccepted?: boolean;
     /** 条款提示刷新 key */
     termsPromptKey?: number;
+    /** Public chatbot config contract for fixture/API-driven UI */
+    chatbotConfig?: ChatbotConfig;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -97,17 +99,26 @@ const createConversationText = computed(() =>
 );
 
 const isEnglish = computed(() => props.language?.startsWith('en'));
-const defaultApplicationName = computed(() => isEnglish.value ? 'JimmyBuddy' : '阿尖');
+const defaultApplicationName = computed(() => props.chatbotConfig?.assistant.name || (isEnglish.value ? 'Assistant' : '助手'));
 const defaultApplicationAvatar = computed(() =>
-    isEnglish.value
-        ? 'https://carers-webchat.aienchat.com/avatar-en-us-v5.gif'
-        : 'https://carers-webchat.aienchat.com/avatar-zh-hk-v5.gif'
+    props.chatbotConfig?.assistant.messageAvatarUrl || ''
 );
 const hotlineLabel = computed(() =>
-    isEnglish.value
-        ? '24-Hour Designated Hotline for Carer Support'
-        : '24小時照顧者支援專線'
+    props.chatbotConfig?.hotline.label || ''
 );
+const hotlineNumber = computed(() => props.chatbotConfig?.hotline.number || '');
+const hotlineUrl = computed(() => props.chatbotConfig?.hotline.url || '');
+const showHotline = computed(() => Boolean(hotlineNumber.value || hotlineLabel.value));
+const themeStyle = computed(() => ({
+    '--adp-chat-header-background': props.chatbotConfig?.theme.headerBackground || '#f7943d',
+    '--adp-chat-surface-background': props.chatbotConfig?.theme.surfaceBackground || '#fff8e8',
+    '--adp-chat-primary-action': props.chatbotConfig?.theme.primaryAction || '#b84222',
+    '--adp-chat-bubble-border': props.chatbotConfig?.theme.bubbleBorder || '#b95a25',
+    '--adp-chat-user-bubble-background': props.chatbotConfig?.theme.userBubbleBackground || props.chatbotConfig?.theme.primaryAction || '#b84222',
+    '--adp-chat-user-bubble-text': props.chatbotConfig?.theme.userBubbleText || '#fff',
+    '--adp-chat-assistant-bubble-background': props.chatbotConfig?.theme.assistantBubbleBackground || '#fff',
+    '--adp-chat-assistant-text': props.chatbotConfig?.theme.assistantText || '#713614',
+}));
 
 const normalizeApplicationName = (name?: string) => {
     const trimmed = name?.trim();
@@ -228,12 +239,12 @@ defineExpose({
 </script>
 
 <template>
-    <TLayout class="main-layout" :class="{ isMobile: isMobile }">
+    <TLayout class="main-layout" :class="{ isMobile: isMobile }" :style="themeStyle">
         <THeader class="layout-header">
             <div class="header-app-container">
-                    <SidebarToggle :theme="theme"  @toggle="handleToggleSidebar" />
-                    <CreateConversation :tooltipText="createConversationText" :theme="theme" @create="handleCreateConversation" />
-                    <TAvatar :imageProps="{
+                    <SidebarToggle v-if="showSidebarToggle && !isOverlay" :theme="theme"  @toggle="handleToggleSidebar" />
+                    <CreateConversation v-if="!isOverlay" :tooltipText="createConversationText" :theme="theme" @create="handleCreateConversation" />
+                    <TAvatar v-if="!isOverlay" :imageProps="{
                             lazy: true,
                             loading: ''
                         }" class="header-app__avatar" shape="round" :image="currentApplicationAvatar || defaultApplicationAvatar" :size="isMobile ? 'var(--td-line-height-headline-small)' : 'large'"></TAvatar>
@@ -269,6 +280,7 @@ defineExpose({
                 :enableFileUpload="enableFileUpload"
                 :isUploading="isUploading"
                 :isOverlay="isOverlay"
+                :chatbotConfig="chatbotConfig"
                 @send="(query: string, fileList: FileProps[], conversationId: string, applicationId: string) => emit('send', query, fileList, conversationId, applicationId)"
                 @stop="emit('stop')"
                 :termsResolving="termsResolving"
@@ -294,8 +306,12 @@ defineExpose({
             </Chat>
         </TContent>
         <TFooter class="layout-footer">
-            <div class="carers-hotline-strip">
-                <span class="carers-hotline-number">182 183</span>
+            <a v-if="showHotline && hotlineUrl" class="carers-hotline-strip" :href="hotlineUrl">
+                <span v-if="hotlineNumber" class="carers-hotline-number">{{ hotlineNumber }}</span>
+                <span>{{ hotlineLabel }}</span>
+            </a>
+            <div v-else-if="showHotline" class="carers-hotline-strip">
+                <span v-if="hotlineNumber" class="carers-hotline-number">{{ hotlineNumber }}</span>
                 <span>{{ hotlineLabel }}</span>
             </div>
             <AIWarning :text="aiWarningText" />
@@ -312,7 +328,7 @@ defineExpose({
     height: 100%;
     display: flex;
     flex-direction: column;
-    background: #fff8e8;
+    background: var(--adp-chat-surface-background, #fff8e8);
     overflow: hidden;
 }
 .isMobile .layout-header{
@@ -321,11 +337,11 @@ defineExpose({
 .layout-header {
     flex-shrink: 0;
     display: flex;
-    padding: 0 14px;
+    padding: 0 12px;
     justify-content: space-between;
-    height: 44px;
-    min-height: 44px;
-    background: linear-gradient(180deg, #ffad5d 0%, #f7943d 100%);
+    height: 38px;
+    min-height: 38px;
+    background: var(--adp-chat-header-background, #f7943d);
     color: #fff;
     box-shadow: 0 1px 0 rgba(160, 78, 20, 0.16);
 }
@@ -350,7 +366,7 @@ defineExpose({
     color: #fff;
     font-size: 16px;
     font-weight: 700;
-    margin-left: var(--td-comp-margin-s);
+    margin-left: 0;
     flex: 1;
     min-width: 0;
     overflow: hidden;
@@ -360,14 +376,14 @@ defineExpose({
 
 .layout-content {
     flex: 1;
-    overflow: auto;
-    background: #fff8e8;
+    overflow: hidden;
+    background: var(--adp-chat-surface-background, #fff8e8);
 }
 
 .layout-footer {
     flex-shrink: 0;
-    padding: 0 12px 10px;
-    background: #fff8e8;
+    padding: 0 10px 8px;
+    background: var(--adp-chat-surface-background, #fff8e8);
 }
 .header-app-driver{
     margin: 0 var(--td-size-6) 0 var(--td-size-4);
@@ -380,7 +396,7 @@ defineExpose({
 }
 :deep(.t-chat__footer){
     position: relative;
-    background: #fff8e8;
+    background: var(--adp-chat-surface-background, #fff8e8);
 }
 :deep(.content .t-chat__content, .content .t-chat__detail-reasoning){
     padding-top: 0;
@@ -442,16 +458,16 @@ defineExpose({
 }
 
 :deep(.t-chat__list) {
-    background: #fff8e8;
+    background: var(--adp-chat-surface-background, #fff8e8);
 }
 
 :deep(.t-chat__content) {
-    color: #6f3516;
+    color: var(--adp-chat-assistant-text, #6f3516);
 }
 
 :deep(.assistant .t-chat__text),
 :deep(.assistant .t-chat__detail) {
-    color: #713614;
+    color: var(--adp-chat-assistant-text, #713614);
 }
 
 :deep(.t-chat__text) {
@@ -459,14 +475,14 @@ defineExpose({
 }
 
 :deep(.user .t-chat__text) {
-    background: #b84222;
-    color: #fff;
+    background: var(--adp-chat-user-bubble-background, #b84222);
+    color: var(--adp-chat-user-bubble-text, #fff);
     border-radius: 14px 14px 4px 14px;
 }
 
 :deep(.assistant .t-chat__text) {
-    background: #fff;
-    border: 1px solid #b95a25;
+    background: var(--adp-chat-assistant-bubble-background, #fff);
+    border: 1px solid var(--adp-chat-bubble-border, #b95a25);
     border-radius: 14px 14px 14px 4px;
     box-shadow: 0 2px 0 rgba(185, 90, 37, 0.08);
 }
@@ -476,18 +492,19 @@ defineExpose({
     align-items: center;
     justify-content: center;
     gap: 8px;
-    min-height: 30px;
-    margin: 0 auto 8px;
-    padding: 5px 10px;
-    border-radius: 8px;
+    min-height: 28px;
+    margin: 0 auto 6px;
+    padding: 4px 10px;
+    border-radius: 7px;
     background: #d7f7df;
     color: #18805d;
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 700;
+    text-decoration: none;
 }
 
 .carers-hotline-number {
     color: #00885b;
-    font-size: 16px;
+    font-size: 14px;
 }
 </style>

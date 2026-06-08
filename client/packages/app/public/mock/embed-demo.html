@@ -1,0 +1,266 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Chatbot Embed Demo</title>
+    <style>
+      :root {
+        font-family: Inter, Arial, sans-serif;
+        color: #252525;
+        background: #f6f4ef;
+      }
+
+      body {
+        min-height: 100vh;
+        margin: 0;
+      }
+
+      main {
+        max-width: 760px;
+        padding: 48px 32px;
+      }
+
+      h1 {
+        margin: 0 0 12px;
+        font-size: 28px;
+      }
+
+      p {
+        max-width: 620px;
+        margin: 0 0 24px;
+        line-height: 1.6;
+      }
+
+      .demo-language {
+        display: inline-flex;
+        gap: 6px;
+        padding: 4px;
+        border: 1px solid #d4c8b4;
+        border-radius: 8px;
+        background: #fff;
+      }
+
+      .demo-language button {
+        border: 0;
+        border-radius: 6px;
+        padding: 7px 12px;
+        background: transparent;
+        color: #4a4036;
+        cursor: pointer;
+      }
+
+      .demo-language button[aria-pressed="true"] {
+        background: #b84222;
+        color: #fff;
+      }
+
+      .chat-launcher {
+        position: fixed;
+        z-index: 1000;
+        display: flex;
+        align-items: flex-start;
+        justify-content: flex-end;
+        width: 128px;
+        height: 112px;
+        border: 0;
+        background: transparent;
+        cursor: pointer;
+      }
+
+      .chat-launcher[hidden],
+      .chat-panel[hidden] {
+        display: none;
+      }
+
+      .chat-launcher__prompt {
+        position: absolute;
+        top: 4px;
+        right: 76px;
+        white-space: nowrap;
+        padding: 4px 10px;
+        border-radius: 16px 16px 4px 16px;
+        background: #dff9e9;
+        border: 1px solid rgba(56, 153, 102, 0.28);
+        color: #16845d;
+        font-size: 13px;
+        font-weight: 700;
+        line-height: 18px;
+        box-shadow: 0 3px 10px rgba(87, 64, 24, 0.14);
+      }
+
+      .chat-launcher__avatar {
+        width: 92px;
+        height: 92px;
+        object-fit: contain;
+      }
+
+      .chat-panel {
+        position: fixed;
+        z-index: 1000;
+        overflow: hidden;
+        border: 1px solid #f6b36c;
+        border-radius: 10px 10px 0 0;
+        background: #fff8e8;
+        box-shadow: 0 6px 28px rgba(79, 42, 18, 0.22);
+      }
+
+      .chat-panel__bar {
+        position: absolute;
+        top: 4px;
+        right: 6px;
+        z-index: 2;
+        display: flex;
+        gap: 4px;
+      }
+
+      .chat-panel__bar button {
+        width: 28px;
+        height: 28px;
+        border: 0;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.22);
+        color: #fff;
+        font-size: 18px;
+        line-height: 28px;
+        cursor: pointer;
+      }
+
+      .chat-panel iframe {
+        display: block;
+        width: 100%;
+        height: 100%;
+        border: 0;
+        background: #fff8e8;
+      }
+
+      @media (max-width: 520px) {
+        .chat-panel[data-mobile-mode="fullscreen"] {
+          inset: 0 !important;
+          width: 100vw !important;
+          height: 100dvh !important;
+          border-radius: 0;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Static Host Page</h1>
+      <p>
+        This page owns launcher placement and panel sizing. The inner chat app
+        runs inside the iframe and receives the same fixture config.
+      </p>
+      <div class="demo-language" aria-label="Fixture language">
+        <button type="button" data-lang="zh-HK" aria-pressed="true">zh-HK</button>
+        <button type="button" data-lang="en-US" aria-pressed="false">en-US</button>
+      </div>
+    </main>
+
+    <button type="button" class="chat-launcher" aria-label="Open chatbot" hidden>
+      <span class="chat-launcher__prompt"></span>
+      <img class="chat-launcher__avatar" alt="" />
+    </button>
+
+    <section class="chat-panel" aria-label="Chatbot panel" hidden>
+      <div class="chat-panel__bar">
+        <button type="button" class="chat-panel__close" aria-label="Close chatbot">×</button>
+      </div>
+      <iframe title="Chatbot preview"></iframe>
+    </section>
+
+    <script>
+      (function () {
+        var launcher = document.querySelector('.chat-launcher');
+        var launcherPrompt = document.querySelector('.chat-launcher__prompt');
+        var launcherAvatar = document.querySelector('.chat-launcher__avatar');
+        var panel = document.querySelector('.chat-panel');
+        var iframe = panel.querySelector('iframe');
+        var closeButton = document.querySelector('.chat-panel__close');
+        var languageButtons = Array.prototype.slice.call(document.querySelectorAll('[data-lang]'));
+        var currentConfig = null;
+        var currentLanguage = 'zh-HK';
+
+        function applyPosition(element, position, offsetX, offsetY) {
+          element.style.top = position.indexOf('top') >= 0 ? offsetY + 'px' : 'auto';
+          element.style.bottom = position.indexOf('top') >= 0 ? 'auto' : offsetY + 'px';
+          element.style.left = position.indexOf('left') >= 0 ? offsetX + 'px' : 'auto';
+          element.style.right = position.indexOf('left') >= 0 ? 'auto' : offsetX + 'px';
+        }
+
+        function postConfig() {
+          if (!currentConfig || !iframe.contentWindow) return;
+          iframe.contentWindow.postMessage({
+            type: 'adp-chatbot-config',
+            config: currentConfig
+          }, window.location.origin);
+        }
+
+        function applyConfig(config) {
+          currentConfig = config;
+          launcher.hidden = panel.hidden === false || config.launcher.enabled === false;
+          launcherPrompt.textContent = config.launcher.prompt || '';
+          launcherAvatar.src = config.assistant.launcherAvatarUrl;
+          launcherAvatar.alt = config.assistant.name;
+          applyPosition(
+            launcher,
+            config.launcher.position || 'bottom-right',
+            config.launcher.offsetX || 22,
+            config.launcher.offsetY || 16
+          );
+
+          panel.style.width = (config.panel.width || 380) + 'px';
+          panel.style.height = (config.panel.height || 600) + 'px';
+          panel.dataset.mobileMode = config.panel.mobileMode || 'fullscreen';
+          applyPosition(
+            panel,
+            config.launcher.position || 'bottom-right',
+            config.launcher.offsetX || 22,
+            config.launcher.offsetY || 16
+          );
+          postConfig();
+        }
+
+        function loadConfig(language) {
+          return fetch('./chatbot-config.' + language + '.json', { cache: 'no-store' })
+            .then(function (response) {
+              if (!response.ok) throw new Error('Failed to load fixture');
+              return response.json();
+            })
+            .then(applyConfig);
+        }
+
+        function openPanel() {
+          launcher.hidden = true;
+          panel.hidden = false;
+          if (!iframe.src) {
+            iframe.src = '/';
+          } else {
+            postConfig();
+          }
+        }
+
+        function closePanel() {
+          panel.hidden = true;
+          launcher.hidden = currentConfig && currentConfig.launcher.enabled === false;
+        }
+
+        launcher.addEventListener('click', openPanel);
+        closeButton.addEventListener('click', closePanel);
+        iframe.addEventListener('load', postConfig);
+
+        languageButtons.forEach(function (button) {
+          button.addEventListener('click', function () {
+            currentLanguage = button.dataset.lang;
+            languageButtons.forEach(function (item) {
+              item.setAttribute('aria-pressed', String(item === button));
+            });
+            loadConfig(currentLanguage);
+          });
+        });
+
+        loadConfig(currentLanguage);
+      })();
+    </script>
+  </body>
+</html>
