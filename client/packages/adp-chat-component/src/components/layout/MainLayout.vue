@@ -122,16 +122,31 @@ const defaultApplicationAvatar = computed(
 const hotlineLabel = computed(() => props.chatbotConfig?.hotline.label || "");
 const hotlineNumber = computed(() => props.chatbotConfig?.hotline.number || "");
 const hotlineUrl = computed(() => props.chatbotConfig?.hotline.url || "");
+const hotlineDescription = computed(
+  () => props.chatbotConfig?.hotline.description || "",
+);
 const showHotline = computed(() =>
   Boolean(hotlineNumber.value || hotlineLabel.value),
 );
+const useCarersHeaderChrome = computed(() => Boolean(props.chatbotConfig));
+// Carers.hk reference composer keeps only text entry plus send; image upload
+// and voice input are intentionally omitted in this layout.
+const carersComposerFileUploadEnabled = false;
+const carersComposerVoiceInputEnabled = false;
 const themeStyle = computed(() => ({
+  "--adp-chat-font-family":
+    '"DM Sans", "微軟正黑體", "Microsoft JhengHei", sans-serif',
+  "--td-font-family":
+    '"DM Sans", "微軟正黑體", "Microsoft JhengHei", sans-serif',
+  "--td-font-family-medium":
+    '"DM Sans", "微軟正黑體", "Microsoft JhengHei", sans-serif',
   "--adp-chat-header-background":
-    props.chatbotConfig?.theme.headerBackground || "#f7943d",
+    props.chatbotConfig?.theme.headerBackground ||
+    "linear-gradient(180deg, #ffd4ac 0%, #ff7e33 100%)",
   "--adp-chat-surface-background":
-    props.chatbotConfig?.theme.surfaceBackground || "#fff8e8",
+    props.chatbotConfig?.theme.surfaceBackground || "#fff",
   "--adp-chat-primary-action":
-    props.chatbotConfig?.theme.primaryAction || "#b84222",
+    props.chatbotConfig?.theme.primaryAction || "#b84319",
   "--adp-chat-bubble-border":
     props.chatbotConfig?.theme.bubbleBorder || "#b95a25",
   "--adp-chat-user-bubble-background":
@@ -143,11 +158,22 @@ const themeStyle = computed(() => ({
   "--adp-chat-user-bubble-border":
     props.chatbotConfig?.theme.userBubbleBorder || "none",
   "--adp-chat-assistant-bubble-background":
-    props.chatbotConfig?.theme.assistantBubbleBackground || "#fff",
+    props.chatbotConfig?.theme.assistantBubbleBackground || "#ffefd6",
   "--adp-chat-assistant-text":
-    props.chatbotConfig?.theme.assistantText || "#713614",
+    props.chatbotConfig?.theme.assistantText || "#b84319",
   "--adp-chat-timestamp-text":
     props.chatbotConfig?.theme.timestampText || "#777",
+  "--adp-chat-footer-background":
+    props.chatbotConfig?.theme.footerBackground ||
+    "linear-gradient(0deg, #FFEFD6 16.5%, #fff 100%), linear-gradient(180deg, #FFEFD6 0%, #FFC284 100%)",
+  "--adp-chat-footer-icon-color":
+    props.chatbotConfig?.theme.footerIconColor ||
+    props.chatbotConfig?.theme.primaryAction ||
+    "#FF7833",
+  "--adp-chat-hotline-background":
+    props.chatbotConfig?.theme.hotlineBackground || "#ECFDF0",
+  "--adp-chat-hotline-text":
+    props.chatbotConfig?.theme.hotlineText || "#139C6C",
 }));
 
 const normalizeApplicationName = (name?: string) => {
@@ -269,6 +295,7 @@ const emit = defineEmits<{
 }>();
 
 const chatRef = ref<InstanceType<typeof Chat> | null>(null);
+const hotlineExpanded = ref(true);
 
 const handleToggleSidebar = () => {
   emit("toggleSidebar");
@@ -276,6 +303,10 @@ const handleToggleSidebar = () => {
 
 const handleCreateConversation = () => {
   emit("createConversation");
+};
+
+const toggleHotline = () => {
+  hotlineExpanded.value = !hotlineExpanded.value;
 };
 
 /**
@@ -308,18 +339,18 @@ defineExpose({
     <THeader class="layout-header">
       <div class="header-app-container">
         <SidebarToggle
-          v-if="showSidebarToggle && !isOverlay"
+          v-if="showSidebarToggle && !isOverlay && !useCarersHeaderChrome"
           :theme="theme"
           @toggle="handleToggleSidebar"
         />
         <CreateConversation
-          v-if="!isOverlay"
+          v-if="!isOverlay && !useCarersHeaderChrome"
           :tooltipText="createConversationText"
           :theme="theme"
           @create="handleCreateConversation"
         />
         <TAvatar
-          v-if="!isOverlay"
+          v-if="!isOverlay && !useCarersHeaderChrome"
           :imageProps="{
             lazy: true,
             loading: '',
@@ -359,8 +390,8 @@ defineExpose({
         :senderI18n="senderI18n"
         :useInternalRecord="useInternalRecord"
         :asrUrlApi="asrUrlApi"
-        :enableVoiceInput="enableVoiceInput"
-        :enableFileUpload="enableFileUpload"
+        :enableVoiceInput="carersComposerVoiceInputEnabled"
+        :enableFileUpload="carersComposerFileUploadEnabled"
         :isUploading="isUploading"
         :isOverlay="isOverlay"
         :chatbotConfig="chatbotConfig"
@@ -430,23 +461,70 @@ defineExpose({
       </Chat>
     </TContent>
     <TFooter class="layout-footer">
-      <a
-        v-if="showHotline && hotlineUrl"
-        class="carers-hotline-strip"
-        :href="hotlineUrl"
-      >
-        <span v-if="hotlineNumber" class="carers-hotline-number">{{
-          hotlineNumber
-        }}</span>
-        <span>{{ hotlineLabel }}</span>
-      </a>
-      <div v-else-if="showHotline" class="carers-hotline-strip">
-        <span v-if="hotlineNumber" class="carers-hotline-number">{{
-          hotlineNumber
-        }}</span>
-        <span>{{ hotlineLabel }}</span>
+      <div v-if="showHotline" class="carers-hotline-panel">
+        <div class="carers-hotline-strip">
+          <a
+            v-if="hotlineUrl"
+            class="carers-hotline-link"
+            :href="hotlineUrl"
+          >
+            <span class="carers-hotline-icon carers-hotline-icon--web" aria-hidden="true">
+              <svg viewBox="0 0 24 24" focusable="false">
+                <path d="M3.5 5.75h17v12.5h-17z" />
+                <path d="M9.25 8.5l6 3.5-6 3.5z" />
+                <path d="M8 21h8" />
+              </svg>
+            </span>
+            <span class="carers-hotline-icon carers-hotline-icon--phone" aria-hidden="true">
+              <svg viewBox="0 0 24 24" focusable="false">
+                <path d="M6.6 3.8 9.4 7c.45.52.46 1.3.03 1.84l-1.18 1.48c1.05 2.18 2.78 3.92 5 5.03l1.55-1.22c.54-.43 1.33-.41 1.84.05l3.02 2.72c.58.52.69 1.38.25 2.02-.9 1.3-2.22 2.02-3.78 1.72-6.05-1.18-10.98-6.12-12.12-12.19-.29-1.54.43-2.84 1.7-3.73.29-.2.63-.3.96-.3.34 0 .68.12.93.38Z" />
+              </svg>
+            </span>
+            <span v-if="hotlineNumber" class="carers-hotline-number">{{
+              hotlineNumber
+            }}</span>
+            <span v-if="hotlineNumber && hotlineLabel" class="carers-hotline-divider" aria-hidden="true"></span>
+            <span>{{ hotlineLabel }}</span>
+          </a>
+          <div v-else class="carers-hotline-link">
+            <span class="carers-hotline-icon carers-hotline-icon--web" aria-hidden="true">
+              <svg viewBox="0 0 24 24" focusable="false">
+                <path d="M3.5 5.75h17v12.5h-17z" />
+                <path d="M9.25 8.5l6 3.5-6 3.5z" />
+                <path d="M8 21h8" />
+              </svg>
+            </span>
+            <span class="carers-hotline-icon carers-hotline-icon--phone" aria-hidden="true">
+              <svg viewBox="0 0 24 24" focusable="false">
+                <path d="M6.6 3.8 9.4 7c.45.52.46 1.3.03 1.84l-1.18 1.48c1.05 2.18 2.78 3.92 5 5.03l1.55-1.22c.54-.43 1.33-.41 1.84.05l3.02 2.72c.58.52.69 1.38.25 2.02-.9 1.3-2.22 2.02-3.78 1.72-6.05-1.18-10.98-6.12-12.12-12.19-.29-1.54.43-2.84 1.7-3.73.29-.2.63-.3.96-.3.34 0 .68.12.93.38Z" />
+              </svg>
+            </span>
+            <span v-if="hotlineNumber" class="carers-hotline-number">{{
+              hotlineNumber
+            }}</span>
+            <span v-if="hotlineNumber && hotlineLabel" class="carers-hotline-divider" aria-hidden="true"></span>
+            <span>{{ hotlineLabel }}</span>
+          </div>
+          <button
+            type="button"
+            class="carers-hotline-toggle"
+            :aria-expanded="hotlineExpanded"
+            :aria-label="hotlineExpanded ? 'Collapse hotline details' : 'Expand hotline details'"
+            @click="toggleHotline"
+          >
+            <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
+              <path d="m6 9 6 6 6-6" />
+            </svg>
+          </button>
+        </div>
+        <div
+          v-if="hotlineExpanded && hotlineDescription"
+          class="carers-hotline-detail"
+        >
+          {{ hotlineDescription }}
+        </div>
       </div>
-      <AIWarning :text="aiWarningText" />
+      <AIWarning v-if="!showHotline" :text="aiWarningText" />
     </TFooter>
   </TLayout>
 </template>
@@ -459,43 +537,54 @@ defineExpose({
   height: 100%;
   display: flex;
   flex-direction: column;
-  background: var(--adp-chat-surface-background, #fff8e8);
+  font-family: var(--adp-chat-font-family);
+  font-size: 16px;
+  background: var(--adp-chat-surface-background, #fff);
+  border: 1px solid var(--adp-chat-bubble-border, #b95a25);
+  border-radius: 12px;
+  box-sizing: border-box;
   overflow: hidden;
 }
 .isMobile .layout-header {
-  padding: var(--td-pop-padding-xl) var(--td-comp-margin-xl);
+  height: 38px;
+  min-height: 38px;
+  padding: 0 8px;
 }
 .layout-header {
   flex-shrink: 0;
   display: flex;
-  padding: 0 12px;
+  align-items: center;
+  padding: 0 8px;
   justify-content: space-between;
   height: 38px;
   min-height: 38px;
   background: var(--adp-chat-header-background, #f7943d);
   color: #fff;
-  box-shadow: 0 1px 0 rgba(160, 78, 20, 0.16);
+  border-radius: 11px 11px 0 0;
+  box-shadow: none;
 }
 .header-app-settings {
   display: flex;
   align-items: center;
   flex-shrink: 0;
+  height: 100%;
 }
 
 .layout-header .header-app-settings svg {
   cursor: pointer;
-  margin-left: var(--td-comp-margin-s);
+  margin-left: 18px;
 }
 
 .layout-header .header-app__avatar {
   border-radius: 50%;
-  margin-left: var(--td-comp-margin-s);
+  margin-left: 6px;
   border: 2px solid rgba(255, 255, 255, 0.8);
   background: #fff7e6;
 }
 .layout-header .header-app__title {
   color: #fff;
   font-size: 16px;
+  line-height: 38px;
   font-weight: 700;
   margin-left: 0;
   flex: 1;
@@ -508,13 +597,14 @@ defineExpose({
 .layout-content {
   flex: 1;
   overflow: hidden;
-  background: var(--adp-chat-surface-background, #fff8e8);
+  background: var(--adp-chat-surface-background, #fff);
 }
 
 .layout-footer {
   flex-shrink: 0;
-  padding: 0 10px 8px;
-  background: var(--adp-chat-surface-background, #fff8e8);
+  padding: 0 8px;
+  border-radius: 0 0 11px 11px;
+  background: var(--adp-chat-footer-background);
 }
 .header-app-driver {
   margin: 0 var(--td-size-6) 0 var(--td-size-4);
@@ -524,10 +614,12 @@ defineExpose({
   align-items: center;
   min-width: 0;
   flex: 1;
+  height: 100%;
 }
 :deep(.t-chat__footer) {
   position: relative;
-  background: var(--adp-chat-surface-background, #fff8e8);
+  padding: 0;
+  background: var(--adp-chat-footer-background);
 }
 :deep(.content .t-chat__content, .content .t-chat__detail-reasoning) {
   padding-top: 0;
@@ -588,12 +680,52 @@ defineExpose({
   color: #fff;
 }
 
+:deep(.layout-header .customeized-icon),
+:deep(.layout-header .header-overlay-icon),
+:deep(.layout-header .open-file-list-btn) {
+  color: #fff;
+}
+
+:deep(.layout-header .customeized-icon) {
+  width: 28px;
+  height: 28px;
+}
+
+:deep(.layout-header .customeized-icon svg) {
+  width: 22px;
+  height: 22px;
+}
+
 :deep(.t-chat__list) {
-  background: var(--adp-chat-surface-background, #fff8e8);
+  background: var(--adp-chat-surface-background, #fff);
 }
 
 :deep(.t-chat__content) {
   color: var(--adp-chat-assistant-text, #6f3516);
+}
+
+:deep(.chat-box),
+:deep(.t-chat),
+:deep(.t-chat__list),
+:deep(.t-chat__content),
+:deep(.t-chat__text),
+:deep(.t-chat__detail),
+:deep(.markdown-body),
+:deep(.markdown-body p),
+:deep(.user-message),
+:deep(.terms-message-card),
+:deep(.sender-container) {
+  font-family: var(--adp-chat-font-family);
+}
+
+:deep(.t-chat__text),
+:deep(.t-chat__detail),
+:deep(.markdown-body),
+:deep(.markdown-body p),
+:deep(.user-message),
+:deep(.terms-message-card) {
+  font-size: 16px !important;
+  line-height: 1.5 !important;
 }
 
 :deep(.assistant .t-chat__text),
@@ -609,34 +741,212 @@ defineExpose({
   background: var(--adp-chat-user-bubble-background, #b84222);
   color: var(--adp-chat-user-bubble-text, #fff);
   border: var(--adp-chat-user-bubble-border, none);
-  border-radius: 14px 14px 4px 14px;
+  border-radius: 12px 12px 0 12px;
 }
 
 :deep(.assistant .t-chat__text) {
-  background: var(--adp-chat-assistant-bubble-background, #fff);
+  background: var(--adp-chat-assistant-bubble-background, #ffefd6);
   border: 1px solid var(--adp-chat-bubble-border, #b95a25);
-  border-radius: 14px 14px 14px 4px;
-  box-shadow: 0 2px 0 rgba(185, 90, 37, 0.08);
+  border-radius: 12px 12px 12px 0;
+  box-shadow: none;
+}
+
+:deep(.terms-message-card) {
+  max-width: calc(100% - 40px);
+  padding: 16px;
+  border-radius: 12px 12px 12px 0;
+  background: var(--adp-chat-assistant-bubble-background, #ffefd6);
+  color: var(--adp-chat-assistant-text, #b84319);
+  font-size: 16px;
+  line-height: 1.5;
+  box-shadow: none;
+}
+
+:deep(.terms-message-title) {
+  color: var(--adp-chat-assistant-text, #b84319);
+}
+
+:deep(.terms-actions) {
+  gap: 16px;
+}
+
+:deep(.terms-btn) {
+  flex: 1 1 0;
+  height: 45px;
+  border-radius: 12px;
+  font-size: 16px;
+}
+
+:deep(.sender-container) {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 40px;
+  align-items: center;
+  min-height: 40px;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: none;
+}
+
+:deep(.sender-container.is-focused) {
+  box-shadow: none;
+}
+
+:deep(.sender-editor-area) {
+  grid-column: 1;
+  min-height: 40px;
+  max-height: 88px;
+  display: flex;
+  align-items: center;
+}
+
+:deep(.sender-editor-area .qa-editor),
+:deep(.sender-editor-area .qa-editor__editor),
+:deep(.sender-editor-area .w-e-text-container) {
+  min-height: 40px;
+}
+
+:deep(.sender-editor-area .w-e-text-container [data-slate-editor]) {
+  min-height: 20px;
+  padding: 8px 12px;
+  color: #464747;
+  font-size: 16px;
+  line-height: 23px;
+}
+
+:deep(.sender-editor-area .w-e-text-placeholder) {
+  top: 8px;
+  color: #9a9a9a;
+  font-size: 16px;
+  line-height: 23px;
+}
+
+:deep(.sender-toolbar) {
+  grid-column: 2;
+  height: 40px;
+  padding: 0;
+  justify-content: flex-end;
+}
+
+:deep(.sender-toolbar__left) {
+  display: none;
+}
+
+:deep(.sender-toolbar__right) {
+  width: 40px;
+  height: 40px;
+  justify-content: center;
+}
+
+:deep(.send-icon),
+:deep(.send-icon .customeized-icon),
+:deep(.send-icon svg) {
+  width: 36px;
+  height: 36px;
+}
+
+.carers-hotline-panel {
+  margin: 0 -8px;
+  overflow: hidden;
 }
 
 .carers-hotline-strip {
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 8px;
-  min-height: 28px;
-  margin: 0 auto 6px;
-  padding: 4px 10px;
-  border-radius: 7px;
-  background: #d7f7df;
-  color: #18805d;
-  font-size: 12px;
+  justify-content: space-between;
+  gap: 6px;
+  min-height: 40px;
+  padding: 0 8px;
+  background: var(--adp-chat-footer-background);
+  color: #101111;
+  font-size: 14px;
   font-weight: 700;
+}
+
+.carers-hotline-link {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  min-width: 0;
+  gap: 8px;
+  color: inherit;
   text-decoration: none;
 }
 
+.carers-hotline-icon {
+  width: 24px;
+  height: 24px;
+  flex: 0 0 24px;
+  color: var(--adp-chat-hotline-text, #139c6c);
+}
+
+.carers-hotline-icon svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.1;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.carers-hotline-icon--web svg path:nth-child(2) {
+  fill: currentColor;
+  stroke: none;
+}
+
 .carers-hotline-number {
-  color: #00885b;
-  font-size: 14px;
+  color: var(--adp-chat-hotline-text, #139c6c);
+  font-size: 18px;
+  line-height: 28px;
+  flex: 0 0 auto;
+}
+
+.carers-hotline-divider {
+  width: 1px;
+  height: 12px;
+  flex: 0 0 1px;
+  background: #ababab;
+  margin: 0 2px;
+}
+
+.carers-hotline-toggle {
+  flex: 0 0 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--adp-chat-footer-icon-color, #ff7833);
+  cursor: pointer;
+}
+
+.carers-hotline-toggle svg {
+  width: 24px;
+  height: 24px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: transform 0.18s ease;
+}
+
+.carers-hotline-toggle[aria-expanded="false"] svg {
+  transform: rotate(180deg);
+}
+
+.carers-hotline-detail {
+  min-height: 32px;
+  padding: 4px 16px;
+  border-radius: 0 0 12px 12px;
+  background: var(--adp-chat-hotline-background, #ecfdf0);
+  color: #101111;
+  font-size: 16px;
+  line-height: 24px;
+  text-align: left;
 }
 </style>

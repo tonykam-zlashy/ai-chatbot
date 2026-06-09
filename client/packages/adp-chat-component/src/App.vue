@@ -291,6 +291,17 @@ const panelParkStyle = computed(() => {
       props.chatbotConfig?.theme.assistantText || "#713614",
     "--adp-chat-timestamp-text":
       props.chatbotConfig?.theme.timestampText || "#777",
+    "--adp-chat-footer-background":
+      props.chatbotConfig?.theme.footerBackground ||
+      "linear-gradient(0deg, #FFEFD6 16.5%, #fff 100%), linear-gradient(180deg, #FFEFD6 0%, #FFC284 100%)",
+    "--adp-chat-footer-icon-color":
+      props.chatbotConfig?.theme.footerIconColor ||
+      props.chatbotConfig?.theme.primaryAction ||
+      "#FF7833",
+    "--adp-chat-hotline-background":
+      props.chatbotConfig?.theme.hotlineBackground || "#ECFDF0",
+    "--adp-chat-hotline-text":
+      props.chatbotConfig?.theme.hotlineText || "#139C6C",
   };
   if (actualIsOverlay.value) {
     const width =

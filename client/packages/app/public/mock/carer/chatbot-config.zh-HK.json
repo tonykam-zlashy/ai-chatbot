@@ -31,7 +31,11 @@
     "userBubbleBorder": "none",
     "assistantBubbleBackground": "#FFEFD6",
     "assistantText": "#B84319",
-    "timestampText": "#777"
+    "timestampText": "#777",
+    "footerBackground": "linear-gradient(0deg, #FFEFD6 16.5%, #ffffff 100%), linear-gradient(180deg, #FFEFD6 0%, #FFC284 100%)",
+    "footerIconColor": "#FF7833",
+    "hotlineBackground": "#ECFDF0",
+    "hotlineText": "#139C6C"
   },
   "terms": {
     "enabled": true,
@@ -70,11 +74,11 @@
   },
   "features": {
     "termsGate": true,
-    "fileUpload": false,
-    "voiceInput": false,
+    "fileUpload": true,
+    "voiceInput": true,
     "mockChat": true
   },
   "mockChat": {
-    "reply": "對不起，系統暫時未能分析您的查詢。請您再輸入問題，或提供其他資料以便系統再作分析。"
+    "reply": "呢個係FE 回覆 placeholder，正式聊天功能會喺BE整合階段接入。"
   }
 }

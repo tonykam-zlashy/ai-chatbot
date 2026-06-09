@@ -1235,6 +1235,10 @@ const handleClose = () => {
     emit('close');
 };
 
+const handleMinimize = () => {
+    emit('close');
+};
+
 const handleOverlay = () => {
     emit('overlay', !props.isOverlay);
 };
@@ -1750,7 +1754,7 @@ defineExpose({
                 @widgetEvent="handleInternalWidgetEvent"
             >
                 <template #header-actions>
-                    <Tooltip v-if="!isMobile && chatMode !== 'standard'" :content="mergedFilePreviewI18n.openFileList" destroyOnClose showArrow theme="default">
+                    <Tooltip v-if="!props.isOverlay && !isMobile && chatMode !== 'standard'" :content="mergedFilePreviewI18n.openFileList" destroyOnClose showArrow theme="default">
                         <span class="open-file-list-btn" @click="toggleFilePreview">
                             <CustomizedIcon name="open_file_list" :theme="theme" />
                         </span>
@@ -1758,6 +1762,11 @@ defineExpose({
                 </template>
                 <template #header-overlay-content v-if="showOverlayButton || $slots['header-overlay-content']">
                     <slot name="header-overlay-content">
+                        <button type="button" class="header-minimize-btn" aria-label="Minimize chatbot" @click="handleMinimize">
+                            <svg viewBox="0 0 24 24" focusable="false" role="img" aria-hidden="true">
+                                <path d="M5 12h14" />
+                            </svg>
+                        </button>
                         <CustomizedIcon class="header-overlay-icon" v-if="showOverlayButton" name="overlay" :theme="theme" @click="handleOverlay"/>
                     </slot>
                 </template>
@@ -1802,8 +1811,31 @@ defineExpose({
     -webkit-backdrop-filter: blur(4px);
     z-index: 99;
 }
+.header-minimize-btn,
 .header-overlay-icon{
     margin-left: var(--td-size-4);
+}
+
+.header-minimize-btn {
+    width: var(--td-comp-size-m);
+    height: var(--td-comp-size-m);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: #fff;
+    cursor: pointer;
+}
+
+.header-minimize-btn svg {
+    width: 34px;
+    height: 34px;
+    stroke: currentColor;
+    stroke-width: 2.8;
+    stroke-linecap: round;
+    fill: none;
 }
 
 .open-file-list-btn {

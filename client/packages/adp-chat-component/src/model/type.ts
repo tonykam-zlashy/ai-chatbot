@@ -63,6 +63,10 @@ export interface ChatbotThemeConfig {
   assistantBubbleBackground?: string
   assistantText?: string
   timestampText?: string
+  footerBackground?: string
+  footerIconColor?: string
+  hotlineBackground?: string
+  hotlineText?: string
 }
 
 export interface ChatbotTermsLinkConfig {

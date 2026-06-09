@@ -785,9 +785,9 @@ defineExpose({
   max-width: 100%;
   display: flex;
   flex-direction: column;
-  border: 1px solid var(--adp-chat-bubble-border, #df9a65);
-  border-radius: 10px;
-  background: var(--td-bg-color-container, #fff);
+  border: 0;
+  border-radius: 18px;
+  background: #fff;
   transition:
     border-color 0.2s,
     box-shadow 0.2s;
@@ -795,8 +795,7 @@ defineExpose({
 }
 
 .sender-container.is-focused {
-  border-color: var(--adp-chat-primary-action, #b84222);
-  box-shadow: 0 0 0 2px rgba(184, 66, 34, 0.12);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--adp-chat-footer-icon-color, #ff7833) 18%, transparent);
 }
 
 .sender-container.is-uploading {
@@ -805,9 +804,8 @@ defineExpose({
 }
 
 .sender-container.is-disabled {
-  border-color: #d8d8d8;
-  background: #f1f1f1;
-  opacity: 0.74;
+  background: #fff;
+  opacity: 1;
 }
 
 /* 文件区域 */
@@ -817,8 +815,8 @@ defineExpose({
 
 /* 编辑器区域 */
 .sender-editor-area {
-  max-height: 96px;
-  min-height: 40px;
+  max-height: 72px;
+  min-height: 48px;
   overflow-y: auto;
   overflow-x: hidden;
 }
@@ -828,7 +826,7 @@ defineExpose({
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 2px 8px 7px;
+  padding: 0 10px 0;
   background: transparent;
 }
 
@@ -850,8 +848,8 @@ defineExpose({
 }
 
 .plus-btn {
-  width: 32px;
-  height: 32px;
+  width: 48px;
+  height: 48px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -863,7 +861,7 @@ defineExpose({
 }
 
 .plus-btn:hover {
-  background-color: color-mix(in srgb, var(--adp-chat-primary-action, #b84222) 8%, transparent);
+  background-color: color-mix(in srgb, var(--adp-chat-footer-icon-color, #ff7833) 10%, transparent);
 }
 
 .plus-btn.disabled {
@@ -918,13 +916,16 @@ defineExpose({
 /* 录音按钮 */
 .recording-icon:hover {
   cursor: pointer;
-  color: var(--adp-chat-primary-action, #b84222);
+  color: var(--adp-chat-footer-icon-color, #ff7833);
 }
 
 .recording-icon {
-  height: var(--td-comp-size-m);
+  width: 48px;
+  height: 48px;
+  color: var(--adp-chat-footer-icon-color, #ff7833);
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   margin-right: var(--td-comp-paddingLR-xs);
 }
 
@@ -945,6 +946,26 @@ defineExpose({
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  color: var(--adp-chat-footer-icon-color, #ff7833);
+}
+
+.send-icon :deep(rect) {
+  fill: var(--adp-chat-footer-icon-color, #ff7833) !important;
+}
+
+.send-icon.waiting :deep(rect) {
+  fill: #dcdde1 !important;
+}
+
+.plus-btn :deep(.customeized-icon),
+.recording-icon :deep(.customeized-icon),
+.send-icon :deep(.customeized-icon),
+.plus-btn :deep(svg),
+.recording-icon :deep(svg),
+.send-icon :deep(svg) {
+  color: var(--adp-chat-footer-icon-color, #ff7833);
+  width: 40px;
+  height: 40px;
 }
 
 .send-icon.disabled {

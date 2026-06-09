@@ -14,7 +14,7 @@ Expected backend fields:
 - `assistant.name`, `assistant.headerTitle`, `assistant.launcherAvatarUrl`, `assistant.messageAvatarUrl`, `assistant.greeting`
 - `launcher.enabled`, `launcher.prompt`, `launcher.position`, `launcher.offsetX`, `launcher.offsetY`
 - `panel.width`, `panel.height`, `panel.mobileMode`
-- `theme.mode`, `theme.headerBackground`, `theme.surfaceBackground`, `theme.primaryAction`, `theme.bubbleBorder`, `theme.userBubbleBackground`, `theme.userBubbleText`, `theme.userBubbleBorder`, `theme.assistantBubbleBackground`, `theme.assistantText`, `theme.timestampText`
+- `theme.mode`, `theme.headerBackground`, `theme.surfaceBackground`, `theme.primaryAction`, `theme.bubbleBorder`, `theme.userBubbleBackground`, `theme.userBubbleText`, `theme.userBubbleBorder`, `theme.assistantBubbleBackground`, `theme.assistantText`, `theme.timestampText`, `theme.footerBackground`, `theme.footerIconColor`, `theme.hotlineBackground`, `theme.hotlineText`
 - `terms.enabled`, `terms.storageScope`, `terms.titleTemplate`, `terms.intro`, `terms.links`, `terms.acceptInstruction`, `terms.scamNoticeBefore`, `terms.scamHotlineLabel`, `terms.scamHotlineUrl`, `terms.scamNoticeAfter`, `terms.acceptButton`, `terms.declineButton`, `terms.acceptedUserText`
 - `composer.disabledPlaceholder`, `composer.enabledPlaceholder`
 - `hotline.number`, `hotline.label`, `hotline.description`, `hotline.url`

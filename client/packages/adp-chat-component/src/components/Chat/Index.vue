@@ -1180,7 +1180,7 @@ defineExpose({
   display: flex;
   justify-content: center;
   padding: 0 10px;
-  background: var(--adp-chat-surface-background, #fff8e8);
+  background: var(--adp-chat-footer-background, var(--adp-chat-surface-background, #fff8e8));
 }
 
 :deep(.content .chat-item__content) {

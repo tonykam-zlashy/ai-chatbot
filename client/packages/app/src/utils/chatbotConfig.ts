@@ -44,6 +44,11 @@ const defaultConfigByLanguage: Record<FixtureLanguage, ChatbotConfig> = {
       assistantBubbleBackground: "#FFEFD6",
       assistantText: "#B84319",
       timestampText: "#777",
+      footerBackground:
+        "linear-gradient(0deg, #FFEFD6 16.5%, #ffffff 100%), linear-gradient(180deg, #FFEFD6 0%, #FFC284 100%)",
+      footerIconColor: "#FF7833",
+      hotlineBackground: "#ECFDF0",
+      hotlineText: "#139C6C",
     },
     terms: {
       enabled: true,
@@ -70,8 +75,8 @@ const defaultConfigByLanguage: Record<FixtureLanguage, ChatbotConfig> = {
     },
     features: {
       termsGate: true,
-      fileUpload: false,
-      voiceInput: false,
+      fileUpload: true,
+      voiceInput: true,
       mockChat: true,
     },
     mockChat: {
@@ -113,6 +118,11 @@ const defaultConfigByLanguage: Record<FixtureLanguage, ChatbotConfig> = {
       assistantBubbleBackground: "#FFEFD6",
       assistantText: "#B84319",
       timestampText: "#777",
+      footerBackground:
+        "linear-gradient(0deg, #FFEFD6 16.5%, #ffffff 100%), linear-gradient(180deg, #FFEFD6 0%, #FFC284 100%)",
+      footerIconColor: "#FF7833",
+      hotlineBackground: "#ECFDF0",
+      hotlineText: "#139C6C",
     },
     terms: {
       enabled: true,
@@ -140,8 +150,8 @@ const defaultConfigByLanguage: Record<FixtureLanguage, ChatbotConfig> = {
     },
     features: {
       termsGate: true,
-      fileUpload: false,
-      voiceInput: false,
+      fileUpload: true,
+      voiceInput: true,
       mockChat: true,
     },
     mockChat: {
