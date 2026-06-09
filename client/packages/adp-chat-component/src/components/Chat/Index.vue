@@ -1375,9 +1375,11 @@ defineExpose({
 }
 
 .terms-btn:disabled {
-  opacity: 0.45;
+  opacity: 0.85;
   cursor: not-allowed;
-  filter: grayscale(0.25);
+  background: rgb(241, 240, 240) !important;
+  color: rgb(171, 171, 171) !important;
+  border-color: rgb(241, 240, 240) !important;
 }
 
 /* 确保 AppType 组件容器有足够高度实现垂直居中 */

@@ -1282,6 +1282,7 @@ const referenceDialogTitle = computed(() => {
   background: var(--adp-chat-user-bubble-background, #fff5ee);
   color: var(--adp-chat-user-bubble-text, #3d1a08);
   border-radius: 12px 12px 0 12px;
+  padding: 16px 8px;
 }
 
 /* Ensure paragraphs inherit it */
