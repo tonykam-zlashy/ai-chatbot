@@ -2182,7 +2182,7 @@ defineExpose({
 }
 
 .header-minimize-btn:hover {
-  background-color: var(--td-bg-color-container-active, rgba(0, 0, 0, 0.05));
+  background-color: rgba(0, 0, 0, 0.04);
 }
 
 .header-minimize-btn:focus,
@@ -2209,5 +2209,11 @@ defineExpose({
   height: 28px;
   cursor: pointer;
   color: inherit;
+  border-radius: var(--td-radius-default, 4px);
+  transition: background-color 0.2s ease;
+}
+
+.open-file-list-btn:hover {
+  background-color: rgba(0, 0, 0, 0.04);
 }
 </style>

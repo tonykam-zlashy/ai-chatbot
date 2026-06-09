@@ -69,6 +69,7 @@ import pause from '../assets/icons/pause.svg?raw';
 import send_dark from '../assets/icons/send_dark.svg?raw';
 import send_fill from '../assets/icons/send_fill.svg?raw';
 import send from '../assets/icons/send.svg?raw';
+import send_outline from '../assets/icons/send_outline.svg?raw';
 import thinking from '../assets/icons/thinking.svg?raw';
 import voice_input from '../assets/icons/voice_input.svg?raw';
 import open_file_list from '../assets/icons/open_file_list.svg?raw';
@@ -88,6 +89,7 @@ const svgMap: Record<string, string> = {
     send_dark,
     send_fill,
     send,
+    send_outline,
     thinking,
     voice_input,
     open_file_list,
@@ -310,13 +312,8 @@ function processSvg(content: string, isNative: boolean): string {
     transition: background-color 0.2s ease, color 0.2s ease;
 }
 
-/* hover 背景效果 - 仅对非原生图标生效 */
-.customeized-icon.normal.showHoverBg:hover {
-    background-color: var(--td-bg-color-container-active, rgba(0, 0, 0, 0.05));
-}
-
-/* 暗色模式下的 hover 背景 */
-.customeized-icon.svg-dark-mode.normal.showHoverBg:hover {
-    background-color: var(--td-bg-color-container-active, rgba(255, 255, 255, 0.1));
+/* hover 背景效果 */
+.customeized-icon.showHoverBg:hover {
+    background-color: rgba(0, 0, 0, 0.04);
 }
 </style>

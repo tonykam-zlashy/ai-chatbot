@@ -246,7 +246,7 @@ function handleDownload(file: FileInfo) {
 }
 
 .assistant-file-card__download:hover {
-    background-color: var(--td-bg-color-container-hover, #f3f3f3);
+    background-color: rgba(0, 0, 0, 0.04);
     color: var(--td-brand-color, #0052d9);
 }
 

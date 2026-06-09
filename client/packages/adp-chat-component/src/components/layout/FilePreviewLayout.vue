@@ -386,7 +386,7 @@ defineExpose({
 }
 
 .file-preview-panel__toggle-dir:hover {
-    background-color: var(--td-bg-color-container-hover, #f3f3f3);
+    background-color: rgba(0, 0, 0, 0.04);
     color: var(--td-text-color-primary);
 }
 
@@ -415,7 +415,7 @@ defineExpose({
 }
 
 .file-preview-panel__close:hover {
-    background-color: var(--td-bg-color-container-hover, #f3f3f3);
+    background-color: rgba(0, 0, 0, 0.04);
     color: var(--td-text-color-primary);
 }
 

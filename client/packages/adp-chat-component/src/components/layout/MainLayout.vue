@@ -172,6 +172,12 @@ const themeStyle = computed(() => ({
   "--adp-chat-footer-background":
     props.chatbotConfig?.theme.footerBackground ||
     "linear-gradient(0deg, #FFEFD6 16.5%, #fff 100%), linear-gradient(180deg, #FFEFD6 0%, #FFC284 100%)",
+  "--adp-chat-layout-footer-height":
+    showHotline.value && hotlineExpanded.value && hotlineDescription.value
+      ? "72px"
+      : showHotline.value
+        ? "40px"
+        : "32px",
   "--adp-chat-footer-icon-color":
     props.chatbotConfig?.theme.footerIconColor ||
     props.chatbotConfig?.theme.primaryAction ||
@@ -478,21 +484,13 @@ defineExpose({
               rel="noopener noreferrer"
               aria-label="Open chatbot tutorial"
             >
-              <svg viewBox="0 0 24 24" focusable="false">
-                <path d="M3.5 5.75h17v12.5h-17z" />
-                <path d="M9.25 8.5l6 3.5-6 3.5z" />
-                <path d="M8 21h8" />
-              </svg>
+              <span aria-hidden="true"></span>
             </a>
             <span
               class="carers-hotline-icon carers-hotline-icon--phone"
               aria-hidden="true"
             >
-              <svg viewBox="0 0 24 24" focusable="false">
-                <path
-                  d="M6.6 3.8 9.4 7c.45.52.46 1.3.03 1.84l-1.18 1.48c1.05 2.18 2.78 3.92 5 5.03l1.55-1.22c.54-.43 1.33-.41 1.84.05l3.02 2.72c.58.52.69 1.38.25 2.02-.9 1.3-2.22 2.02-3.78 1.72-6.05-1.18-10.98-6.12-12.12-12.19-.29-1.54.43-2.84 1.7-3.73.29-.2.63-.3.96-.3.34 0 .68.12.93.38Z"
-                />
-              </svg>
+              <span></span>
             </span>
             <a
               v-if="hotlineNumber"
@@ -611,6 +609,12 @@ defineExpose({
   padding: 0 8px;
   border-radius: 0 0 11px 11px;
   background: var(--adp-chat-footer-background);
+  background-size: 100%
+    calc(
+      var(--chat-composer-footer-height, 41px) +
+        var(--adp-chat-layout-footer-height, 72px)
+    );
+  background-position: bottom;
 }
 .header-app-driver {
   margin: 0 var(--td-size-6) 0 var(--td-size-4);
@@ -626,6 +630,12 @@ defineExpose({
   position: relative;
   padding: 0;
   background: var(--adp-chat-footer-background);
+  background-size: 100%
+    calc(
+      var(--chat-composer-footer-height, 41px) +
+        var(--adp-chat-layout-footer-height, 72px)
+    );
+  background-position: top;
 }
 :deep(.content .t-chat__content, .content .t-chat__detail-reasoning) {
   padding-top: 0;
@@ -690,6 +700,12 @@ defineExpose({
 :deep(.layout-header .header-overlay-icon),
 :deep(.layout-header .open-file-list-btn) {
   color: #fff;
+}
+
+:deep(.layout-header .customeized-icon:hover),
+:deep(.layout-header .header-overlay-icon:hover),
+:deep(.layout-header .open-file-list-btn:hover) {
+  background-color: rgba(0, 0, 0, 0.04);
 }
 
 :deep(.layout-header .customeized-icon) {
@@ -790,16 +806,20 @@ defineExpose({
 
 :deep(.sender-container) {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 40px;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
   min-height: 40px;
-  border-radius: 12px;
-  background: #fff;
+  border-radius: 0;
+  background: transparent;
   box-shadow: none;
 }
 
 :deep(.sender-container.is-focused) {
   box-shadow: none;
+}
+
+:deep(.sender-container.is-disabled) {
+  background: transparent;
 }
 
 :deep(.sender-editor-area) {
@@ -808,6 +828,9 @@ defineExpose({
   max-height: 88px;
   display: flex;
   align-items: center;
+  border-radius: 12px;
+  background: #fff;
+  overflow: hidden;
 }
 
 :deep(.sender-editor-area .qa-editor),
@@ -843,7 +866,8 @@ defineExpose({
 }
 
 :deep(.sender-toolbar__right) {
-  width: 40px;
+  width: auto;
+  min-width: max-content;
   height: 40px;
   justify-content: center;
 }
@@ -929,6 +953,28 @@ defineExpose({
   stroke: none;
 }
 
+.carers-hotline-icon--web span {
+  display: block;
+  width: 24px;
+  height: 24px;
+  background-color: currentColor;
+  mask: url("https://carers-webchat.aienchat.com/video-outlined.svg") center /
+    contain no-repeat;
+  -webkit-mask: url("https://carers-webchat.aienchat.com/video-outlined.svg")
+    center / contain no-repeat;
+}
+
+.carers-hotline-icon--phone span {
+  display: block;
+  width: 24px;
+  height: 24px;
+  background-color: currentColor;
+  mask: url("https://carers-webchat.aienchat.com/phone.svg") center / contain
+    no-repeat;
+  -webkit-mask: url("https://carers-webchat.aienchat.com/phone.svg") center /
+    contain no-repeat;
+}
+
 .carers-hotline-number {
   color: var(--adp-chat-hotline-text, #139c6c);
   font-weight: bold;
@@ -964,6 +1010,10 @@ defineExpose({
 .carers-hotline-toggle:active {
   outline: none;
   box-shadow: none;
+}
+
+.carers-hotline-toggle:hover {
+  background-color: rgba(0, 0, 0, 0.04);
 }
 
 .carers-hotline-toggle svg {

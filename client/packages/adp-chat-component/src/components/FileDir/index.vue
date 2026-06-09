@@ -318,7 +318,7 @@ onBeforeUnmount(() => {
 }
 
 .file-dir-action:hover {
-    background-color: var(--td-bg-color-container-hover);
+    background-color: rgba(0, 0, 0, 0.04);
     color: var(--td-text-color-primary);
 }
 
@@ -381,7 +381,7 @@ onBeforeUnmount(() => {
 }
 
 .file-download-btn:hover {
-    background-color: var(--td-bg-color-container-hover);
+    background-color: rgba(0, 0, 0, 0.04);
     color: var(--td-brand-color);
 }
 

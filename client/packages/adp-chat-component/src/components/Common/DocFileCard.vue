@@ -322,6 +322,7 @@ const fileSizeDisplay = computed(() => {
 }
 
 .delete-btn:hover {
+    background: rgba(0, 0, 0, 0.04);
     color: var(--td-error-color, #e34d59);
 }
 

@@ -757,6 +757,10 @@ const updateFooterHeight = () => {
   if (footer) {
     const height = footer.offsetHeight;
     document.documentElement.style.setProperty(
+      "--chat-composer-footer-height",
+      `${height}px`,
+    );
+    document.documentElement.style.setProperty(
       "--chat-footer-height",
       `${height + 18}px`,
     );

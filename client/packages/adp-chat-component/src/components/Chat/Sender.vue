@@ -1,11 +1,10 @@
 <!-- 消息发送组件，支持富文本编辑、图片上传、文件上传、语音输入 -->
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, nextTick } from "vue";
+import { ref, computed, nextTick } from "vue";
 import { MessagePlugin, Tooltip as TTooltip } from "tdesign-vue-next";
 import type { FileProps } from "../../model/file";
 import {
   ALLOWED_IMAGE_TYPES,
-  ALLOWED_DOC_TYPES,
   FILE_SIZE_LIMITS,
   FILE_COUNT_LIMIT,
   getFileCategory,
@@ -105,13 +104,10 @@ const recordRef = ref<ReturnType<typeof setTimeout> | null>(null);
 const qaEditorRef = ref<InstanceType<typeof QaEditor> | null>(null);
 const inputValueBefore = ref("");
 
-/**
- * 加号菜单状态
- */
-const showPlusMenu = ref(false);
-const plusMenuRef = ref<HTMLDivElement | null>(null);
 const imageInputRef = ref<HTMLInputElement | null>(null);
-const fileInputRef = ref<HTMLInputElement | null>(null);
+const imageUploadIconUrl =
+  "https://carers-webchat.aienchat.com/add-photo-alternate.svg";
+const voiceInputIconUrl = "https://carers-webchat.aienchat.com/microphone.svg";
 
 /**
  * 图片 accept 属性
@@ -120,11 +116,6 @@ const imageAccept = ALLOWED_IMAGE_TYPES.map((t) => {
   const ext = t.split("/")[1];
   return `.${ext === "jpeg" ? "jpg,.jpeg" : ext}`;
 }).join(",");
-
-/**
- * 文件 accept 属性
- */
-const fileAccept = ".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt,.md,.csv,.json";
 
 const placeholder = computed(() => {
   if (props.disabled) {
@@ -140,47 +131,12 @@ const placeholder = computed(() => {
     : i18n.value.placeholder || "";
 });
 
-onMounted(() => {
-  document.addEventListener("click", handleClickOutside);
-});
-
-onUnmounted(() => {
-  document.removeEventListener("click", handleClickOutside);
-});
-
-/**
- * 点击外部关闭菜单
- */
-const handleClickOutside = (e: MouseEvent) => {
-  if (plusMenuRef.value && !plusMenuRef.value.contains(e.target as Node)) {
-    showPlusMenu.value = false;
-  }
-};
-
-/**
- * 切换加号菜单
- */
-const togglePlusMenu = () => {
-  if (props.disabled || props.isUploading) return;
-  showPlusMenu.value = !showPlusMenu.value;
-};
-
 /**
  * 选择图片
  */
 const handleSelectImage = () => {
   if (props.disabled || props.isUploading) return;
-  showPlusMenu.value = false;
   imageInputRef.value?.click();
-};
-
-/**
- * 选择文件
- */
-const handleSelectFile = () => {
-  if (props.disabled || props.isUploading) return;
-  showPlusMenu.value = false;
-  fileInputRef.value?.click();
 };
 
 /**
@@ -309,10 +265,6 @@ const isExtensionAllowed = (
 
 const handleImageInputChange = (event: Event) => {
   handleFilesSelected(event, ALLOWED_IMAGE_TYPES);
-};
-
-const handleFileInputChange = (event: Event) => {
-  handleFilesSelected(event, ALLOWED_DOC_TYPES);
 };
 
 const handleDeleteFile = (index: number) => {
@@ -659,81 +611,61 @@ defineExpose({
 
     <!-- 底部工具栏 -->
     <div class="sender-toolbar">
-      <div class="sender-toolbar__left">
-        <!-- 加号菜单按钮 -->
-        <div
-          v-if="enableFileUpload"
-          ref="plusMenuRef"
-          class="plus-menu-wrapper"
-        >
+      <div class="sender-toolbar__right">
+        <CustomizedIcon
+          class="sender-action-icon send-icon waiting"
+          :class="{ disabled: sendDisabled }"
+          v-if="!isStreamLoad && !hasContent"
+          :showHoverBg="false"
+          name="send_outline"
+          :theme="theme"
+          @click="handleSend"
+        />
+        <CustomizedIcon
+          class="sender-action-icon send-icon success"
+          :class="{ disabled: sendDisabled }"
+          v-if="!isStreamLoad && hasContent"
+          :showHoverBg="false"
+          name="send_outline"
+          :theme="theme"
+          @click="handleSend"
+        />
+        <CustomizedIcon
+          class="sender-action-icon send-icon stop"
+          v-if="isStreamLoad"
+          nativeIcon
+          :showHoverBg="false"
+          :name="theme === 'dark' ? 'pause_dark' : 'pause'"
+          @click="emit('stop')"
+        />
+
+        <TTooltip v-if="enableFileUpload" :content="i18n.uploadImage">
           <span
-            class="plus-btn"
-            :class="{ active: showPlusMenu, disabled: isUploading || disabled }"
-            @click="togglePlusMenu"
+            class="sender-action-icon image-upload-icon"
+            :class="{ disabled: isUploading || disabled }"
+            @click="handleSelectImage"
           >
-            <CustomizedIcon
-              remote
-              name="basic_new_line"
-              :theme="theme"
-              :showHoverBg="false"
+            <img
+              class="sender-action-icon__img"
+              :src="imageUploadIconUrl"
+              alt=""
             />
           </span>
-          <Transition name="fade-up">
-            <div v-if="showPlusMenu" class="plus-menu-popover">
-              <div class="plus-menu-item" @click="handleSelectImage">
-                <CustomizedIcon
-                  remote
-                  name="basic_picture_line"
-                  :theme="theme"
-                  size="s"
-                  :showHoverBg="false"
-                />
-                <span>{{ i18n.uploadImage }}</span>
-              </div>
-              <div class="plus-menu-item" @click="handleSelectFile">
-                <CustomizedIcon
-                  remote
-                  name="basic_file_line"
-                  :theme="theme"
-                  size="s"
-                  :showHoverBg="false"
-                />
-                <span>{{ i18n.uploadFile }}</span>
-              </div>
-            </div>
-          </Transition>
-          <!-- 隐藏的文件选择 input -->
-          <input
-            ref="imageInputRef"
-            type="file"
-            :accept="imageAccept"
-            multiple
-            hidden
-            @change="handleImageInputChange"
-          />
-          <input
-            ref="fileInputRef"
-            type="file"
-            :accept="fileAccept"
-            multiple
-            hidden
-            @change="handleFileInputChange"
-          />
-        </div>
+        </TTooltip>
 
         <TTooltip
           v-if="enableVoiceInput && !recording"
           :content="i18n.startRecord"
         >
           <span
-            class="recording-icon"
-            :class="{ isMobile: isMobile, disabled: disabled }"
+            class="sender-action-icon recording-icon"
+            :class="{ isMobile: isMobile, disabled: sendDisabled }"
             @click="handleStartRecord"
           >
-            <CustomizedIcon
-              name="voice_input"
-              :theme="theme"
-              :showHoverBg="!isMobile"
+            <img
+              class="sender-action-icon__img"
+              :src="voiceInputIconUrl"
+              alt=""
             />
           </span>
         </TTooltip>
@@ -743,41 +675,22 @@ defineExpose({
           :content="i18n.stopRecord"
         >
           <span
-            class="recording-icon stop-icon"
+            class="sender-action-icon recording-icon stop-icon"
             :class="{ isMobile: isMobile }"
             @click="handleStopRecord"
           >
             <RecordIcon />
           </span>
         </TTooltip>
-      </div>
 
-      <div class="sender-toolbar__right">
-        <CustomizedIcon
-          class="send-icon waiting"
-          :class="{ disabled: sendDisabled }"
-          v-if="!isStreamLoad && !hasContent"
-          nativeIcon
-          :showHoverBg="false"
-          :name="theme === 'dark' ? 'send_dark' : 'send'"
-          @click="handleSend"
-        />
-        <CustomizedIcon
-          class="send-icon success"
-          :class="{ disabled: sendDisabled }"
-          v-if="!isStreamLoad && hasContent"
-          nativeIcon
-          :showHoverBg="false"
-          name="send_fill"
-          @click="handleSend"
-        />
-        <CustomizedIcon
-          class="send-icon stop"
-          v-if="isStreamLoad"
-          nativeIcon
-          :showHoverBg="false"
-          :name="theme === 'dark' ? 'pause_dark' : 'pause'"
-          @click="emit('stop')"
+        <!-- 隐藏的文件选择 input -->
+        <input
+          ref="imageInputRef"
+          type="file"
+          :accept="imageAccept"
+          multiple
+          hidden
+          @change="handleImageInputChange"
         />
       </div>
     </div>
@@ -792,6 +705,8 @@ defineExpose({
   flex-direction: column;
   border: 0;
   border-radius: 18px;
+  margin-left: 12px;
+  margin-top: 4px;
   background: #fff;
   transition:
     border-color 0.2s,
@@ -834,120 +749,55 @@ defineExpose({
 /* 底部工具栏 */
 .sender-toolbar {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-end;
   align-items: center;
   padding: 0 10px 0;
   background: transparent;
 }
 
-.sender-toolbar__left {
-  display: flex;
-  align-items: center;
-}
-
 .sender-toolbar__right {
   display: flex;
   align-items: center;
+  gap: 8px;
 }
 
-/* 加号菜单 */
-.plus-menu-wrapper {
+/* 图片上传和录音按钮 */
+.sender-action-icon:hover {
+  cursor: pointer;
+  background-color: rgba(0, 0, 0, 0.04);
+  color: var(--adp-chat-footer-icon-color, #ff7833);
+  scale: 1.1;
+  opacity: 1;
+}
+
+.sender-action-icon {
   position: relative;
-  display: inline-flex;
-  align-items: center;
-}
-
-.plus-btn {
   width: 48px;
   height: 48px;
+  opacity: 0.8;
+  color: var(--adp-chat-footer-icon-color, #ff7833);
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  cursor: pointer;
   border-radius: var(--td-radius-default, 4px);
   transition:
-    background 0.2s,
-    transform 0.2s;
+    background-color 0.2s ease,
+    color 0.2s ease,
+    opacity 0.2s ease,
+    transform 0.2s ease;
 }
 
-.plus-btn:hover {
-  background-color: color-mix(
-    in srgb,
-    var(--adp-chat-footer-icon-color, #ff7833) 10%,
-    transparent
-  );
-}
-
-.plus-btn.disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-  pointer-events: none;
-}
-
-.plus-menu-popover {
-  position: absolute;
-  bottom: calc(100% + 8px);
-  left: 0;
-  width: 140px;
-  padding: 6px;
-  border-radius: 8px;
-  background: var(--td-bg-color-container, #fff);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
-  z-index: 2000;
-}
-
-.plus-menu-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px;
-  border-radius: 6px;
-  font-size: 13px;
-  line-height: 20px;
-  color: rgba(0, 0, 0, 0.8);
-  cursor: pointer;
-  transition: background 0.15s;
-}
-
-.plus-menu-item:hover {
-  background-color: var(--td-bg-color-container-active, rgba(0, 0, 0, 0.05));
-}
-
-/* 菜单出入动画 */
-.fade-up-enter-active,
-.fade-up-leave-active {
-  transition:
-    opacity 0.15s,
-    transform 0.15s;
-}
-
-.fade-up-enter-from,
-.fade-up-leave-to {
-  opacity: 0;
-  transform: translateY(4px);
-}
-
-/* 录音按钮 */
-.recording-icon:hover {
-  cursor: pointer;
-  color: var(--adp-chat-footer-icon-color, #ff7833);
-}
-
-.recording-icon {
-  width: 48px;
-  height: 48px;
-  color: var(--adp-chat-footer-icon-color, #ff7833);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  margin-right: var(--td-comp-paddingLR-xs);
+.sender-action-icon__img {
+  width: 40px;
+  height: 40px;
+  display: block;
 }
 
 .recording-icon.isMobile {
-  margin-right: var(--td-comp-paddingLR-m);
+  margin-right: 0;
 }
 
-.recording-icon.disabled {
+.sender-action-icon.disabled {
   opacity: 0.4;
   cursor: not-allowed;
   pointer-events: none;
@@ -956,26 +806,11 @@ defineExpose({
 /* 发送按钮 */
 .send-icon {
   padding: 0 !important;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--adp-chat-footer-icon-color, #ff7833);
 }
 
-.send-icon :deep(rect) {
-  fill: var(--adp-chat-footer-icon-color, #ff7833) !important;
-}
-
-.send-icon.waiting :deep(rect) {
-  fill: #dcdde1 !important;
-}
-
-.plus-btn :deep(.customeized-icon),
-.recording-icon :deep(.customeized-icon),
+.sender-action-icon :deep(.customeized-icon),
 .send-icon :deep(.customeized-icon),
-.plus-btn :deep(svg),
-.recording-icon :deep(svg),
+.sender-action-icon :deep(svg),
 .send-icon :deep(svg) {
   color: var(--adp-chat-footer-icon-color, #ff7833);
   width: 40px;

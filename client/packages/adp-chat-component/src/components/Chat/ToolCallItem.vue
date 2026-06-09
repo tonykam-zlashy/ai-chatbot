@@ -450,7 +450,7 @@ function detectLanguage(): string {
 
 .tool-call-item__action-btn:hover {
     color: var(--td-text-color-primary);
-    background: var(--td-bg-color-container-hover, rgba(0, 0, 0, 0.04));
+    background: rgba(0, 0, 0, 0.04);
 }
 
 /* 查看按钮 */
@@ -490,7 +490,7 @@ function detectLanguage(): string {
 
 .tool-call-item__copy-btn:hover {
     color: var(--td-text-color-primary);
-    background: var(--td-bg-color-container-hover, rgba(0, 0, 0, 0.04));
+    background: rgba(0, 0, 0, 0.04);
 }
 
 .tool-call-item__copy-btn :deep(.customeized-icon) {
