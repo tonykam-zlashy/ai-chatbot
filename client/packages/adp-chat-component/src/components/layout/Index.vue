@@ -1817,8 +1817,8 @@ defineExpose({
 }
 
 .header-minimize-btn {
-    width: var(--td-comp-size-m);
-    height: var(--td-comp-size-m);
+    width: 28px;
+    height: 28px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -1827,13 +1827,26 @@ defineExpose({
     background: transparent;
     color: #fff;
     cursor: pointer;
+    border-radius: var(--td-radius-default, 4px);
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.header-minimize-btn:hover {
+    background-color: var(--td-bg-color-container-active, rgba(0, 0, 0, 0.05));
+}
+
+.header-minimize-btn:focus,
+.header-minimize-btn:focus-visible,
+.header-minimize-btn:active {
+    outline: none;
+    box-shadow: none;
 }
 
 .header-minimize-btn svg {
-    width: 34px;
-    height: 34px;
+    width: 24px;
+    height: 24px;
     stroke: currentColor;
-    stroke-width: 2.8;
+    stroke-width: 2;
     stroke-linecap: round;
     fill: none;
 }
@@ -1842,16 +1855,9 @@ defineExpose({
     display: flex;
     align-items: center;
     justify-content: center;
-    width: var(--td-comp-size-m);
-    height: var(--td-comp-size-m);
-    border-radius: var(--td-radius-medium);
+    width: 28px;
+    height: 28px;
     cursor: pointer;
-    color: var(--td-text-color-secondary);
-    transition: all 0.2s;
-}
-
-.open-file-list-btn:hover {
-    color: var(--td-brand-color);
-    background: var(--td-bg-color-container-hover);
+    color: inherit;
 }
 </style>

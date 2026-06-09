@@ -70,7 +70,7 @@
     "number": "182 183",
     "label": "24小時照顧者支援專線",
     "description": "如需要社工協助，請致電182183。",
-    "url": "tel:182183"
+    "url": "https://carers.hk/chatbot-tutorial"
   },
   "features": {
     "termsGate": true,

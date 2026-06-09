@@ -122,6 +122,16 @@ const defaultApplicationAvatar = computed(
 const hotlineLabel = computed(() => props.chatbotConfig?.hotline.label || "");
 const hotlineNumber = computed(() => props.chatbotConfig?.hotline.number || "");
 const hotlineUrl = computed(() => props.chatbotConfig?.hotline.url || "");
+const hotlineTutorialUrl = computed(() => {
+  const url = hotlineUrl.value.trim();
+  return url && !url.toLowerCase().startsWith("tel:")
+    ? url
+    : "https://carers.hk/chatbot-tutorial";
+});
+const hotlineTelUrl = computed(() => {
+  const dialNumber = hotlineNumber.value.replace(/[^\d+]/g, "");
+  return dialNumber ? `tel:${dialNumber}` : "";
+});
 const hotlineDescription = computed(
   () => props.chatbotConfig?.hotline.description || "",
 );
@@ -463,47 +473,33 @@ defineExpose({
     <TFooter class="layout-footer">
       <div v-if="showHotline" class="carers-hotline-panel">
         <div class="carers-hotline-strip">
-          <a
-            v-if="hotlineUrl"
-            class="carers-hotline-link"
-            :href="hotlineUrl"
-          >
-            <span class="carers-hotline-icon carers-hotline-icon--web" aria-hidden="true">
+          <div class="carers-hotline-link">
+            <a
+              class="carers-hotline-icon carers-hotline-icon--web carers-hotline-action"
+              :href="hotlineTutorialUrl"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Open chatbot tutorial"
+            >
               <svg viewBox="0 0 24 24" focusable="false">
                 <path d="M3.5 5.75h17v12.5h-17z" />
                 <path d="M9.25 8.5l6 3.5-6 3.5z" />
                 <path d="M8 21h8" />
               </svg>
-            </span>
+            </a>
             <span class="carers-hotline-icon carers-hotline-icon--phone" aria-hidden="true">
               <svg viewBox="0 0 24 24" focusable="false">
                 <path d="M6.6 3.8 9.4 7c.45.52.46 1.3.03 1.84l-1.18 1.48c1.05 2.18 2.78 3.92 5 5.03l1.55-1.22c.54-.43 1.33-.41 1.84.05l3.02 2.72c.58.52.69 1.38.25 2.02-.9 1.3-2.22 2.02-3.78 1.72-6.05-1.18-10.98-6.12-12.12-12.19-.29-1.54.43-2.84 1.7-3.73.29-.2.63-.3.96-.3.34 0 .68.12.93.38Z" />
               </svg>
             </span>
-            <span v-if="hotlineNumber" class="carers-hotline-number">{{
-              hotlineNumber
-            }}</span>
+            <a
+              v-if="hotlineNumber"
+              class="carers-hotline-number carers-hotline-action"
+              :href="hotlineTelUrl"
+              >{{ hotlineNumber }}</a
+            >
             <span v-if="hotlineNumber && hotlineLabel" class="carers-hotline-divider" aria-hidden="true"></span>
-            <span>{{ hotlineLabel }}</span>
-          </a>
-          <div v-else class="carers-hotline-link">
-            <span class="carers-hotline-icon carers-hotline-icon--web" aria-hidden="true">
-              <svg viewBox="0 0 24 24" focusable="false">
-                <path d="M3.5 5.75h17v12.5h-17z" />
-                <path d="M9.25 8.5l6 3.5-6 3.5z" />
-                <path d="M8 21h8" />
-              </svg>
-            </span>
-            <span class="carers-hotline-icon carers-hotline-icon--phone" aria-hidden="true">
-              <svg viewBox="0 0 24 24" focusable="false">
-                <path d="M6.6 3.8 9.4 7c.45.52.46 1.3.03 1.84l-1.18 1.48c1.05 2.18 2.78 3.92 5 5.03l1.55-1.22c.54-.43 1.33-.41 1.84.05l3.02 2.72c.58.52.69 1.38.25 2.02-.9 1.3-2.22 2.02-3.78 1.72-6.05-1.18-10.98-6.12-12.12-12.19-.29-1.54.43-2.84 1.7-3.73.29-.2.63-.3.96-.3.34 0 .68.12.93.38Z" />
-              </svg>
-            </span>
-            <span v-if="hotlineNumber" class="carers-hotline-number">{{
-              hotlineNumber
-            }}</span>
-            <span v-if="hotlineNumber && hotlineLabel" class="carers-hotline-divider" aria-hidden="true"></span>
-            <span>{{ hotlineLabel }}</span>
+            <span class="carers-hotline-label">{{ hotlineLabel }}</span>
           </div>
           <button
             type="button"
@@ -692,8 +688,8 @@ defineExpose({
 }
 
 :deep(.layout-header .customeized-icon svg) {
-  width: 22px;
-  height: 22px;
+  width: 24px;
+  height: 24px;
 }
 
 :deep(.t-chat__list) {
@@ -872,17 +868,40 @@ defineExpose({
   text-decoration: none;
 }
 
+.carers-hotline-action {
+  color: inherit;
+  text-decoration: none;
+}
+
+.carers-hotline-action:focus,
+.carers-hotline-action:focus-visible,
+.carers-hotline-action:active {
+  outline: none;
+  box-shadow: none;
+}
+
 .carers-hotline-icon {
   width: 24px;
   height: 24px;
+  min-width: 24px;
   flex: 0 0 24px;
   color: var(--adp-chat-hotline-text, #139c6c);
 }
 
+.carers-hotline-action.carers-hotline-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  min-width: 24px;
+}
+
 .carers-hotline-icon svg {
   display: block;
-  width: 100%;
-  height: 100%;
+  width: 24px;
+  height: 24px;
+  flex: 0 0 24px;
   fill: none;
   stroke: currentColor;
   stroke-width: 2.1;
@@ -897,8 +916,8 @@ defineExpose({
 
 .carers-hotline-number {
   color: var(--adp-chat-hotline-text, #139c6c);
-  font-size: 18px;
-  line-height: 28px;
+  font-size: 16px;
+  line-height: 24px;
   flex: 0 0 auto;
 }
 
@@ -922,6 +941,13 @@ defineExpose({
   background: transparent;
   color: var(--adp-chat-footer-icon-color, #ff7833);
   cursor: pointer;
+}
+
+.carers-hotline-toggle:focus,
+.carers-hotline-toggle:focus-visible,
+.carers-hotline-toggle:active {
+  outline: none;
+  box-shadow: none;
 }
 
 .carers-hotline-toggle svg {

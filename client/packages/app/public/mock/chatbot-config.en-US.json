@@ -66,7 +66,7 @@
     "number": "182 183",
     "label": "24-Hour Designated Hotline for Carer Support",
     "description": "Call 182183 if you need assistance from a social worker.",
-    "url": "tel:182183"
+    "url": "https://carers.hk/chatbot-tutorial"
   },
   "features": {
     "termsGate": true,
