@@ -920,27 +920,27 @@ defineExpose({
 }
 
 .carers-hotline-icon {
-  width: 24px;
-  height: 24px;
-  min-width: 24px;
-  flex: 0 0 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  min-width: 28px;
+  flex: 0 0 28px;
   color: var(--adp-chat-hotline-text, #139c6c);
 }
 
 .carers-hotline-action.carers-hotline-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 24px;
-  height: 24px;
-  min-width: 24px;
+  width: 28px;
+  height: 28px;
+  min-width: 28px;
 }
 
 .carers-hotline-icon svg {
   display: block;
-  width: 24px;
-  height: 24px;
-  flex: 0 0 24px;
+  width: 28px;
+  height: 28px;
+  flex: 0 0 28px;
   fill: none;
   stroke: currentColor;
   stroke-width: 2.1;
@@ -955,8 +955,8 @@ defineExpose({
 
 .carers-hotline-icon--web span {
   display: block;
-  width: 24px;
-  height: 24px;
+  width: 28px;
+  height: 28px;
   background-color: currentColor;
   mask: url("https://carers-webchat.aienchat.com/video-outlined.svg") center /
     contain no-repeat;

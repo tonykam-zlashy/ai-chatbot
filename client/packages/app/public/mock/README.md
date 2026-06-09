@@ -19,7 +19,7 @@ Expected backend fields:
 - `composer.disabledPlaceholder`, `composer.enabledPlaceholder`
 - `hotline.number`, `hotline.label`, `hotline.description`, `hotline.url`
 - `features.termsGate`, `features.fileUpload`, `features.voiceInput`, `features.mockChat`
-- `mockChat.reply`
+- `mockChat.reply`, `mockChat.errorReply`
 
 `theme.headerBackground` is applied as a CSS `background` value, so it can be a
 solid color such as `#f7943d` or a gradient such as

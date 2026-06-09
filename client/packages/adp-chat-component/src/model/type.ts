@@ -111,6 +111,7 @@ export interface ChatbotFeatureConfig {
 
 export interface ChatbotMockChatConfig {
   reply: string
+  errorReply?: string
 }
 
 /**

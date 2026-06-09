@@ -79,6 +79,7 @@
     "mockChat": true
   },
   "mockChat": {
-    "reply": "This is a FE mock reply placeholder. The formal chat functionality will be integrated in the BE integration phase."
+    "reply": "This is a FE mock reply placeholder. The formal chat functionality will be integrated in the BE integration phase.",
+    "errorReply": "Sorry, the system is temporarily unable to analyze your query. Please enter your question again or provide more information for further analysis."
   }
 }

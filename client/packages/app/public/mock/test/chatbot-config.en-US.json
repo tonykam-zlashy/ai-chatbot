@@ -73,6 +73,7 @@
     "mockChat": true
   },
   "mockChat": {
-    "reply": "Fascinating question! The deepest part of the ocean is the Challenger Deep in the Mariana Trench, approximately 11,034 meters (36,201 feet) below sea level. 🐟 Would you like to learn more about deep sea creatures?"
+    "reply": "Fascinating question! The deepest part of the ocean is the Challenger Deep in the Mariana Trench, approximately 11,034 meters (36,201 feet) below sea level. 🐟 Would you like to learn more about deep sea creatures?",
+    "errorReply": "Sorry, the system is temporarily unable to analyze your query. Please enter your question again or provide more information for further analysis."
   }
 }

@@ -138,6 +138,25 @@ const isFromSelf = computed(() => {
 
 const messages = computed(() => record.value.Messages ?? []);
 
+const isErrorStatus = (status: string | undefined) =>
+  ["error", "failed", "fail"].includes((status || "").toLowerCase());
+
+const assistantErrorText = computed(
+  () =>
+    props.chatbotConfig?.mockChat.errorReply ||
+    (props.language?.startsWith("en")
+      ? "Sorry, the system is temporarily unable to respond. Please try again later."
+      : "抱歉，系統暫時未能回應。請稍後再試。"),
+);
+
+const isAssistantError = computed(() => {
+  if (isFromSelf.value) return false;
+  return (
+    isErrorStatus(record.value.Status) ||
+    messages.value.some((msg) => isErrorStatus(msg.Status))
+  );
+});
+
 const primaryMessage = computed(() => {
   const list = messages.value;
   if (list.length === 0) return undefined;
@@ -171,8 +190,16 @@ const extractMessageText = (message?: Message) => {
     .join("\n");
 };
 
-const displayText = computed(() => {
+const rawDisplayText = computed(() => {
   return extractMessageText(primaryMessage.value);
+});
+
+const displayText = computed(() => {
+  const text = rawDisplayText.value;
+  if (!text.trim() && isAssistantError.value) {
+    return assistantErrorText.value;
+  }
+  return text;
 });
 
 const reasoningMessages = computed(() => {
@@ -674,26 +701,6 @@ const referenceDialogTitle = computed(() => {
               :enableScale="isMobile"
               @widgetEvent="handleWidgetEvent"
             />
-            <span>
-              <CustomizedIcon
-                remote
-                :size="isMobile ? 'm' : 's'"
-                v-if="showActions && !isMobile"
-                class="control-icon copy-icon"
-                name="basic_copy_line"
-                :theme="theme"
-                @click="(e: any) => copyContent(e, displayText, 'user')"
-              />
-              <CustomizedIcon
-                remote
-                :size="isMobile ? 'm' : 's'"
-                v-if="showActions && !isMobile"
-                class="control-icon share-icon"
-                name="basic_forward_line"
-                :theme="theme"
-                @click="share(item)"
-              />
-            </span>
             <span v-if="replyTime" class="user-message-time">{{
               replyTime
             }}</span>
@@ -728,6 +735,18 @@ const referenceDialogTitle = computed(() => {
                 @widgetEvent="handleWidgetEvent"
               />
             </template>
+            <MdContent
+              v-if="isAssistantError && !rawDisplayText.trim()"
+              :content="assistantErrorText"
+              role="assistant"
+              :theme="theme"
+              :mode="mode"
+              :language="language"
+              :recordId="item.RecordId"
+              :disable="!isLastMsg"
+              :enableScale="isMobile"
+              @widgetEvent="handleWidgetEvent"
+            />
           </div>
           <MdContent
             v-else
@@ -907,6 +926,8 @@ const referenceDialogTitle = computed(() => {
 
 .chat-message-row--assistant {
   gap: 8px;
+  padding-right: var(--adp-chat-message-right-gap, 16px);
+  box-sizing: border-box;
 }
 
 .chat-message-row--user {
@@ -920,19 +941,20 @@ const referenceDialogTitle = computed(() => {
 
 .chat-message-row--assistant .chat-message-item {
   flex: 0 1 auto;
-  max-width: min(100%, 312px);
+  max-width: 100%;
 }
 
 .chat-message-row--assistant :deep(.t-chat__content) {
   margin-left: 0;
-  width: auto;
+  width: max-content;
   max-width: 100%;
 }
 
 .chat-message-row--assistant :deep(.t-chat__detail) {
   width: auto;
   max-width: 100%;
-  padding: 0px 12px;
+  box-sizing: border-box;
+  padding: 8px 16px;
   border: 1px solid var(--adp-chat-bubble-border, #b95a25);
   border-radius: 12px 12px 12px 3px;
   background: var(--adp-chat-assistant-bubble-background, #fff);
@@ -966,13 +988,6 @@ const referenceDialogTitle = computed(() => {
   align-items: flex-end;
 }
 
-.user-message .copy-icon,
-.user-message .share-icon {
-  opacity: 0;
-  transition: opacity 0.2s ease;
-  cursor: pointer;
-}
-
 .check-circle {
   color: var(--td-success-color-5);
   font-size: var(--td-font-size-title-large);
@@ -991,12 +1006,6 @@ const referenceDialogTitle = computed(() => {
 }
 .icon.not-allowed {
   cursor: not-allowed;
-}
-
-/* 用户消息图标悬停效果 */
-.user-message:hover .copy-icon,
-.user-message:hover .share-icon {
-  opacity: 1;
 }
 
 /* 操作按钮容器样式 */

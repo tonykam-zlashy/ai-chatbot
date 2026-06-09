@@ -82,6 +82,8 @@ const defaultConfigByLanguage: Record<FixtureLanguage, ChatbotConfig> = {
     mockChat: {
       reply:
         "對不起，系統暫時未能分析您的查詢。請您再輸入問題，或提供其他資料以便系統再作分析。",
+      errorReply:
+        "對不起，系統暫時未能分析您的查詢。請您再輸入問題，或提供其他資料以便系統再作分析。",
     },
   },
   "en-US": {
@@ -156,6 +158,8 @@ const defaultConfigByLanguage: Record<FixtureLanguage, ChatbotConfig> = {
     },
     mockChat: {
       reply:
+        "Sorry, the system is temporarily unable to analyze your query. Please enter your question again or provide more information for further analysis.",
+      errorReply:
         "Sorry, the system is temporarily unable to analyze your query. Please enter your question again or provide more information for further analysis.",
     },
   },

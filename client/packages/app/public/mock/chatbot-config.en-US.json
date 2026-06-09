@@ -75,6 +75,7 @@
     "mockChat": true
   },
   "mockChat": {
-    "reply": "This is a frontend POC reply. The real chatbot backend will be connected later."
+    "reply": "This is a frontend POC reply. The real chatbot backend will be connected later.",
+    "errorReply": "Sorry, the system is temporarily unable to analyze your query. Please enter your question again or provide more information for further analysis."
   }
 }

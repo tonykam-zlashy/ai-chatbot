@@ -298,6 +298,8 @@ const mockChatEnabled = computed(
 );
 
 const configApplication = computed<Application | undefined>(() => {
+  if (!props.frontendPocMode) return undefined;
+
   const config = props.chatbotConfig;
   if (!config) return undefined;
 
@@ -611,9 +613,30 @@ const isStreamAbortError = (msg: unknown) => {
   );
 };
 
+const markLatestAssistantError = (
+  conversationKey: string,
+  statusDesc: string,
+) => {
+  const targetState = getConversationRuntimeState(conversationKey);
+  if (!targetState) {
+    return;
+  }
+  const assistantRecord = [...targetState.records]
+    .reverse()
+    .find(
+      (item) =>
+        item.Role === "assistant" || item.RecordId === "placeholder-agent",
+    );
+  if (!assistantRecord) {
+    return;
+  }
+  assistantRecord.Status = "error";
+  assistantRecord.StatusDesc = statusDesc;
+};
+
 const handleStreamFailure = (msg: unknown) => {
   if (isStreamAbortError(msg)) {
-    return;
+    return "";
   }
   if (
     msg &&
@@ -627,7 +650,7 @@ const handleStreamFailure = (msg: unknown) => {
       const loginExpiredText = mergedChatI18n.value.loginExpired;
       MessagePlugin.error(loginExpiredText);
       emit("message", MessageCode.SEND_MESSAGE_FAILED, loginExpiredText);
-      return;
+      return loginExpiredText;
     }
   }
   if (
@@ -639,16 +662,17 @@ const handleStreamFailure = (msg: unknown) => {
     const networkErrorText = mergedChatI18n.value.networkError;
     MessagePlugin.error(networkErrorText);
     emit("message", MessageCode.NETWORK_ERROR, networkErrorText);
-    return;
+    return networkErrorText;
   }
   if (typeof msg === "string") {
     MessagePlugin.error(msg);
     emit("message", MessageCode.SEND_MESSAGE_FAILED, msg);
-    return;
+    return msg;
   }
   const sendErrorText = mergedChatI18n.value.sendError;
   MessagePlugin.error(sendErrorText);
   emit("message", MessageCode.SEND_MESSAGE_FAILED, sendErrorText);
+  return sendErrorText;
 };
 
 const hydrateReferences = async (
@@ -1258,7 +1282,10 @@ const handleInternalSend = async (
         }
       },
       fail(msg) {
-        handleStreamFailure(msg);
+        const failureText = handleStreamFailure(msg);
+        if (failureText) {
+          markLatestAssistantError(streamConversationKey, failureText);
+        }
       },
     },
   );
@@ -1672,7 +1699,10 @@ const sendWidgetActionSSE = async (
         }
       },
       fail(msg) {
-        handleStreamFailure(msg);
+        const failureText = handleStreamFailure(msg);
+        if (failureText) {
+          markLatestAssistantError(streamConversationKey, failureText);
+        }
       },
     },
   );

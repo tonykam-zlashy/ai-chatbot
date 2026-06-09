@@ -766,14 +766,13 @@ defineExpose({
   cursor: pointer;
   background-color: rgba(0, 0, 0, 0.04);
   color: var(--adp-chat-footer-icon-color, #ff7833);
-  scale: 1.1;
   opacity: 1;
 }
 
 .sender-action-icon {
   position: relative;
-  width: 48px;
-  height: 48px;
+  width: 40px;
+  height: 40px;
   opacity: 0.8;
   color: var(--adp-chat-footer-icon-color, #ff7833);
   display: inline-flex;
@@ -788,9 +787,14 @@ defineExpose({
 }
 
 .sender-action-icon__img {
-  width: 40px;
-  height: 40px;
+  width: 24px;
+  height: 24px;
   display: block;
+}
+
+.image-upload-icon .sender-action-icon__img {
+  width: 28px;
+  height: 28px;
 }
 
 .recording-icon.isMobile {
