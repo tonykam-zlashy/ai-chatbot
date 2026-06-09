@@ -36,8 +36,7 @@
   "terms": {
     "enabled": true,
     "storageScope": "global",
-    "titleTemplate": "你好，我是{{assistantName}}",
-    "intro": "使用人工智能聊天機械人對話系統前，請先細閱並接受下列條款及細則。",
+    "intro": "請細閱下列有關使用人工智能聊天機械人對話系統的條款及細則。",
     "links": [
       { "label": "免責聲明", "url": "https://www.carers.hk/disclaimers" },
       {

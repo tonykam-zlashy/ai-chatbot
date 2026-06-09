@@ -107,7 +107,11 @@
                   </p>
                   <ul class="terms-link-list">
                     <li v-for="link in termsCopy.links" :key="link.url">
-                      <a target="_blank" rel="noopener noreferrer" :href="link.url">
+                      <a
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        :href="link.url"
+                      >
                         {{ link.label }}
                       </a>
                     </li>
@@ -118,9 +122,12 @@
                   <p>
                     {{ termsCopy.scamNoticeBefore }}
                     <a
-                      v-if="termsCopy.scamHotlineLabel && termsCopy.scamHotlineUrl"
+                      v-if="
+                        termsCopy.scamHotlineLabel && termsCopy.scamHotlineUrl
+                      "
                       :href="termsCopy.scamHotlineUrl"
-                    >{{ termsCopy.scamHotlineLabel }}</a>
+                      >{{ termsCopy.scamHotlineLabel }}</a
+                    >
                     <template v-else-if="termsCopy.scamHotlineLabel">
                       {{ termsCopy.scamHotlineLabel }}
                     </template>
@@ -220,7 +227,12 @@
                 :class="{ disabled: selectedIds.length <= 0 }"
                 @click="handleCopyShare()"
               >
-                <CustomizedIcon remote size="xs" name="basic_relation_line" :theme="theme" />
+                <CustomizedIcon
+                  remote
+                  size="xs"
+                  name="basic_relation_line"
+                  :theme="theme"
+                />
                 <span>{{ i18n.copyUrl }}</span>
               </div>
             </div>
@@ -464,18 +476,25 @@ const TERMS_ACCEPTED_GREETING_RECORD_ID = "local-terms-accepted-greeting";
 const syntheticBaseTime = Date.now();
 
 const isEnglish = computed(() => props.language?.startsWith("en"));
-const termsEnabled = computed(() =>
-  props.chatbotConfig?.features.termsGate !== false &&
-  props.chatbotConfig?.terms.enabled !== false,
+const termsEnabled = computed(
+  () =>
+    props.chatbotConfig?.features.termsGate !== false &&
+    props.chatbotConfig?.terms.enabled !== false,
 );
-const defaultAssistantName = computed(() =>
-  props.chatbotConfig?.assistant.name || (isEnglish.value ? "Assistant" : "助手"),
+const defaultAssistantName = computed(
+  () =>
+    props.chatbotConfig?.assistant.name ||
+    (isEnglish.value ? "Assistant" : "助手"),
 );
-const assistantAvatar = computed(() =>
-  props.chatbotConfig?.assistant.messageAvatarUrl || currentApplicationAvatar.value || "",
+const assistantAvatar = computed(
+  () =>
+    props.chatbotConfig?.assistant.messageAvatarUrl ||
+    currentApplicationAvatar.value ||
+    "",
 );
-const assistantMessageAvatar = computed(() =>
-  props.chatbotConfig?.assistant.messageAvatarUrl || assistantAvatar.value,
+const assistantMessageAvatar = computed(
+  () =>
+    props.chatbotConfig?.assistant.messageAvatarUrl || assistantAvatar.value,
 );
 
 const normalizeAssistantName = (name?: string) => {
@@ -495,25 +514,30 @@ const assistantName = computed(() =>
 
 const termsCopy = computed(() => {
   const config = props.chatbotConfig;
-  const fallbackTitle = isEnglish.value ? assistantName.value : `你好，我是${assistantName.value}`;
-  const titleTemplate = config?.terms.titleTemplate || fallbackTitle;
 
   return {
-    title: titleTemplate.replace("{{assistantName}}", assistantName.value),
-    intro: config?.terms.intro || (isEnglish.value
-      ? "Please read and accept the terms and conditions before use."
-      : "使用前請先細閱並接受下列條款及細則。"),
+    title: "",
+    intro:
+      config?.terms.intro ||
+      (isEnglish.value
+        ? "Please read and accept the terms and conditions before use."
+        : "使用前請先細閱並接受下列條款及細則。"),
     links: config?.terms.links || [],
-    acceptInstruction: config?.terms.acceptInstruction || (isEnglish.value
-      ? "Click Accept if you agree to the terms and conditions."
-      : "如同意使用條款及細則，請點擊接受按鈕。"),
+    acceptInstruction:
+      config?.terms.acceptInstruction ||
+      (isEnglish.value
+        ? "Click Accept if you agree to the terms and conditions."
+        : "如同意使用條款及細則，請點擊接受按鈕。"),
     scamNoticeBefore: config?.terms.scamNoticeBefore || "",
     scamHotlineLabel: config?.terms.scamHotlineLabel || "",
     scamHotlineUrl: config?.terms.scamHotlineUrl || "",
     scamNoticeAfter: config?.terms.scamNoticeAfter || "",
-    acceptButton: config?.terms.acceptButton || (isEnglish.value ? "ACCEPT" : "接受"),
-    declineButton: config?.terms.declineButton || (isEnglish.value ? "REJECT" : "拒絕"),
-    acceptedUserText: config?.terms.acceptedUserText || (isEnglish.value ? "Accept" : "接受"),
+    acceptButton:
+      config?.terms.acceptButton || (isEnglish.value ? "ACCEPT" : "接受"),
+    declineButton:
+      config?.terms.declineButton || (isEnglish.value ? "REJECT" : "拒絕"),
+    acceptedUserText:
+      config?.terms.acceptedUserText || (isEnglish.value ? "Accept" : "接受"),
     acceptedGreeting:
       config?.assistant.greeting ||
       currentApplicationGreeting.value ||
@@ -570,7 +594,9 @@ const termsPromptText = computed(() => {
     termsCopy.value.scamNoticeBefore,
     termsCopy.value.scamHotlineLabel,
     termsCopy.value.scamNoticeAfter,
-  ].filter(Boolean).join("");
+  ]
+    .filter(Boolean)
+    .join("");
   if (scamNotice) body.push(scamNotice);
 
   return body.join("\n\n");
@@ -1199,7 +1225,10 @@ defineExpose({
   display: flex;
   justify-content: center;
   padding: 0 10px;
-  background: var(--adp-chat-footer-background, var(--adp-chat-surface-background, #fff8e8));
+  background: var(
+    --adp-chat-footer-background,
+    var(--adp-chat-surface-background, #fff8e8)
+  );
 }
 
 :deep(.content .chat-item__content) {
@@ -1284,8 +1313,13 @@ defineExpose({
 }
 
 .terms-link-list {
-  margin: 0 0 9px;
-  padding-left: 18px;
+  margin: 24px 0 24px;
+  padding-left: 0;
+  list-style: none;
+}
+
+.terms-link-list li::before {
+  content: "- ";
 }
 
 .terms-link-list li + li {

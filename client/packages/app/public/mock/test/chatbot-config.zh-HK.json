@@ -40,7 +40,6 @@
   "terms": {
     "enabled": true,
     "storageScope": "global",
-    "titleTemplate": "{{assistantName}}",
     "intro": "歡迎使用深海探索聊天機器人。請在開始前仔細閱讀並接受以下條款。",
     "links": [
       { "label": "服務條款", "url": "https://example.com/tos" },

@@ -612,24 +612,21 @@ defineExpose({
     <!-- 底部工具栏 -->
     <div class="sender-toolbar">
       <div class="sender-toolbar__right">
-        <CustomizedIcon
-          class="sender-action-icon send-icon waiting"
-          :class="{ disabled: sendDisabled }"
-          v-if="!isStreamLoad && !hasContent"
-          :showHoverBg="false"
-          name="send_outline"
-          :theme="theme"
-          @click="handleSend"
-        />
-        <CustomizedIcon
-          class="sender-action-icon send-icon success"
+        <span
+          class="sender-action-icon send-icon"
           :class="{ disabled: sendDisabled }"
           v-if="!isStreamLoad && hasContent"
-          :showHoverBg="false"
-          name="send_outline"
-          :theme="theme"
           @click="handleSend"
-        />
+        >
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+            <path
+              fill="currentColor"
+              fill-rule="evenodd"
+              d="M3.402 6.673c-.26-2.334 2.143-4.048 4.266-3.042l11.944 5.658c2.288 1.083 2.288 4.339 0 5.422L7.668 20.37c-2.123 1.006-4.525-.708-4.266-3.042L3.882 13H12a1 1 0 1 0 0-2H3.883z"
+              clip-rule="evenodd"
+            />
+          </svg>
+        </span>
         <CustomizedIcon
           class="sender-action-icon send-icon stop"
           v-if="isStreamLoad"
@@ -639,7 +636,10 @@ defineExpose({
           @click="emit('stop')"
         />
 
-        <TTooltip v-if="enableFileUpload" :content="i18n.uploadImage">
+        <TTooltip
+          v-if="enableFileUpload && !hasContent"
+          :content="i18n.uploadImage"
+        >
           <span
             class="sender-action-icon image-upload-icon"
             :class="{ disabled: isUploading || disabled }"
@@ -654,7 +654,7 @@ defineExpose({
         </TTooltip>
 
         <TTooltip
-          v-if="enableVoiceInput && !recording"
+          v-if="enableVoiceInput && !recording && !hasContent"
           :content="i18n.startRecord"
         >
           <span
@@ -706,6 +706,7 @@ defineExpose({
   border: 0;
   border-radius: 18px;
   margin-left: 12px;
+  margin-right: 12px;
   margin-top: 4px;
   background: #fff;
   transition:
@@ -809,16 +810,16 @@ defineExpose({
 
 /* 发送按钮 */
 .send-icon {
-  padding: 0 !important;
+  margin-left: 12px;
+  width: 48px;
+  height: 48px;
 }
 
-.sender-action-icon :deep(.customeized-icon),
-.send-icon :deep(.customeized-icon),
-.sender-action-icon :deep(svg),
-.send-icon :deep(svg) {
+.send-icon svg {
+  display: block;
   color: var(--adp-chat-footer-icon-color, #ff7833);
-  width: 40px;
-  height: 40px;
+  width: 24px;
+  height: 24px;
 }
 
 .send-icon.disabled {

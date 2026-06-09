@@ -189,23 +189,7 @@ const themeStyle = computed(() => ({
   "--adp-chat-link-color": "rgb(26, 13, 171)",
 }));
 
-const normalizeApplicationName = (name?: string) => {
-  const trimmed = name?.trim();
-  if (
-    !trimmed ||
-    ["unknown", "unknown application"].includes(trimmed.toLowerCase())
-  ) {
-    return defaultApplicationName.value;
-  }
-  return trimmed;
-};
-
-const headerTitle = computed(
-  () =>
-    props.currentConversationTitle?.trim() ||
-    normalizeApplicationName(props.currentApplicationName) ||
-    defaultApplicationName.value,
-);
+const headerTitle = computed(() => defaultApplicationName.value);
 
 const emit = defineEmits<{
   /** 切换侧边栏显示/隐藏 */

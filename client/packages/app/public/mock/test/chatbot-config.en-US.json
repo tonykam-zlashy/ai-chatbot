@@ -40,7 +40,6 @@
   "terms": {
     "enabled": true,
     "storageScope": "global",
-    "titleTemplate": "{{assistantName}}",
     "intro": "Welcome to the deep sea exploration chatbot. Please review and accept the following terms before diving in.",
     "links": [
       { "label": "Terms of Service", "url": "https://example.com/tos" },

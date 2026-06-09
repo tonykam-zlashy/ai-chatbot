@@ -36,7 +36,6 @@
   "terms": {
     "enabled": true,
     "storageScope": "global",
-    "titleTemplate": "{{assistantName}}",
     "intro": "Please read the following terms and conditions regarding the use of the artificial intelligence chatbot dialogue system.",
     "links": [
       { "label": "Disclaimers", "url": "https://www.carers.hk/disclaimers" },

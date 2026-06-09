@@ -100,11 +100,17 @@ Suggested shape:
     "enabled": true,
     "storageScope": "global",
     "titleTemplate": "你好，我是{{assistantName}}",
-    "intro": "使用人工智能聊天機械人對話系統前，請先細閱並接受下列條款及細則。",
+    "intro": "請細閱下列有關使用人工智能聊天機械人對話系統的條款及細則。",
     "links": [
       { "label": "免責聲明", "url": "https://www.carers.hk/disclaimers" },
-      { "label": "版權聲明", "url": "https://www.carers.hk/copyright-statement" },
-      { "label": "私隱政策及個人資料收集聲明", "url": "https://www.carers.hk/personal-information-collection-statement" }
+      {
+        "label": "版權聲明",
+        "url": "https://www.carers.hk/copyright-statement"
+      },
+      {
+        "label": "私隱政策及個人資料收集聲明",
+        "url": "https://www.carers.hk/personal-information-collection-statement"
+      }
     ],
     "acceptInstruction": "如同意使用條款及細則，請點擊「接受」按鈕，點擊接受按鈕後，即表示您已閱讀、理解和同意使用條款及細則。",
     "scamNoticeBefore": "請注意，人工智能聊天機械人對話系統是不會向用戶索取任何個人資料。如有懷疑，請致電反詐騙諮詢熱線",

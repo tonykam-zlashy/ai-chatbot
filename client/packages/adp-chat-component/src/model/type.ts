@@ -77,7 +77,6 @@ export interface ChatbotTermsLinkConfig {
 export interface ChatbotTermsConfig {
   enabled: boolean
   storageScope: 'global' | 'application' | 'conversation'
-  titleTemplate: string
   intro: string
   links: ChatbotTermsLinkConfig[]
   acceptInstruction: string

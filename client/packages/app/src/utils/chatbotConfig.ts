@@ -53,7 +53,6 @@ const defaultConfigByLanguage: Record<FixtureLanguage, ChatbotConfig> = {
     terms: {
       enabled: true,
       storageScope: "global",
-      titleTemplate: "你好，我是{{assistantName}}",
       intro: "使用前請先細閱並接受下列條款及細則。",
       links: [],
       acceptInstruction: "如同意使用條款及細則，請點擊接受按鈕。",
@@ -129,7 +128,6 @@ const defaultConfigByLanguage: Record<FixtureLanguage, ChatbotConfig> = {
     terms: {
       enabled: true,
       storageScope: "global",
-      titleTemplate: "{{assistantName}}",
       intro: "Please read and accept the terms and conditions before use.",
       links: [],
       acceptInstruction:
@@ -192,12 +190,6 @@ const normalizeConfig = (
     theme: mergeRecord(defaults.theme, raw.theme),
     terms: {
       ...terms,
-      titleTemplate: String(
-        terms.titleTemplate || defaults.terms.titleTemplate,
-      ).replace(
-        "{{assistantName}}",
-        String(assistant.name || defaults.assistant.name),
-      ),
       links: Array.isArray(terms.links) ? terms.links : defaults.terms.links,
     },
     composer: mergeRecord(defaults.composer, raw.composer),
