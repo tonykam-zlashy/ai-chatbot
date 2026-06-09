@@ -34,16 +34,16 @@ const defaultConfigByLanguage: Record<FixtureLanguage, ChatbotConfig> = {
     },
     theme: {
       mode: "default",
-      headerBackground: "#f7943d",
+      headerBackground: "linear-gradient(180deg, #FFC284 0%, #FF7833 100%)",
       surfaceBackground: "#ffffff",
-      primaryAction: "rgb(185, 67, 25)",
-      bubbleBorder: "rgb(185, 67, 25)",
-      userBubbleBackground: "rgb(185, 67, 25)",
-      userBubbleText: "#ffffff",
+      primaryAction: "#B84319",
+      bubbleBorder: "#B84319",
+      userBubbleBackground: "#B84319",
+      userBubbleText: "#FFFFFF",
       userBubbleBorder: "none",
-      assistantBubbleBackground: "rgb(255, 239, 214)",
-      assistantText: "rgb(185, 67, 25)",
-      timestampText: "rgb(119, 119, 119)",
+      assistantBubbleBackground: "#FFEFD6",
+      assistantText: "#B84319",
+      timestampText: "#777",
     },
     terms: {
       enabled: true,
@@ -75,7 +75,8 @@ const defaultConfigByLanguage: Record<FixtureLanguage, ChatbotConfig> = {
       mockChat: true,
     },
     mockChat: {
-      reply: "This is a frontend POC reply.",
+      reply:
+        "對不起，系統暫時未能分析您的查詢。請您再輸入問題，或提供其他資料以便系統再作分析。",
     },
   },
   "en-US": {
@@ -102,16 +103,16 @@ const defaultConfigByLanguage: Record<FixtureLanguage, ChatbotConfig> = {
     },
     theme: {
       mode: "default",
-      headerBackground: "#f7943d",
+      headerBackground: "linear-gradient(180deg, #FFC284 0%, #FF7833 100%)",
       surfaceBackground: "#ffffff",
-      primaryAction: "rgb(185, 67, 25)",
-      bubbleBorder: "rgb(185, 67, 25)",
-      userBubbleBackground: "rgb(185, 67, 25)",
-      userBubbleText: "#ffffff",
+      primaryAction: "#B84319",
+      bubbleBorder: "#B84319",
+      userBubbleBackground: "#B84319",
+      userBubbleText: "#FFFFFF",
       userBubbleBorder: "none",
-      assistantBubbleBackground: "rgb(255, 239, 214)",
-      assistantText: "rgb(185, 67, 25)",
-      timestampText: "rgb(119, 119, 119)",
+      assistantBubbleBackground: "#FFEFD6",
+      assistantText: "#B84319",
+      timestampText: "#777",
     },
     terms: {
       enabled: true,
@@ -144,7 +145,8 @@ const defaultConfigByLanguage: Record<FixtureLanguage, ChatbotConfig> = {
       mockChat: true,
     },
     mockChat: {
-      reply: "This is a frontend POC reply.",
+      reply:
+        "Sorry, the system is temporarily unable to analyze your query. Please enter your question again or provide more information for further analysis.",
     },
   },
 };
