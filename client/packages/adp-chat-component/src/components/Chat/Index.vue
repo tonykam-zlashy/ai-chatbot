@@ -126,19 +126,34 @@
                     </template>
                     {{ termsCopy.scamNoticeAfter }}
                   </p>
-                  <div v-if="!termsAccepted" class="terms-actions">
+                  <div class="terms-actions">
                     <button
                       type="button"
                       class="terms-btn terms-btn--primary"
+                      :disabled="termsAccepted"
                       @click="emit('acceptTerms')"
                     >
+                      <span class="terms-btn__icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" focusable="false">
+                          <circle cx="12" cy="12" r="9" />
+                          <path d="m7.75 12.25 2.6 2.6 5.9-6.1" />
+                        </svg>
+                      </span>
                       {{ termsCopy.acceptButton }}
                     </button>
                     <button
                       type="button"
                       class="terms-btn terms-btn--secondary"
+                      :disabled="termsAccepted"
                       @click="emit('declineTerms')"
                     >
+                      <span class="terms-btn__icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" focusable="false">
+                          <circle cx="12" cy="12" r="9" />
+                          <path d="m8.75 8.75 6.5 6.5" />
+                          <path d="m15.25 8.75-6.5 6.5" />
+                        </svg>
+                      </span>
                       {{ termsCopy.declineButton }}
                     </button>
                   </div>
@@ -1280,6 +1295,10 @@ defineExpose({
 }
 
 .terms-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
   min-width: 76px;
   height: 32px;
   border-radius: 7px;
@@ -1287,6 +1306,24 @@ defineExpose({
   font-size: 13px;
   font-weight: 700;
   cursor: pointer;
+}
+
+.terms-btn__icon {
+  display: inline-flex;
+  width: 18px;
+  height: 18px;
+  flex: 0 0 18px;
+}
+
+.terms-btn__icon svg {
+  display: block;
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 .terms-btn--primary {
@@ -1297,6 +1334,12 @@ defineExpose({
 .terms-btn--secondary {
   background: #fff7e6;
   color: #8e3d18;
+}
+
+.terms-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  filter: grayscale(0.25);
 }
 
 /* 确保 AppType 组件容器有足够高度实现垂直居中 */

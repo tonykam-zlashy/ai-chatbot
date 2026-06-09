@@ -1,0 +1,78 @@
+{
+  "appId": "midnight-ocean-test",
+  "language": "en-US",
+  "assistant": {
+    "name": "Nautilus",
+    "headerTitle": "Nautilus - Deep Sea Guide",
+    "launcherAvatarUrl": "https://carers-webchat.aienchat.com/avatar-en-us-v5.gif",
+    "messageAvatarUrl": "https://carers-webchat.aienchat.com/message-en-us-v5.gif",
+    "greeting": "🌊 Welcome aboard! I'm Nautilus, your deep sea guide. Ask me anything about ocean exploration."
+  },
+  "launcher": {
+    "enabled": true,
+    "prompt": "Dive in",
+    "position": "bottom-right",
+    "offsetX": 16,
+    "offsetY": 16
+  },
+  "panel": {
+    "width": 420,
+    "height": 680,
+    "mobileMode": "panel"
+  },
+  "theme": {
+    "mode": "dark-ocean",
+    "headerBackground": "linear-gradient(135deg, #0a1628 0%, #1a3a5c 50%, #0d2847 100%)",
+    "surfaceBackground": "#0f1a2e",
+    "primaryAction": "#00d4aa",
+    "bubbleBorder": "#00d4aa",
+    "userBubbleBackground": "#00d4aa",
+    "userBubbleText": "#0a1628",
+    "userBubbleBorder": "1px solid #00ffc8",
+    "assistantBubbleBackground": "#162a45",
+    "assistantText": "#b8d8f0",
+    "timestampText": "#5a7a9a",
+    "footerBackground": "linear-gradient(180deg, #0f1a2e 0%, #0a1628 100%)",
+    "footerIconColor": "#00d4aa",
+    "hotlineBackground": "#1a2a45",
+    "hotlineText": "#4fc3f7"
+  },
+  "terms": {
+    "enabled": true,
+    "storageScope": "global",
+    "titleTemplate": "{{assistantName}}",
+    "intro": "Welcome to the deep sea exploration chatbot. Please review and accept the following terms before diving in.",
+    "links": [
+      { "label": "Terms of Service", "url": "https://example.com/tos" },
+      { "label": "Privacy Policy", "url": "https://example.com/privacy" },
+      { "label": "Data Usage", "url": "https://example.com/data" }
+    ],
+    "acceptInstruction": "By clicking Accept, you confirm that you have read and agree to the terms above. Your chat history will be stored for quality improvement.",
+    "scamNoticeBefore": "Nautilus will never ask for your personal or financial information. If you have concerns, please contact our support team at",
+    "scamHotlineLabel": "Support Center",
+    "scamHotlineUrl": "https://example.com/support",
+    "scamNoticeAfter": "for assistance. You must accept the terms to continue.",
+    "acceptButton": "ACCEPT & DIVE",
+    "declineButton": "DECLINE",
+    "acceptedUserText": "Terms Accepted"
+  },
+  "composer": {
+    "disabledPlaceholder": "Please accept the terms first",
+    "enabledPlaceholder": "Ask me about the ocean..."
+  },
+  "hotline": {
+    "number": "1-800-555-0199",
+    "label": "Ocean Support Hotline",
+    "description": "Available 24/7 for technical support and inquiries about the Nautilus chatbot service.",
+    "url": "https://example.com/help"
+  },
+  "features": {
+    "termsGate": true,
+    "fileUpload": true,
+    "voiceInput": true,
+    "mockChat": true
+  },
+  "mockChat": {
+    "reply": "Fascinating question! The deepest part of the ocean is the Challenger Deep in the Mariana Trench, approximately 11,034 meters (36,201 feet) below sea level. 🐟 Would you like to learn more about deep sea creatures?"
+  }
+}

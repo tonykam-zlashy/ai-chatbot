@@ -1,0 +1,78 @@
+{
+  "appId": "midnight-ocean-test",
+  "language": "zh-HK",
+  "assistant": {
+    "name": "鸚鵡螺號",
+    "headerTitle": "鸚鵡螺號 - 深海導航員",
+    "launcherAvatarUrl": "https://carers-webchat.aienchat.com/avatar-en-us-v5.gif",
+    "messageAvatarUrl": "https://carers-webchat.aienchat.com/message-en-us-v5.gif",
+    "greeting": "🌊 歡迎登船！我是鸚鵡螺號，您的深海導航員。關於海洋探索的任何問題都可以問我！"
+  },
+  "launcher": {
+    "enabled": true,
+    "prompt": "潛入深海",
+    "position": "bottom-right",
+    "offsetX": 16,
+    "offsetY": 16
+  },
+  "panel": {
+    "width": 420,
+    "height": 680,
+    "mobileMode": "panel"
+  },
+  "theme": {
+    "mode": "dark-ocean",
+    "headerBackground": "linear-gradient(135deg, #0a1628 0%, #1a3a5c 50%, #0d2847 100%)",
+    "surfaceBackground": "#0f1a2e",
+    "primaryAction": "#00d4aa",
+    "bubbleBorder": "#00d4aa",
+    "userBubbleBackground": "#00d4aa",
+    "userBubbleText": "#0a1628",
+    "userBubbleBorder": "1px solid #00ffc8",
+    "assistantBubbleBackground": "#162a45",
+    "assistantText": "#b8d8f0",
+    "timestampText": "#5a7a9a",
+    "footerBackground": "linear-gradient(180deg, #0f1a2e 0%, #0a1628 100%)",
+    "footerIconColor": "#00d4aa",
+    "hotlineBackground": "#1a2a45",
+    "hotlineText": "#4fc3f7"
+  },
+  "terms": {
+    "enabled": true,
+    "storageScope": "global",
+    "titleTemplate": "{{assistantName}}",
+    "intro": "歡迎使用深海探索聊天機器人。請在開始前仔細閱讀並接受以下條款。",
+    "links": [
+      { "label": "服務條款", "url": "https://example.com/tos" },
+      { "label": "私隱政策", "url": "https://example.com/privacy" },
+      { "label": "數據使用", "url": "https://example.com/data" }
+    ],
+    "acceptInstruction": "點擊接受即表示您已閱讀並同意以上條款。您的對話記錄將用於服務質量改進。",
+    "scamNoticeBefore": "鸚鵡螺號絕不會要求您提供個人或財務資料。如有疑問，請聯絡我們的支援團隊：",
+    "scamHotlineLabel": "支援中心",
+    "scamHotlineUrl": "https://example.com/support",
+    "scamNoticeAfter": "尋求協助。您必須接受條款才能繼續使用。",
+    "acceptButton": "接受並潛航",
+    "declineButton": "拒絕",
+    "acceptedUserText": "條款已接受"
+  },
+  "composer": {
+    "disabledPlaceholder": "請先接受條款",
+    "enabledPlaceholder": "問我關於海洋的問題..."
+  },
+  "hotline": {
+    "number": "1-800-555-0199",
+    "label": "海洋支援熱線",
+    "description": "24小時提供技術支援及鸚鵡螺號聊天機器人服務查詢。",
+    "url": "https://example.com/help"
+  },
+  "features": {
+    "termsGate": true,
+    "fileUpload": true,
+    "voiceInput": true,
+    "mockChat": true
+  },
+  "mockChat": {
+    "reply": "有趣的問題！海洋最深處是馬里亞納海溝的挑戰者深淵，深度約為海平面以下 11,034 米（36,201 英尺）。🐟 您想了解更多關於深海生物的知識嗎？"
+  }
+}

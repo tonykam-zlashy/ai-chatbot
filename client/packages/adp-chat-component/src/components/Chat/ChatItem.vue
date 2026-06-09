@@ -414,10 +414,7 @@ const isFinal = computed(() => {
 });
 
 /**
- * 回复时间（从 ExtraInfo.StartTime 提取）
- * - 今天：显示 hh:mm:ss
- * - 今年过去日期：显示 M月D日
- * - 过去年份：显示 YYYY年M月D日
+ * 消息时间（从 ExtraInfo.StartTime 提取）
  */
 const replyTime = computed(() => {
   const startTime = record.value.ExtraInfo?.StartTime;
@@ -425,23 +422,9 @@ const replyTime = computed(() => {
   const ts = Number(startTime);
   if (!ts) return "";
   const date = new Date(ts);
-  const now = new Date();
-  const isToday =
-    date.getFullYear() === now.getFullYear() &&
-    date.getMonth() === now.getMonth() &&
-    date.getDate() === now.getDate();
-  const isThisYear = date.getFullYear() === now.getFullYear();
-
-  if (isToday) {
-    const hours = String(date.getHours()).padStart(2, "0");
-    const minutes = String(date.getMinutes()).padStart(2, "0");
-    const seconds = String(date.getSeconds()).padStart(2, "0");
-    return `${hours}:${minutes}:${seconds}`;
-  } else if (isThisYear) {
-    return `${date.getMonth() + 1}月${date.getDate()}日`;
-  } else {
-    return `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日`;
-  }
+  const hours = String(date.getHours()).padStart(2, "0");
+  const minutes = String(date.getMinutes()).padStart(2, "0");
+  return `${hours}:${minutes}`;
 });
 
 /**
@@ -711,6 +694,9 @@ const referenceDialogTitle = computed(() => {
                 @click="share(item)"
               />
             </span>
+            <span v-if="replyTime" class="user-message-time">{{
+              replyTime
+            }}</span>
           </div>
           <!-- claw 模式分组渲染：tool_call 折叠 + reply 独立展示 -->
           <div v-else-if="useClawRender" class="claw-render">
@@ -1036,6 +1022,15 @@ const referenceDialogTitle = computed(() => {
   margin-left: 0;
   white-space: nowrap;
 }
+
+.user-message-time {
+  align-self: flex-end;
+  margin-top: 4px;
+  font-size: var(--td-font-size-link-small);
+  color: var(--adp-chat-timestamp-text, var(--td-text-color-placeholder));
+  line-height: 18px;
+  white-space: nowrap;
+}
 .collapsed-thinking-text {
   color: var(--td-text-color-placeholder);
   display: flex;
@@ -1277,6 +1272,7 @@ const referenceDialogTitle = computed(() => {
 .chat-message-row--user :deep(.markdown-body.user) {
   background: var(--adp-chat-user-bubble-background, #fff5ee);
   color: var(--adp-chat-user-bubble-text, #3d1a08);
+  border-radius: 12px 12px 0 12px;
 }
 
 /* Ensure paragraphs inherit it */

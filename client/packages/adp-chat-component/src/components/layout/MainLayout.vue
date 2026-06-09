@@ -184,6 +184,7 @@ const themeStyle = computed(() => ({
     props.chatbotConfig?.theme.hotlineBackground || "#ECFDF0",
   "--adp-chat-hotline-text":
     props.chatbotConfig?.theme.hotlineText || "#139C6C",
+  "--adp-chat-link-color": "rgb(26, 13, 171)",
 }));
 
 const normalizeApplicationName = (name?: string) => {
@@ -487,9 +488,14 @@ defineExpose({
                 <path d="M8 21h8" />
               </svg>
             </a>
-            <span class="carers-hotline-icon carers-hotline-icon--phone" aria-hidden="true">
+            <span
+              class="carers-hotline-icon carers-hotline-icon--phone"
+              aria-hidden="true"
+            >
               <svg viewBox="0 0 24 24" focusable="false">
-                <path d="M6.6 3.8 9.4 7c.45.52.46 1.3.03 1.84l-1.18 1.48c1.05 2.18 2.78 3.92 5 5.03l1.55-1.22c.54-.43 1.33-.41 1.84.05l3.02 2.72c.58.52.69 1.38.25 2.02-.9 1.3-2.22 2.02-3.78 1.72-6.05-1.18-10.98-6.12-12.12-12.19-.29-1.54.43-2.84 1.7-3.73.29-.2.63-.3.96-.3.34 0 .68.12.93.38Z" />
+                <path
+                  d="M6.6 3.8 9.4 7c.45.52.46 1.3.03 1.84l-1.18 1.48c1.05 2.18 2.78 3.92 5 5.03l1.55-1.22c.54-.43 1.33-.41 1.84.05l3.02 2.72c.58.52.69 1.38.25 2.02-.9 1.3-2.22 2.02-3.78 1.72-6.05-1.18-10.98-6.12-12.12-12.19-.29-1.54.43-2.84 1.7-3.73.29-.2.63-.3.96-.3.34 0 .68.12.93.38Z"
+                />
               </svg>
             </span>
             <a
@@ -498,14 +504,22 @@ defineExpose({
               :href="hotlineTelUrl"
               >{{ hotlineNumber }}</a
             >
-            <span v-if="hotlineNumber && hotlineLabel" class="carers-hotline-divider" aria-hidden="true"></span>
+            <span
+              v-if="hotlineNumber && hotlineLabel"
+              class="carers-hotline-divider"
+              aria-hidden="true"
+            ></span>
             <span class="carers-hotline-label">{{ hotlineLabel }}</span>
           </div>
           <button
             type="button"
             class="carers-hotline-toggle"
             :aria-expanded="hotlineExpanded"
-            :aria-label="hotlineExpanded ? 'Collapse hotline details' : 'Expand hotline details'"
+            :aria-label="
+              hotlineExpanded
+                ? 'Collapse hotline details'
+                : 'Expand hotline details'
+            "
             @click="toggleHotline"
           >
             <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
@@ -762,6 +776,11 @@ defineExpose({
   color: var(--adp-chat-assistant-text, #b84319);
 }
 
+:deep(.terms-message-card a),
+:deep(.markdown-body a) {
+  color: var(--adp-chat-link-color, rgb(26, 13, 171));
+}
+
 :deep(.terms-actions) {
   gap: 16px;
 }
@@ -852,7 +871,7 @@ defineExpose({
   gap: 6px;
   min-height: 40px;
   padding: 0 8px;
-  background: var(--adp-chat-footer-background);
+  background: transparent;
   color: #101111;
   font-size: 14px;
   font-weight: 700;
@@ -916,6 +935,7 @@ defineExpose({
 
 .carers-hotline-number {
   color: var(--adp-chat-hotline-text, #139c6c);
+  font-weight: bold;
   font-size: 16px;
   line-height: 24px;
   flex: 0 0 auto;
