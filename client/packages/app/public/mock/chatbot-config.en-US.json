@@ -70,8 +70,8 @@
   },
   "features": {
     "termsGate": true,
-    "fileUpload": false,
-    "voiceInput": false,
+    "fileUpload": true,
+    "voiceInput": true,
     "mockChat": true
   },
   "mockChat": {

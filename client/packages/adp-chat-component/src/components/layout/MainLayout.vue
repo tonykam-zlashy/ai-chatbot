@@ -139,10 +139,6 @@ const showHotline = computed(() =>
   Boolean(hotlineNumber.value || hotlineLabel.value),
 );
 const useCarersHeaderChrome = computed(() => Boolean(props.chatbotConfig));
-// Carers.hk reference composer keeps only text entry plus send; image upload
-// and voice input are intentionally omitted in this layout.
-const carersComposerFileUploadEnabled = false;
-const carersComposerVoiceInputEnabled = false;
 const themeStyle = computed(() => ({
   "--adp-chat-font-family":
     '"DM Sans", "微軟正黑體", "Microsoft JhengHei", sans-serif',
@@ -401,8 +397,8 @@ defineExpose({
         :senderI18n="senderI18n"
         :useInternalRecord="useInternalRecord"
         :asrUrlApi="asrUrlApi"
-        :enableVoiceInput="carersComposerVoiceInputEnabled"
-        :enableFileUpload="carersComposerFileUploadEnabled"
+        :enableVoiceInput="props.enableVoiceInput"
+        :enableFileUpload="props.enableFileUpload"
         :isUploading="isUploading"
         :isOverlay="isOverlay"
         :chatbotConfig="chatbotConfig"

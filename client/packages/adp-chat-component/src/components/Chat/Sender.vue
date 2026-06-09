@@ -671,7 +671,12 @@ defineExpose({
             :class="{ active: showPlusMenu, disabled: isUploading || disabled }"
             @click="togglePlusMenu"
           >
-            <CustomizedIcon remote name="basic_new_line" :theme="theme" :showHoverBg="false" />
+            <CustomizedIcon
+              remote
+              name="basic_new_line"
+              :theme="theme"
+              :showHoverBg="false"
+            />
           </span>
           <Transition name="fade-up">
             <div v-if="showPlusMenu" class="plus-menu-popover">
@@ -795,7 +800,12 @@ defineExpose({
 }
 
 .sender-container.is-focused {
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--adp-chat-footer-icon-color, #ff7833) 18%, transparent);
+  box-shadow: 0 0 0 2px
+    color-mix(
+      in srgb,
+      var(--adp-chat-footer-icon-color, #ff7833) 18%,
+      transparent
+    );
 }
 
 .sender-container.is-uploading {
@@ -861,7 +871,11 @@ defineExpose({
 }
 
 .plus-btn:hover {
-  background-color: color-mix(in srgb, var(--adp-chat-footer-icon-color, #ff7833) 10%, transparent);
+  background-color: color-mix(
+    in srgb,
+    var(--adp-chat-footer-icon-color, #ff7833) 10%,
+    transparent
+  );
 }
 
 .plus-btn.disabled {

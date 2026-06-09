@@ -220,7 +220,7 @@ const pocFeatureFlags = computed(
 );
 
 const loadPocConfig = async () => {
-  if (!FRONTEND_POC_MODE || externalPocConfigReceived.value) return;
+  if (externalPocConfigReceived.value) return;
 
   chatbotConfigLoading.value = true;
   chatbotConfigError.value = "";
