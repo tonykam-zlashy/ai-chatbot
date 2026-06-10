@@ -167,13 +167,20 @@ const primaryMessage = computed(() => {
   return list.find((msg) => msg.Type === "reply");
 });
 
-const extractMessageText = (message?: Message) => {
+const extractMessageText = (
+  message?: Message,
+  options: { omitLastContentText?: boolean } = {},
+) => {
   if (!message?.Contents?.length) return "";
-  return message.Contents.map((content) => {
+  const contents = message.Contents;
+  return contents.map((content, index) => {
     const parts: string[] = [];
 
     // 先处理文本内容（如果有）
-    if (content.Text) {
+    if (
+      content.Text &&
+      !(options.omitLastContentText && index === contents.length - 1)
+    ) {
       parts.push(content.Text);
     }
 
@@ -190,18 +197,6 @@ const extractMessageText = (message?: Message) => {
     .filter((text) => text.length > 0)
     .join("\n");
 };
-
-const rawDisplayText = computed(() => {
-  return extractMessageText(primaryMessage.value);
-});
-
-const displayText = computed(() => {
-  const text = rawDisplayText.value;
-  if (!text.trim() && isAssistantError.value) {
-    return assistantErrorText.value;
-  }
-  return text;
-});
 
 const reasoningMessages = computed(() => {
   return messages.value.filter((msg) => msg.Type === "thought");
@@ -388,7 +383,10 @@ const IMAGE_EXT_RE = /\.(jpg|jpeg|png|bmp|webp|gif)$/i;
 /** 音频 MIME 类型前缀 */
 const AUDIO_TYPE_RE = /^audio\//i;
 /** 通过文件名判断音频 */
-const AUDIO_EXT_RE = /\.(wav|mp3|m4a|aac|ogg|webm)$/i;
+const AUDIO_EXT_RE = /\.(wav|mp3|m4a|aac|ogg|webm)(?:[?#]|$)/i;
+/** AI 回复最后一个 content 中可识别的音频链接 */
+const AUDIO_LINK_RE = /^\s*\[([^\]]*)\]\(([^)\s]+)\)\s*$/;
+const RAW_URL_RE = /^\s*<?(https?:\/\/\S+?)>?\s*$/i;
 
 const imageAttachments = computed<FileInfo[]>(() => {
   return fileAttachments.value.filter(
@@ -402,7 +400,8 @@ const audioAttachments = computed<FileInfo[]>(() => {
   return fileAttachments.value.filter(
     (f) =>
       AUDIO_TYPE_RE.test(f.MimeType || f.FileType || "") ||
-      AUDIO_EXT_RE.test(f.FileName || ""),
+      AUDIO_EXT_RE.test(f.FileName || "") ||
+      AUDIO_EXT_RE.test(f.FileUrl || f.Url || ""),
   );
 });
 
@@ -412,8 +411,93 @@ const docAttachments = computed<FileInfo[]>(() => {
       !IMAGE_TYPE_RE.test(f.MimeType || f.FileType || "") &&
       !IMAGE_EXT_RE.test(f.FileName || "") &&
       !AUDIO_TYPE_RE.test(f.MimeType || f.FileType || "") &&
-      !AUDIO_EXT_RE.test(f.FileName || ""),
+      !AUDIO_EXT_RE.test(f.FileName || "") &&
+      !AUDIO_EXT_RE.test(f.FileUrl || f.Url || ""),
   );
+});
+
+const getAudioUrlFromText = (text: string | undefined) => {
+  const trimmed = text?.trim();
+  if (!trimmed) return "";
+
+  const markdownMatch = trimmed.match(AUDIO_LINK_RE);
+  const markdownUrl = markdownMatch?.[2] || "";
+  if (markdownUrl && AUDIO_EXT_RE.test(markdownUrl)) {
+    return markdownUrl;
+  }
+
+  const rawUrl = trimmed.match(RAW_URL_RE)?.[1] || "";
+  if (rawUrl && AUDIO_EXT_RE.test(rawUrl)) {
+    return rawUrl;
+  }
+
+  return "";
+};
+
+const getFileNameFromUrl = (url: string) => {
+  try {
+    const pathname = new URL(url).pathname;
+    const fileName = decodeURIComponent(pathname.split("/").pop() || "");
+    return fileName || "audio.wav";
+  } catch {
+    return "audio.wav";
+  }
+};
+
+const getInlineAudioAttachmentFromMessage = (
+  message?: Message,
+): FileInfo | undefined => {
+  const contents = message?.Contents ?? [];
+  if (message?.Type !== "reply" || contents.length === 0) return undefined;
+  const lastContent = contents[contents.length - 1];
+  const audioUrl = getAudioUrlFromText(lastContent?.Text);
+  if (!audioUrl) return undefined;
+
+  return {
+    FileName: getFileNameFromUrl(audioUrl),
+    FileSize: "",
+    FileUrl: audioUrl,
+    FileType: "audio/wav",
+    MimeType: "audio/wav",
+  };
+};
+
+const extractDisplayMessageText = (message?: Message) => {
+  return extractMessageText(message, {
+    omitLastContentText: Boolean(getInlineAudioAttachmentFromMessage(message)),
+  });
+};
+
+const rawDisplayText = computed(() => {
+  return extractDisplayMessageText(primaryMessage.value);
+});
+
+const displayText = computed(() => {
+  const text = rawDisplayText.value;
+  if (!text.trim() && isAssistantError.value) {
+    return assistantErrorText.value;
+  }
+  return text;
+});
+
+const assistantAudioAttachments = computed<FileInfo[]>(() => {
+  if (isFromSelf.value) return [];
+
+  const files = [...audioAttachments.value];
+  const replyMessages = messages.value.filter((msg) => msg.Type === "reply");
+  const source =
+    replyMessages.length > 0
+      ? replyMessages[replyMessages.length - 1]
+      : primaryMessage.value;
+  const inlineAudio = getInlineAudioAttachmentFromMessage(source);
+  if (!inlineAudio) return files;
+
+  const inlineUrl = inlineAudio.FileUrl || inlineAudio.Url;
+  const hasSameAudio = files.some((file) => {
+    const fileUrl = file.FileUrl || file.Url;
+    return fileUrl && inlineUrl && fileUrl === inlineUrl;
+  });
+  return hasSameAudio ? files : [...files, inlineAudio];
 });
 
 /** 点击图片附件，新窗口打开预览 */
@@ -748,7 +832,7 @@ const referenceDialogTitle = computed(() => {
               />
               <MdContent
                 v-else-if="renderItem.kind === 'reply'"
-                :content="extractMessageText(renderItem.message)"
+                :content="extractDisplayMessageText(renderItem.message)"
                 role="assistant"
                 :theme="theme"
                 :mode="mode"
@@ -805,6 +889,18 @@ const referenceDialogTitle = computed(() => {
             :files="docAttachments"
             :theme="theme"
           />
+          <!-- assistant 音频附件：支持 file 内容和回复末尾的 .wav 链接 -->
+          <div
+            v-if="!isFromSelf && assistantAudioAttachments.length > 0"
+            class="audio-attachments"
+          >
+            <AudioPlayer
+              v-for="(file, idx) in assistantAudioAttachments"
+              :key="'assistant-audio-' + idx"
+              :src="file.FileUrl || file.Url || ''"
+              :theme="theme"
+            />
+          </div>
           <OptionCard
             v-if="optionCards && optionCards.length"
             :cards="optionCards"
