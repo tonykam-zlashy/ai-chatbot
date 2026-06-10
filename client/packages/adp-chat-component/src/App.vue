@@ -1,6 +1,6 @@
 <!-- 控制尺寸、展开和收起 -->
 <script setup lang="ts">
-import { ref, computed, watch } from "vue";
+import { ref, computed, watch, onMounted, onUnmounted } from "vue";
 import MainApp from "./components/layout/Index.vue";
 import type { Application } from "./model/application";
 import type { ChatConversation, Record } from "./model/chat-v2";
@@ -9,7 +9,11 @@ import { ScoreValue } from "./model/chat-v2";
 import type { ApiConfig } from "./service/api";
 import { defaultApiDetailConfig } from "./service/api";
 import { getMessage, type MessageCode } from "./model/messages";
-import { normalizeWidth, normalizeHeight } from "./utils/device";
+import {
+  normalizeWidth,
+  normalizeHeight,
+  installVisualViewportCssVars,
+} from "./utils/device";
 import type {
   LanguageOption,
   UserInfo,
@@ -218,6 +222,16 @@ const internalTheme = ref(props.theme ?? "light");
 
 // 内部 language 状态（用于没有 onChangeLanguage 回调时的内部切换）
 const internalLanguage = ref(props.language ?? "zh-CN");
+let cleanupVisualViewportCssVars: (() => void) | null = null;
+
+onMounted(() => {
+  cleanupVisualViewportCssVars = installVisualViewportCssVars();
+});
+
+onUnmounted(() => {
+  cleanupVisualViewportCssVars?.();
+  cleanupVisualViewportCssVars = null;
+});
 
 // 监听 props.isOpen 变化，同步内部状态
 watch(
@@ -650,6 +664,11 @@ const actualAutoLoad = computed(() => props.autoLoad);
 @import "./styles/theme.css";
 @import "./styles/chat-overrides.css";
 
+:root {
+  --adp-chat-visual-viewport-height: 100vh;
+  --adp-chat-viewport-bottom-offset: 0px;
+}
+
 .t-chat.isChatting .t-chat__to-bottom::before {
   content: "";
   position: absolute;
@@ -773,12 +792,15 @@ const actualAutoLoad = computed(() => props.autoLoad);
 
   position: fixed;
   z-index: 999;
-  bottom: 18px;
+  bottom: calc(18px + var(--adp-chat-viewport-bottom-offset, 0px));
   right: 18px;
   margin: 0;
   background-color: var(--adp-chat-surface-background, #fff8e8);
   border: 1px solid var(--adp-chat-bubble-border, #f6b36c);
   overflow: hidden;
+  max-height: calc(
+    var(--adp-chat-visual-viewport-height, 100dvh) - 36px
+  );
 }
 
 @media (max-width: 520px) {
@@ -800,10 +822,15 @@ const actualAutoLoad = computed(() => props.autoLoad);
 
   .panel-park--overlay {
     right: 0;
-    bottom: 0;
+    bottom: var(--adp-chat-viewport-bottom-offset, 0px);
     border-radius: 10px 10px 0 0;
     max-width: 100vw;
-    max-height: 100dvh;
+    max-height: var(--adp-chat-visual-viewport-height, 100dvh);
+  }
+
+  .panel-park--full {
+    height: var(--adp-chat-visual-viewport-height, 100dvh);
+    max-height: var(--adp-chat-visual-viewport-height, 100dvh);
   }
 }
 </style>

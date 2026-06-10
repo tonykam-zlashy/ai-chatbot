@@ -146,14 +146,69 @@ export const getViewportWidth = (): number => {
 
 /**
  * 获取视口高度（不包含滚动条）
- * 兼容处理：优先使用 documentElement.clientHeight，降级到 body.clientHeight 或 window.innerHeight
+ * 兼容处理：优先使用 visualViewport.height，降级到 documentElement.clientHeight、body.clientHeight 或 window.innerHeight
  */
 export const getViewportHeight = (): number => {
   if (typeof window === 'undefined') return 0
-  return document.documentElement?.clientHeight 
+  return Math.round(window.visualViewport?.height || 0)
+    || document.documentElement?.clientHeight 
     || document.body?.clientHeight 
     || window.innerHeight 
     || 0
+}
+
+/**
+ * 同步移动浏览器可视视口到 CSS 变量。
+ * iOS Chrome 的底部工具栏不会总是随页面滚动隐藏，固定底部 UI 需要显式避开它。
+ */
+export const installVisualViewportCssVars = (
+  target: HTMLElement = document.documentElement
+): (() => void) => {
+  if (typeof window === 'undefined') return () => {}
+
+  let frame = 0
+
+  const update = () => {
+    frame = 0
+
+    const visualViewport = window.visualViewport
+    const layoutHeight =
+      window.innerHeight ||
+      document.documentElement?.clientHeight ||
+      document.body?.clientHeight ||
+      0
+    const visualHeight = Math.round(visualViewport?.height || layoutHeight)
+    const visualOffsetTop = Math.round(visualViewport?.offsetTop || 0)
+    const bottomOffset = Math.max(
+      0,
+      Math.round(layoutHeight - visualHeight - visualOffsetTop)
+    )
+
+    target.style.setProperty('--adp-chat-visual-viewport-height', `${visualHeight}px`)
+    target.style.setProperty('--adp-chat-viewport-bottom-offset', `${bottomOffset}px`)
+  }
+
+  const scheduleUpdate = () => {
+    if (frame) return
+    frame = window.requestAnimationFrame(update)
+  }
+
+  update()
+  window.addEventListener('resize', scheduleUpdate)
+  window.addEventListener('orientationchange', scheduleUpdate)
+  window.visualViewport?.addEventListener('resize', scheduleUpdate)
+  window.visualViewport?.addEventListener('scroll', scheduleUpdate)
+
+  return () => {
+    if (frame) {
+      window.cancelAnimationFrame(frame)
+      frame = 0
+    }
+    window.removeEventListener('resize', scheduleUpdate)
+    window.removeEventListener('orientationchange', scheduleUpdate)
+    window.visualViewport?.removeEventListener('resize', scheduleUpdate)
+    window.visualViewport?.removeEventListener('scroll', scheduleUpdate)
+  }
 }
 
 // 默认 padding

@@ -163,7 +163,7 @@ export const httpService = {
      * @param data 请求数据
      * @param config 额外配置
      */
-    async post<T = any>(url: string, data?: object, config?: AxiosRequestConfig): Promise<T> {
+    async post<T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T> {
         const response = await axiosInstance.post(url, data, config);
         return (hasCustomResponseInterceptor ? response : response.data) as T;
     },

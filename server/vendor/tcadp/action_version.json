@@ -4,10 +4,6 @@
         "service": "adp",
         "headers.X-TC-Version": "2026-05-20"
     },
-    "DescribeStorageCredential": {
-        "service": "adp",
-        "headers.X-TC-Version": "2026-05-20"
-    },
     "CreateWorkspaceCredential": {
         "service": "adp",
         "headers.X-TC-Version": "2026-05-20"

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from "vue";
+import { ref, computed, onMounted, onUnmounted } from "vue";
 import type { Application } from "../../model/application";
 import type { Record } from "../../model/chat-v2";
 import type { FileProps } from "../../model/file";
@@ -26,6 +26,7 @@ import type {
   ChatbotConfig,
 } from "../../model/type";
 import { chatRelatedPropsDefaults, defaultChatI18n } from "../../model/type";
+import { installVisualViewportCssVars } from "../../utils/device";
 
 export interface Props extends ChatRelatedProps {
   /** 当前应用信息 */
@@ -103,6 +104,16 @@ const props = withDefaults(defineProps<Props>(), {
   termsResolving: false,
   termsAccepted: false,
   termsPromptKey: 0,
+});
+let cleanupVisualViewportCssVars: (() => void) | null = null;
+
+onMounted(() => {
+  cleanupVisualViewportCssVars = installVisualViewportCssVars();
+});
+
+onUnmounted(() => {
+  cleanupVisualViewportCssVars?.();
+  cleanupVisualViewportCssVars = null;
 });
 
 // 合并 i18n 配置，获取 createConversation 文本
@@ -590,7 +601,11 @@ defineExpose({
 
 .layout-footer {
   flex-shrink: 0;
-  padding: 0 8px;
+  padding: 0 8px
+    max(
+      env(safe-area-inset-bottom, 0px),
+      var(--adp-chat-viewport-bottom-offset, 0px)
+    );
   border-radius: 0 0 11px 11px;
   background: var(--adp-chat-footer-background);
   background-size: 100%
@@ -599,6 +614,7 @@ defineExpose({
         var(--adp-chat-layout-footer-height, 72px)
     );
   background-position: bottom;
+  box-sizing: border-box;
 }
 .header-app-driver {
   margin: 0 var(--td-size-6) 0 var(--td-size-4);

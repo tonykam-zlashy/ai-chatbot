@@ -1196,15 +1196,14 @@ class TCADP(BaseVendor):
         # claw/agent 模式使用 BotBizId='0' + IsPublic=True，确保文件在公有桶中可被 Claw Agent 下载
         if mode == 'claw':
             payload = {
-                "AppId": '0',
+                "BotBizId": '0',
                 "FileType": file_type,
                 "IsPublic": True,
                 "TypeKey": 'realtime',
             }
-            resp = await tc_request(self.tc_config(), action, payload)
         else:
             payload = {
-                "AppId": self.config.get('AppId', ''),
+                "BotBizId": self.config.get('AppId', ''),
                 "FileType": file_type,
                 "IsPublic": is_image,
                 "TypeKey": 'realtime',
@@ -1279,7 +1278,7 @@ class TCADP(BaseVendor):
         # 对齐 webim openclaw 的 handleAgentDoc → cos.getDownloadUrl 逻辑
         if mode == 'claw' and cos_url:
             download_payload = {
-                "AppId": '0',
+                "BotBizId": '0',
                 "FileType": file_type,
                 "IsPublic": True,
                 "TypeKey": 'realtime',

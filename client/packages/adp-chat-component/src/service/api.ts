@@ -274,7 +274,11 @@ export const uploadFile = async (file: File, applicationId?: string, apiPath?: s
     }
     const url = params.toString() ? `${apiPath}?${params.toString()}` : apiPath;
     try {
-        const response = await httpService.post(url, file);
+        const response = await httpService.post(url, await file.arrayBuffer(), {
+            headers: {
+                'Content-Type': file.type || 'application/octet-stream',
+            },
+        });
         return response;
     } catch (error) {
         console.error('文件上传失败:', error);
