@@ -65,6 +65,8 @@ export interface Props extends ChatRelatedProps {
   useInternalRecord?: boolean;
   /** ASR URL API 路径 */
   asrUrlApi?: string;
+  /** ASR 文件识别 API 路径 */
+  asrFileApi?: string;
   /** 是否启用语音输入 */
   enableVoiceInput?: boolean;
   /** 是否启用文件上传入口 */
@@ -224,6 +226,12 @@ const emit = defineEmits<{
   ): void;
   /** 停止生成回复 */
   (e: "stop"): void;
+  (
+    e: "recordAudio",
+    file: FileProps,
+    conversationId: string,
+    applicationId: string,
+  ): void;
   /** 加载更多历史消息
    * @param conversationId - 会话ID
    * @param lastRecordId - 最后一条记录ID
@@ -398,6 +406,7 @@ defineExpose({
         :senderI18n="senderI18n"
         :useInternalRecord="useInternalRecord"
         :asrUrlApi="asrUrlApi"
+        :asrFileApi="asrFileApi"
         :enableVoiceInput="props.enableVoiceInput"
         :enableFileUpload="props.enableFileUpload"
         :isUploading="isUploading"
@@ -412,6 +421,13 @@ defineExpose({
           ) => emit('send', query, fileList, conversationId, applicationId)
         "
         @stop="emit('stop')"
+        @recordAudio="
+          (
+            file: FileProps,
+            conversationId: string,
+            applicationId: string,
+          ) => emit('recordAudio', file, conversationId, applicationId)
+        "
         :termsResolving="termsResolving"
         :termsAccepted="termsAccepted"
         :termsPromptKey="termsPromptKey"

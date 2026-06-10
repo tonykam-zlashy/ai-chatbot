@@ -253,6 +253,7 @@
           :i18n="senderI18n"
           :useInternalRecord="useInternalRecord"
           :asrUrlApi="asrUrlApi"
+          :asrFileApi="asrFileApi"
           :enableVoiceInput="props.enableVoiceInput"
           :enableFileUpload="props.enableFileUpload"
           :isUploading="props.isUploading"
@@ -260,6 +261,7 @@
           :disabledPlaceholder="termsCopy.inputDisabledPlaceholder"
           @stop="onStop"
           @send="handleSend"
+          @recordAudio="handleRecordAudio"
           @uploadFile="handleUploadFile"
           @startRecord="handleStartRecord"
           @stopRecord="handleStopRecord"
@@ -343,6 +345,8 @@ export interface Props extends ChatRelatedProps {
   useInternalRecord?: boolean;
   /** ASR URL API 路径 */
   asrUrlApi?: string;
+  /** ASR 文件识别 API 路径 */
+  asrFileApi?: string;
   /** 是否启用语音输入 */
   enableVoiceInput?: boolean;
   /** 是否启用文件上传入口 */
@@ -376,6 +380,7 @@ const props = withDefaults(defineProps<Props>(), {
   senderI18n: () => ({}),
   useInternalRecord: false,
   asrUrlApi: "",
+  asrFileApi: "/helper/asr/file",
   enableVoiceInput: true,
   enableFileUpload: true,
   isUploading: false,
@@ -398,6 +403,7 @@ const {
   theme,
   useInternalRecord,
   asrUrlApi,
+  asrFileApi,
 } = toRefs(props);
 
 // 合并默认值和传入值（根据 language 选择对应语言的默认值）
@@ -431,6 +437,12 @@ const emit = defineEmits<{
     applicationId: string,
   ): void;
   (e: "stop"): void;
+  (
+    e: "recordAudio",
+    file: FileProps,
+    conversationId: string,
+    applicationId: string,
+  ): void;
   (e: "loadMore", conversationId: string, lastRecordId: string): void;
   (
     e: "rate",
@@ -937,6 +949,10 @@ const inputEnter = function (
  */
 const handleSend = (value: string, fileList: FileProps[]) => {
   inputEnter(value, fileList);
+};
+
+const handleRecordAudio = (file: FileProps) => {
+  emit("recordAudio", file, props.chatId, props.currentApplicationId);
 };
 
 const extractRecordText = (record: Record): string => {

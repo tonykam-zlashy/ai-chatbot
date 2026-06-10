@@ -20,8 +20,8 @@ import {
 import RecordIcon from "../Common/RecordIcon.vue";
 import FileList from "../Common/FileList.vue";
 import CustomizedIcon from "../CustomizedIcon.vue";
-import WebRecorder from "../../utils/webRecorder";
-import { getAsrUrl } from "../../service/api";
+import WebRecorder, { pcmToWav } from "../../utils/webRecorder";
+import { httpService } from "../../service/httpService";
 import QaEditor from "../QaEditor/index.vue";
 
 export interface Props extends ChatRelatedProps {
@@ -31,6 +31,8 @@ export interface Props extends ChatRelatedProps {
   useInternalRecord?: boolean;
   /** ASR URL API 路径 */
   asrUrlApi?: string;
+  /** ASR 文件识别 API 路径 */
+  asrFileApi?: string;
   /** 是否启用语音输入 */
   enableVoiceInput?: boolean;
   /** 是否启用文件上传入口 */
@@ -50,6 +52,7 @@ const props = withDefaults(defineProps<Props>(), {
   isStreamLoad: false,
   useInternalRecord: false,
   asrUrlApi: "",
+  asrFileApi: "/helper/asr/file",
   enableVoiceInput: true,
   enableFileUpload: true,
   isUploading: false,
@@ -87,6 +90,7 @@ const hasContent = computed(() => {
 const emit = defineEmits<{
   (e: "stop"): void;
   (e: "send", value: string, fileList: FileProps[]): void;
+  (e: "recordAudio", file: FileProps): void;
   (e: "uploadFile", files: File[]): void;
   (e: "startRecord"): void;
   (e: "stopRecord"): void;
@@ -98,8 +102,7 @@ const inputFocus = ref(false);
 const recording = ref(false);
 const fileList = ref<FileProps[]>([]);
 const recorder = ref<WebRecorder | null>(null);
-const asrWebSocket = ref<WebSocket | null>(null);
-const recordMaxTime = 60;
+const recordMaxTime = 10;
 const recordRef = ref<ReturnType<typeof setTimeout> | null>(null);
 const qaEditorRef = ref<InstanceType<typeof QaEditor> | null>(null);
 const inputValueBefore = ref("");
@@ -346,58 +349,18 @@ const handleStartRecord = async () => {
   recording.value = true;
 
   if (props.useInternalRecord) {
-    try {
-      const res = await getAsrUrl(props.asrUrlApi || undefined);
-      inputValueBefore.value = getPlainText(editorHtml.value);
-      const url = res.url;
-      asrWebSocket.value = new WebSocket(url);
-
-      asrWebSocket.value.onopen = () => {
-        startRecording();
-        recordRef.value = setTimeout(() => {
-          if (recording.value) {
-            const text =
-              i18n.value.recordTooLong ||
-              getMessage(MessageCode.RECORD_TOO_LONG).message;
-            MessagePlugin.warning(text);
-            emit("message", MessageCode.RECORD_TOO_LONG, text);
-            handleStopRecord();
-          }
-        }, recordMaxTime * 1000);
-      };
-
-      asrWebSocket.value.onmessage = (event) => {
-        if (!recording.value) return;
-        const msg = JSON.parse(event.data);
-        if ("result" in msg) {
-          const newText =
-            inputValueBefore.value + msg["result"]["voice_text_str"];
-          qaEditorRef.value?.clear();
-          nextTick(() => {
-            qaEditorRef.value?.insertText(newText);
-          });
-        }
-        if ("message" in msg && "code" in msg && msg["code"] != 0) {
-          MessagePlugin.error(msg["message"]);
-          emit("message", MessageCode.ASR_SERVICE_FAILED, msg["message"]);
-        }
-      };
-
-      asrWebSocket.value.onclose = () => {
-        recording.value = false;
-        if (recordRef.value) {
-          clearTimeout(recordRef.value);
-          recordRef.value = null;
-        }
-      };
-    } catch (error) {
-      recording.value = false;
-      const text =
-        i18n.value.asrServiceFailed ||
-        getMessage(MessageCode.ASR_SERVICE_FAILED).message;
-      MessagePlugin.error(text);
-      emit("message", MessageCode.ASR_SERVICE_FAILED, text);
-    }
+    inputValueBefore.value = getPlainText(editorHtml.value);
+    startRecording();
+    recordRef.value = setTimeout(() => {
+      if (recording.value) {
+        const text =
+          i18n.value.recordTooLong ||
+          getMessage(MessageCode.RECORD_TOO_LONG).message;
+        MessagePlugin.warning(text);
+        emit("message", MessageCode.RECORD_TOO_LONG, text);
+        handleStopRecord();
+      }
+    }, recordMaxTime * 1000);
   }
 
   emit("startRecord");
@@ -409,11 +372,7 @@ const handleStartRecord = async () => {
 const startRecording = () => {
   const requestId = "0";
   recorder.value = new WebRecorder({ requestId });
-  recorder.value.OnReceivedData = (data: any) => {
-    if (asrWebSocket.value?.readyState === WebSocket.OPEN) {
-      asrWebSocket.value?.send(data);
-    }
-  };
+  recorder.value.OnReceivedData = () => {};
   recorder.value.OnError = (err: any) => {
     let errMsg: string;
     let errCode: MessageCode = MessageCode.RECORD_FAILED;
@@ -465,6 +424,64 @@ const startRecording = () => {
     emit("message", errCode, errMsg);
     recording.value = false;
   };
+  recorder.value.OnStop = async (data: number[]) => {
+    if (data.length === 0) {
+      return;
+    }
+    let audioUrl = "";
+    let audioCommitted = false;
+    try {
+      const wavBlob = pcmToWav(data, 16000);
+      const fileName = `recording_${Date.now()}.wav`;
+      const audioFile = new File([wavBlob], fileName, { type: "audio/wav" });
+      audioUrl = URL.createObjectURL(wavBlob);
+      const audioAttachment: FileProps = {
+        uid: `${Date.now()}-${Math.random().toString(36).slice(2)}-audio`,
+        name: fileName,
+        url: audioUrl,
+        size: audioFile.size,
+        type: audioFile.type,
+        status: "done",
+        category: "audio",
+        localOnly: true,
+      };
+      emit("recordAudio", audioAttachment);
+      audioCommitted = true;
+      const formData = new FormData();
+      formData.append("audio", audioFile);
+      const response = await httpService.post(
+        props.asrFileApi || "/helper/asr/file",
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        },
+      );
+      const result =
+        (response as any)?.Result || (response as any)?.data?.Result || "";
+      if (result) {
+        const prefix = inputValueBefore.value;
+        const newText = prefix ? `${prefix} ${result}` : result;
+        emit("send", newText, [audioAttachment]);
+      } else {
+        const text =
+          i18n.value.asrServiceFailed ||
+          getMessage(MessageCode.ASR_SERVICE_FAILED).message;
+        MessagePlugin.error(text);
+        emit("message", MessageCode.ASR_SERVICE_FAILED, text);
+      }
+    } catch (err) {
+      if (audioUrl && !audioCommitted) {
+        URL.revokeObjectURL(audioUrl);
+      }
+      const text =
+        i18n.value.asrServiceFailed ||
+        getMessage(MessageCode.ASR_SERVICE_FAILED).message;
+      MessagePlugin.error(text);
+      emit("message", MessageCode.ASR_SERVICE_FAILED, text);
+    }
+  };
   recorder.value.start();
 };
 
@@ -478,8 +495,6 @@ const handleStopRecord = () => {
   if (props.useInternalRecord) {
     recorder.value?.stop();
     recorder.value = null;
-    asrWebSocket.value?.close();
-    asrWebSocket.value = null;
     if (recordRef.value) {
       clearTimeout(recordRef.value);
       recordRef.value = null;

@@ -54,12 +54,15 @@ export interface Image {
 }
 
 export interface FileInfo {
+  Uid?: string
   FileName: string
   FileSize: string
   FileUrl: string
   FileType: string
   Url?: string
   DocId?: string
+  MimeType?: string
+  LocalOnly?: boolean
 }
 
 export interface WidgetAction {

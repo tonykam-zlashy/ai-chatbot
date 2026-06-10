@@ -958,6 +958,125 @@ const loadSystemConfig = async () => {
   }
 };
 
+const fileToContent = (file: FileProps): Content | null => {
+  if (file.status !== "done" || !file.url) return null;
+  const extName = file.name?.split(".").pop() || "";
+  return {
+    Type: "file",
+    File: {
+      Uid: file.uid,
+      DocId: file.docId || "0",
+      FileName: file.name || "",
+      FileUrl: file.url,
+      FileSize: String(file.size || 0),
+      FileType: file.type || extName,
+      MimeType: file.type || "",
+      LocalOnly: file.localOnly,
+    },
+  };
+};
+
+const getLocalAudioFile = (fileList: FileProps[]) =>
+  fileList.find((file) => file.localOnly && file.category === "audio");
+
+const getLocalAudioRecordId = (file: FileProps) => `local-audio-${file.uid}`;
+
+const appendLocalOnlyFileContents = (
+  record: Record,
+  localRecord: Record | undefined,
+): Record => {
+  if (!localRecord?.Messages?.length) return record;
+  const localContents = localRecord.Messages.flatMap((message) =>
+    (message.Contents || []).filter(
+      (content) => content.Type === "file" && content.File?.LocalOnly,
+    ),
+  );
+  if (localContents.length === 0) return record;
+
+  const messages = record.Messages ? [...record.Messages] : [];
+  const messageIndex = messages.findIndex((message) => message.Type === "question");
+  const targetIndex = messageIndex >= 0 ? messageIndex : 0;
+  const targetMessage = messages[targetIndex];
+  if (!targetMessage) return record;
+
+  const contents = targetMessage.Contents ? [...targetMessage.Contents] : [];
+  const seen = new Set(
+    contents
+      .filter((content) => content.Type === "file" && content.File?.LocalOnly)
+      .map((content) => content.File?.Uid || content.File?.FileUrl || ""),
+  );
+  for (const content of localContents) {
+    const key = content.File?.Uid || content.File?.FileUrl || "";
+    if (key && seen.has(key)) continue;
+    contents.push(content);
+    if (key) seen.add(key);
+  }
+
+  messages[targetIndex] = { ...targetMessage, Contents: contents };
+  return { ...record, Messages: messages };
+};
+
+const handleInternalRecordAudio = (
+  file: FileProps,
+  conversationId: string,
+  applicationId: string,
+) => {
+  if (!useApiMode.value) return;
+
+  const streamConversationKey =
+    conversationId ||
+    currentConversationStateKey.value ||
+    createPendingConversationKey();
+  currentConversationStateKey.value = streamConversationKey;
+  const streamState = ensureConversationRuntimeState(streamConversationKey);
+  if (!streamState) return;
+
+  streamState.applicationId =
+    applicationId ||
+    streamState.applicationId ||
+    internalCurrentConversation.value?.ApplicationId ||
+    internalCurrentApplication.value?.ApplicationId;
+
+  const fileContent = fileToContent(file);
+  if (!fileContent) return;
+
+  const recordId = getLocalAudioRecordId(file);
+  if (streamState.records.some((record) => record.RecordId === recordId)) {
+    return;
+  }
+
+  const timestamp = Date.now();
+  streamState.records.push({
+    Role: "user",
+    RecordId: recordId,
+    ConversationId: conversationId || streamConversationKey,
+    Status: "success",
+    StatusDesc: "",
+    Messages: [
+      {
+        Type: "question",
+        MessageId: `${recordId}-message`,
+        Name: "question",
+        Title: "",
+        Status: "success",
+        StatusDesc: "",
+        Contents: [fileContent],
+      },
+    ],
+    ExtraInfo: {
+      RequestId: "",
+      TraceId: "",
+      Elapsed: 0,
+      StartTime: timestamp,
+      IsFromSelf: true,
+    },
+  });
+
+  nextTick(() => {
+    mainLayoutRef.value?.getChatRef()?.backToBottom();
+  });
+};
+
 // 内部发送消息处理（API 模式）
 const handleInternalSend = async (
   query: string,
@@ -1054,6 +1173,10 @@ const handleInternalSend = async (
   mainLayoutRef.value?.getChatRef()?.setHasUserScrolled(false);
 
   const timestamp = Date.now();
+  const localAudioFile = getLocalAudioFile(fileList);
+  const userPlaceholderId = localAudioFile
+    ? getLocalAudioRecordId(localAudioFile)
+    : "placeholder-user";
   const baseExtraInfo = (isFromSelf: boolean) => ({
     RequestId: "",
     TraceId: "",
@@ -1065,25 +1188,14 @@ const handleInternalSend = async (
   // 构建用户消息展示内容（图片和文档都作为 file Content 展示）
   const userContents: Content[] = [{ Type: "text", Text: query }];
   for (const file of fileList) {
-    if (file.status === "done" && file.url) {
-      const extName = file.name?.split(".").pop() || "";
-      userContents.push({
-        Type: "file",
-        File: {
-          DocId: file.docId || "0",
-          FileName: file.name || "",
-          FileUrl: file.url,
-          FileSize: String(file.size || 0),
-          FileType: extName,
-        },
-      });
-    }
+    const fileContent = fileToContent(file);
+    if (fileContent) userContents.push(fileContent);
   }
 
   // 创建用户消息占位
   const userRecord: Record = {
     Role: "user",
-    RecordId: "placeholder-user",
+    RecordId: userPlaceholderId,
     ConversationId: conversationId || streamConversationKey,
     Status: "success",
     StatusDesc: "",
@@ -1100,7 +1212,14 @@ const handleInternalSend = async (
     ],
     ExtraInfo: baseExtraInfo(true),
   };
-  streamState.records.push(userRecord);
+  const existingUserRecordIndex = streamState.records.findIndex(
+    (record) => record.RecordId === userPlaceholderId,
+  );
+  if (existingUserRecordIndex >= 0) {
+    streamState.records.splice(existingUserRecordIndex, 1, userRecord);
+  } else {
+    streamState.records.push(userRecord);
+  }
 
   // 创建助手消息占位
   const assistantRecord: Record = {
@@ -1124,20 +1243,11 @@ const handleInternalSend = async (
   const contents: Content[] = [{ Type: "text", Text: query }];
   // 将所有已上传成功的文件（图片和文档）以 file content 格式加入
   for (const file of fileList) {
-    if (file.status === "done" && file.url) {
-      const extName = file.name?.split(".").pop() || "";
-      contents.push({
-        Type: "file",
-        File: {
-          DocId: file.docId || "0",
-          FileName: file.name || "",
-          FileUrl: file.url,
-          FileSize: String(file.size || 0),
-          FileType: extName,
-        },
-      });
-    }
+    if (file.localOnly) continue;
+    const fileContent = fileToContent(file);
+    if (fileContent) contents.push(fileContent);
   }
+  const backendFileList = fileList.filter((file) => !file.localOnly);
   await fetchSSE(
     () => {
       return sendMessage(
@@ -1145,7 +1255,7 @@ const handleInternalSend = async (
           Contents: contents,
           ConversationId: conversationId || undefined,
           ApplicationId: applicationId,
-          FileInfos: fileList,
+          FileInfos: backendFileList,
         },
         { signal: streamState.abortController?.signal },
         mergedApiDetailConfig.value.sendMessageApi,
@@ -1224,11 +1334,15 @@ const handleInternalSend = async (
         if (event.Type === "request_ack") {
           // 用户消息：替换占位
           const placeholderUser = targetState.records.find(
-            (item) => item.RecordId === "placeholder-user",
+            (item) => item.RecordId === userPlaceholderId,
           );
           const nextUser = applySseEventToRecord(event, placeholderUser);
           if (nextUser) {
-            const appliedUser = updateRecord(nextUser, "placeholder-user");
+            const userWithLocalAudio = appendLocalOnlyFileContents(
+              nextUser,
+              placeholderUser,
+            );
+            const appliedUser = updateRecord(userWithLocalAudio, userPlaceholderId);
             void hydrateReferences([appliedUser], {
               applicationId: resolvedApplicationId,
             });
@@ -2065,6 +2179,7 @@ defineExpose({
         :senderI18n="props.senderI18n"
         :useInternalRecord="useApiMode"
         :asrUrlApi="mergedApiDetailConfig.asrUrlApi"
+        :asrFileApi="mergedApiDetailConfig.asrFileApi"
         :enableVoiceInput="enableVoiceInput"
         :enableFileUpload="enableFileUpload"
         :isUploading="isUploading"
@@ -2078,6 +2193,7 @@ defineExpose({
         @acceptTerms="handleAcceptTerms"
         @declineTerms="handleDeclineTerms"
         @send="handleInternalSend"
+        @recordAudio="handleInternalRecordAudio"
         @stop="handleInternalStop"
         @loadMore="handleInternalLoadMore"
         @rate="handleInternalRate"

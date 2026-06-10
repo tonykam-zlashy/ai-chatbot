@@ -1,7 +1,7 @@
 /**
  * 文件类型分类
  */
-export type FileCategory = 'image' | 'document';
+export type FileCategory = 'image' | 'document' | 'audio';
 
 /**
  * 文件上传状态
@@ -23,12 +23,17 @@ export interface FileProps {
   response?: string;
   /** 文档解析后获取的 doc_id，standard 模式下用于文件对话 */
   docId?: string;
+  /** 仅用于前端展示，不作为聊天文件内容发送给后端 */
+  localOnly?: boolean;
 }
 
 /**
  * 根据 MIME 类型判断文件分类
  */
 export function getFileCategory(mimeType: string): FileCategory {
+  if (mimeType.startsWith('audio/')) {
+    return 'audio';
+  }
   if (mimeType.startsWith('image/')) {
     return 'image';
   }
@@ -74,6 +79,7 @@ export const ALLOWED_FILE_TYPES = [...ALLOWED_IMAGE_TYPES, ...ALLOWED_DOC_TYPES]
 export const FILE_SIZE_LIMITS = {
   image: 10 * 1024 * 1024,
   document: 15 * 1024 * 1024,
+  audio: 2 * 1024 * 1024,
 };
 
 /**

@@ -134,6 +134,7 @@ const defaultApiConfig: ApiConfig = {
     userInfoApi: "/account/info",
     uploadApi: "/file/upload",
     asrUrlApi: "/helper/asr/url",
+    asrFileApi: "/helper/asr/file",
     systemConfigApi: "/system/config",
   },
 };
@@ -552,10 +553,10 @@ const handleConversationChange = (conversationId: string) => {
     :isSidePanelOverlay="true"
     :showToggleButton="embedHostMode ? false : embedConfig.showToggleButton"
     :showCloseButton="
-      embedHostMode ? false : embedConfig.showCloseButton ?? true
+      embedHostMode ? false : (embedConfig.showCloseButton ?? true)
     "
     :showOverlayButton="
-      embedHostMode ? false : embedConfig.showOverlayButton ?? true
+      embedHostMode ? false : (embedConfig.showOverlayButton ?? true)
     "
     :width="embedConfig.width"
     :height="embedConfig.height"

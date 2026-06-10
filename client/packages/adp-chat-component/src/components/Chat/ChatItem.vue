@@ -30,6 +30,7 @@ import OptionCard from "../Common/OptionCard.vue";
 import MdContent from "../Common/MdContent.vue";
 import MessageFileCard from "../Common/MessageFileCard.vue";
 import AssistantFileCard from "../Common/AssistantFileCard.vue";
+import AudioPlayer from "../Common/AudioPlayer.vue";
 import WidgetActionTag from "../Common/WidgetActionTag.vue";
 import CustomizedIcon from "../CustomizedIcon.vue";
 import CollapsibleMessageGroup from "./CollapsibleMessageGroup.vue";
@@ -384,20 +385,34 @@ const fileAttachments = computed<FileInfo[]>(() => {
 const IMAGE_TYPE_RE = /^image\//i;
 /** 通过文件名判断图片 */
 const IMAGE_EXT_RE = /\.(jpg|jpeg|png|bmp|webp|gif)$/i;
+/** 音频 MIME 类型前缀 */
+const AUDIO_TYPE_RE = /^audio\//i;
+/** 通过文件名判断音频 */
+const AUDIO_EXT_RE = /\.(wav|mp3|m4a|aac|ogg|webm)$/i;
 
 const imageAttachments = computed<FileInfo[]>(() => {
   return fileAttachments.value.filter(
     (f) =>
-      IMAGE_TYPE_RE.test(f.FileType || "") ||
+      IMAGE_TYPE_RE.test(f.MimeType || f.FileType || "") ||
       IMAGE_EXT_RE.test(f.FileName || ""),
+  );
+});
+
+const audioAttachments = computed<FileInfo[]>(() => {
+  return fileAttachments.value.filter(
+    (f) =>
+      AUDIO_TYPE_RE.test(f.MimeType || f.FileType || "") ||
+      AUDIO_EXT_RE.test(f.FileName || ""),
   );
 });
 
 const docAttachments = computed<FileInfo[]>(() => {
   return fileAttachments.value.filter(
     (f) =>
-      !IMAGE_TYPE_RE.test(f.FileType || "") &&
-      !IMAGE_EXT_RE.test(f.FileName || ""),
+      !IMAGE_TYPE_RE.test(f.MimeType || f.FileType || "") &&
+      !IMAGE_EXT_RE.test(f.FileName || "") &&
+      !AUDIO_TYPE_RE.test(f.MimeType || f.FileType || "") &&
+      !AUDIO_EXT_RE.test(f.FileName || ""),
   );
 });
 
@@ -690,7 +705,16 @@ const referenceDialogTitle = computed(() => {
                 :theme="theme"
               />
             </div>
+            <div v-if="audioAttachments.length > 0" class="audio-attachments">
+              <AudioPlayer
+                v-for="(file, idx) in audioAttachments"
+                :key="'audio-' + idx"
+                :src="file.FileUrl || file.Url || ''"
+                :theme="theme"
+              />
+            </div>
             <MdContent
+              v-if="displayText"
               :content="displayText"
               role="user"
               :theme="theme"
@@ -1213,6 +1237,16 @@ const referenceDialogTitle = computed(() => {
   gap: var(--td-comp-margin-s);
   margin: var(--td-comp-margin-s) 0;
 }
+
+.audio-attachments {
+  display: flex;
+  flex-direction: column;
+  gap: var(--td-comp-margin-xs);
+  margin: var(--td-comp-margin-s) 0;
+  max-width: min(280px, 100%);
+}
+
+
 
 .msg-inline-image {
   max-width: 200px;
