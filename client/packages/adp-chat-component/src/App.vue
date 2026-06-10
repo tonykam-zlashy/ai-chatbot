@@ -340,6 +340,10 @@ const handleClose = () => {
   emit("close");
 };
 
+const handleMinimize = () => {
+  setOpen(false);
+};
+
 const handleOverlay = (_isOverlay: boolean) => {
   internalIsOverlay.value = _isOverlay;
   emit("overlay", _isOverlay);
@@ -480,7 +484,7 @@ const actualTheme = computed(() => {
 });
 const actualLanguageOptions = computed(() => props.languageOptions);
 const actualLanguage = computed(
-  () => props.chatbotConfig?.language || internalLanguage.value,
+  () => internalLanguage.value || props.chatbotConfig?.language,
 );
 const actualIsSidePanelOverlay = computed(() => props.isSidePanelOverlay);
 const actualLogoUrl = computed(() => props.logoUrl);
@@ -499,7 +503,9 @@ const actualAiWarningText = computed(() => {
 });
 
 // 根据最终渲染语言获取默认 i18n。config-url 模式下语言可能来自 chatbotConfig。
-const defaultI18n = computed(() => getI18nByLanguage(actualLanguage.value));
+const defaultI18n = computed(() =>
+  getI18nByLanguage(actualLanguage.value || "zh-HK"),
+);
 // 如果外部传入了 i18n，优先使用外部的；否则使用根据语言计算的默认值
 const actualSideI18n = computed(
   () => props.sideI18n ?? defaultI18n.value.sideI18n,
@@ -593,6 +599,7 @@ const actualAutoLoad = computed(() => props.autoLoad);
         @changeLanguage="handleChangeLanguage"
         @logout="emit('logout')"
         @userClick="emit('userClick')"
+        @minimize="handleMinimize"
         @close="handleClose"
         @overlay="handleOverlay"
         @send="
@@ -798,9 +805,7 @@ const actualAutoLoad = computed(() => props.autoLoad);
   background-color: var(--adp-chat-surface-background, #fff8e8);
   border: 1px solid var(--adp-chat-bubble-border, #f6b36c);
   overflow: hidden;
-  max-height: calc(
-    var(--adp-chat-visual-viewport-height, 100dvh) - 36px
-  );
+  max-height: calc(var(--adp-chat-visual-viewport-height, 100dvh) - 36px);
 }
 
 @media (max-width: 520px) {

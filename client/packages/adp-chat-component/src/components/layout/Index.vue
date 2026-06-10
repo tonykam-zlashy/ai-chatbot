@@ -199,6 +199,7 @@ const emit = defineEmits<{
   (e: "changeLanguage", key: string): void;
   (e: "logout"): void;
   (e: "userClick"): void;
+  (e: "minimize"): void;
   (e: "close"): void;
   (e: "overlay", isOverlay: boolean): void;
   (
@@ -264,7 +265,7 @@ const filePreviewLayoutRef = ref<InstanceType<typeof FilePreviewLayout> | null>(
 );
 const TERMS_ACCEPTED_STORAGE_PREFIX = "adp_chat_terms_accepted";
 const actualLanguageValue = computed(
-  () => props.chatbotConfig?.language || props.language || "zh-HK",
+  () => props.language || props.chatbotConfig?.language || "zh-HK",
 );
 const isEnglish = computed(() => actualLanguageValue.value?.startsWith("en"));
 const defaultApplicationName = computed(
@@ -1599,7 +1600,7 @@ const handleClose = () => {
 };
 
 const handleMinimize = () => {
-  emit("close");
+  emit("minimize");
 };
 
 const handleOverlay = () => {

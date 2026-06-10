@@ -44,7 +44,7 @@ Use these attributes on the embed `<script>` tag.
 | Attribute | Example | Description |
 | --- | --- | --- |
 | `data-logo-title` | `Support` | Header/title text inside the chatbot. |
-| `data-language` | `en` | Initial language. Supported public keys are `en`, `zh-HK`, and `zh_CN`. |
+| `data-language` | `en` | Initial language. Supported public keys are `en`, `zh-HK`, and `zh_CN`. Defaults to `zh-HK` if unset. |
 | `data-theme` | `light` | Initial theme: `light` or `dark`. |
 | `data-width` | `420` | Chat panel width. Number values are treated as pixels. |
 | `data-height` | `80vh` | Chat panel height. |
@@ -109,6 +109,8 @@ ADPChatEmbed.update({
 
 ### Language
 
+`setLanguage()` and `changeLanguage()` are functionally identical — `changeLanguage` delegates to `setLanguage`.
+
 ```js
 ADPChatEmbed.setLanguage('en');
 ADPChatEmbed.changeLanguage('zh-HK');
@@ -128,12 +130,14 @@ ADPChatEmbed.changeLanguage('en', {
 });
 ```
 
+`setLanguage()` and `changeLanguage()` are functionally identical — `changeLanguage` delegates to `setLanguage`.
+
 Language aliases are normalized:
 
 ```text
-en, en-US, english -> en
-zh-HK, zh_HK, zh-Hant -> zh-HK
-zh, zh-CN, zh_CN, zh-Hans, chinese -> zh_CN
+en, en-US, english                        -> en
+zh-HK, zh_HK, zh-Hant, hongkong, hong-kong -> zh-HK
+zh, zh-CN, zh_CN, zh-Hans, chinese        -> zh_CN
 ```
 
 ### Theme
