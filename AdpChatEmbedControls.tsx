@@ -107,6 +107,7 @@ const AdpChatEmbedControls = ({ locale }: AdpChatEmbedControlsProps) => {
   const [isReady, setIsReady] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [status, setStatus] = useState("closed");
+  const [isFrameExpanded, setIsFrameExpanded] = useState(false);
   const [accessibilityEnabled, setAccessibilityEnabled] = useState(false);
   const [featureTogglesEnabled, setFeatureTogglesEnabled] = useState(true);
   const [darkThemeEnabled, setDarkThemeEnabled] = useState(false);
@@ -217,6 +218,33 @@ const AdpChatEmbedControls = ({ locale }: AdpChatEmbedControlsProps) => {
     },
     [accessibilityEnabled, adpLanguage, getEmbedApi, locale],
   );
+
+  useEffect(() => {
+    const handleEmbedMessage = (event: MessageEvent) => {
+      if (event.source !== iframeRef.current?.contentWindow) {
+        return;
+      }
+
+      const data = event.data;
+      if (!data || data.source !== "ADPChatEmbed") {
+        return;
+      }
+
+      if (data.type === "ADP_CHAT_OVERLAY_CHANGE") {
+        setIsFrameExpanded(data.isExpanded === true);
+      }
+
+      if (data.type === "ADP_CHAT_OPEN_CHANGE" && data.isOpen === false) {
+        setIsFrameExpanded(false);
+      }
+    };
+
+    window.addEventListener("message", handleEmbedMessage);
+
+    return () => {
+      window.removeEventListener("message", handleEmbedMessage);
+    };
+  }, []);
 
   useEffect(() => {
     const updateReadyState = () => {
@@ -333,7 +361,11 @@ const AdpChatEmbedControls = ({ locale }: AdpChatEmbedControlsProps) => {
         ref={iframeRef}
         title="ADP chat embed test"
         srcDoc={iframeSrcDoc}
-        className="fixed bottom-0 right-0 z-[999] h-[620px] w-[430px] max-h-[100vh] max-w-[100vw] border-0 bg-transparent"
+        className={
+          isFrameExpanded
+            ? "fixed inset-0 z-[1001] h-screen w-screen max-h-none max-w-none border-0 bg-transparent"
+            : "fixed bottom-0 right-0 z-[999] h-[620px] w-[430px] max-h-[100vh] max-w-[100vw] border-0 bg-transparent"
+        }
       />
       <div className="fixed right-4 top-4 z-[1000] flex max-w-[calc(100vw-2rem)] flex-wrap items-center justify-end gap-2">
         <button
@@ -373,6 +405,7 @@ const AdpChatEmbedControls = ({ locale }: AdpChatEmbedControlsProps) => {
               api.close?.();
               openedFrameRef.current = false;
               setIsOpen(false);
+              setIsFrameExpanded(false);
               setIsReady(false);
               setStatus("closed");
             })

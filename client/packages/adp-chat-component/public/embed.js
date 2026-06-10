@@ -12,7 +12,10 @@
     mounted: false,
     containerSelector: "",
     config: null,
+    configUrl: "",
     accessibility: {},
+    onOpenChange: null,
+    onOverlayChange: null,
   };
 
   function getAttr(name, fallback) {
@@ -114,6 +117,71 @@
         OpeningQuestions: [],
         Pattern: "standard",
       },
+    });
+  }
+
+  function emitEmbedEvent(type, detail) {
+    var payload = Object.assign(
+      {
+        source: "ADPChatEmbed",
+        type: type,
+      },
+      detail || {},
+    );
+
+    try {
+      window.dispatchEvent(new CustomEvent(type, { detail: payload }));
+    } catch (error) {
+      // CustomEvent may be unavailable in very old browsers; postMessage below
+      // still provides the host-page integration path.
+    }
+
+    if (window.parent && window.parent !== window) {
+      window.parent.postMessage(payload, "*");
+    }
+  }
+
+  function handleOpenChange(isOpen) {
+    state.config = mergeConfig(state.config || {}, { isOpen: !!isOpen });
+    emitEmbedEvent("ADP_CHAT_OPEN_CHANGE", { isOpen: !!isOpen });
+
+    if (typeof state.onOpenChange === "function") {
+      state.onOpenChange(isOpen);
+    }
+  }
+
+  function handleOverlayChange(isOverlay) {
+    state.config = mergeConfig(state.config || {}, { isOverlay: !!isOverlay });
+    emitEmbedEvent("ADP_CHAT_OVERLAY_CHANGE", {
+      isOverlay: !!isOverlay,
+      isExpanded: !isOverlay,
+    });
+
+    if (typeof state.onOverlayChange === "function") {
+      state.onOverlayChange(isOverlay);
+    }
+  }
+
+  function withEmbedCallbacks(config) {
+    if (!config) return config;
+
+    if (
+      typeof config.onOpenChange === "function" &&
+      config.onOpenChange !== handleOpenChange
+    ) {
+      state.onOpenChange = config.onOpenChange;
+    }
+
+    if (
+      typeof config.onOverlayChange === "function" &&
+      config.onOverlayChange !== handleOverlayChange
+    ) {
+      state.onOverlayChange = config.onOverlayChange;
+    }
+
+    return mergeConfig(config, {
+      onOpenChange: handleOpenChange,
+      onOverlayChange: handleOverlayChange,
     });
   }
 
@@ -346,6 +414,7 @@
     var config = mergeConfig(built.config, overrideConfig || {});
 
     state.containerSelector = built.containerSelector;
+    state.configUrl = built.configUrl;
     loadStylesheet(cssUrl);
 
     return fetchJson(built.configUrl)
@@ -357,7 +426,7 @@
             chatbotConfig: chatbotConfig,
           });
         }
-        config = mapChatbotConfig(config);
+        config = withEmbedCallbacks(mapChatbotConfig(config));
         state.config = config;
         applyAccessibility(state.accessibility);
         return loadScript(jsUrl);
@@ -410,8 +479,8 @@
           );
         }
       }
-      state.config = mapChatbotConfig(
-        mergeConfig(state.config || {}, nextConfig),
+      state.config = withEmbedCallbacks(
+        mapChatbotConfig(mergeConfig(state.config || {}, nextConfig)),
       );
       applyAccessibility(state.accessibility);
       if (window.ADPChatComponent && state.mounted) {
@@ -433,14 +502,26 @@
       return this.update({ isOpen: isOpen });
     },
     setLanguage: function (language, i18nConfig) {
+      var self = this;
       var normalized = normalizeLanguage(language);
       var config = mergeConfig({ language: normalized }, i18nConfig || {});
-      if (state.config && state.config.chatbotConfig) {
-        config.chatbotConfig = Object.assign({}, state.config.chatbotConfig, {
-          language: normalized,
-        });
+      var langUrl = "";
+
+      if (state.configUrl) {
+        var separator = state.configUrl.indexOf("?") >= 0 ? "&" : "?";
+        langUrl = state.configUrl + separator + "lang=" + encodeURIComponent(normalized);
       }
-      return this.update(config);
+
+      return fetchJson(langUrl).then(function (chatbotConfig) {
+        if (chatbotConfig) {
+          config.chatbotConfig = chatbotConfig;
+        } else if (state.config && state.config.chatbotConfig) {
+          config.chatbotConfig = Object.assign({}, state.config.chatbotConfig, {
+            language: normalized,
+          });
+        }
+        return self.update(config);
+      });
     },
     changeLanguage: function (language, i18nConfig) {
       return this.setLanguage(language, i18nConfig);

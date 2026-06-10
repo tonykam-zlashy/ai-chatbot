@@ -788,8 +788,17 @@ const actualAutoLoad = computed(() => props.autoLoad);
 }
 
 .panel-park--full {
-  width: 100%;
-  height: 100%;
+  position: fixed;
+  inset: 0;
+  z-index: 999;
+  width: 100vw;
+  height: var(--adp-chat-visual-viewport-height, 100dvh);
+  max-width: 100vw;
+  max-height: var(--adp-chat-visual-viewport-height, 100dvh);
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  background-color: var(--adp-chat-surface-background, #fff);
 }
 
 .panel-park--overlay {
@@ -834,7 +843,9 @@ const actualAutoLoad = computed(() => props.autoLoad);
   }
 
   .panel-park--full {
+    width: 100vw;
     height: var(--adp-chat-visual-viewport-height, 100dvh);
+    max-width: 100vw;
     max-height: var(--adp-chat-visual-viewport-height, 100dvh);
   }
 }
