@@ -104,7 +104,7 @@ const recordingTime = ref(0);
 let recordingTimer: ReturnType<typeof setInterval> | null = null;
 const fileList = ref<FileProps[]>([]);
 const recorder = ref<WebRecorder | null>(null);
-const recordMaxTime = 10;
+const recordMaxTime = 10.5;
 const qaEditorRef = ref<InstanceType<typeof QaEditor> | null>(null);
 const inputValueBefore = ref("");
 
@@ -349,22 +349,24 @@ const handleStartRecord = async () => {
   }
   recording.value = true;
   recordingTime.value = 0;
+  const recordStartTime = Date.now();
   recordingTimer = setInterval(() => {
-    recordingTime.value++;
-    if (recordingTime.value >= recordMaxTime) {
-      recordingTime.value = recordMaxTime;
-      nextTick(() => {
+    const elapsed = (Date.now() - recordStartTime) / 1000;
+    recordingTime.value = Math.min(elapsed, recordMaxTime);
+    if (elapsed >= recordMaxTime && recording.value) {
+      setTimeout(() => {
+        const wasActive = recording.value;
         handleStopRecord();
-        if (props.useInternalRecord) {
+        if (wasActive && props.useInternalRecord) {
           const text =
             i18n.value.recordTooLong ||
             getMessage(MessageCode.RECORD_TOO_LONG).message;
           MessagePlugin.warning(text);
           emit("message", MessageCode.RECORD_TOO_LONG, text);
         }
-      });
+      }, 200);
     }
-  }, 1000);
+  }, 200);
 
   if (props.useInternalRecord) {
     inputValueBefore.value = getPlainText(editorHtml.value);
@@ -732,7 +734,7 @@ defineExpose({
         <RecordIcon />
         <div class="recording-label">{{ i18n.recording }}</div>
         <div class="recording-timer">
-          {{ recordingTime }}s / {{ recordMaxTime }}s
+          {{ Math.floor(recordingTime) }}s / 10s
         </div>
         <div class="recording-tap-hint">{{ i18n.tapToStop }}</div>
       </div>
