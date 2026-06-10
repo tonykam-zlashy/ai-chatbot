@@ -13,7 +13,10 @@
       "import": "./dist/es/adp-chat-component.es.js",
       "require": "./dist/umd/adp-chat-component.umd.js"
     },
-    "./style.css": "./src/style.css",
+    "./style.css": {
+      "development": "./src/style.css",
+      "default": "./dist/es/adp-chat-component.css"
+    },
     "./dist/*": "./dist/*",
     "./src/*": "./src/*"
   },

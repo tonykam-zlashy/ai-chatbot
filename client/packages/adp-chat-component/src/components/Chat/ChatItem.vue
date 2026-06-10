@@ -527,7 +527,19 @@ const displayText = computed(() => {
   return text;
 });
 
-const hasUserDisplayText = computed(() => displayText.value.trim().length > 0);
+const MARKDOWN_IMAGE_RE = /!\[[^\]]*\]\([^)]*\)/g;
+
+const userDisplayText = computed(() => {
+  if (!isFromSelf.value) return displayText.value;
+  if (props.mode === "claw" || imageAttachments.value.length === 0) {
+    return displayText.value;
+  }
+  return displayText.value.replace(MARKDOWN_IMAGE_RE, "").trim();
+});
+
+const hasUserDisplayText = computed(
+  () => userDisplayText.value.trim().length > 0,
+);
 
 const shouldShowUserImageTextPlaceholder = computed(() => {
   return (
@@ -877,7 +889,7 @@ const referenceDialogTitle = computed(() => {
             </div>
             <MdContent
               v-if="hasUserDisplayText"
-              :content="displayText"
+              :content="userDisplayText"
               role="user"
               :theme="theme"
               :mode="mode"
@@ -891,7 +903,7 @@ const referenceDialogTitle = computed(() => {
               v-else-if="shouldShowUserImageTextPlaceholder"
               class="user-message-empty-description"
             >
-              no text description input
+              {{ i18n.noTextDescriptionInput }}
             </span>
             <span v-if="replyTime" class="user-message-time">{{
               replyTime
