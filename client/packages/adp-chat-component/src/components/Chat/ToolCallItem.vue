@@ -22,7 +22,7 @@ interface Props extends ThemeProps {
 
 const props = withDefaults(defineProps<Props>(), {
     ...themePropsDefaults,
-    language: 'zh-CN',
+    language: 'zh-HK',
     chatI18n: () => ({}),
 });
 

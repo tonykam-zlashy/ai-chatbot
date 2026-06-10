@@ -224,7 +224,7 @@ adp-chat-component/
 | Props | 类型 | 默认值 | 说明 |
 |-------|------|--------|------|
 | `theme` | `'light' \| 'dark'` | `'light'` | 主题模式 |
-| `languageOptions` | `LanguageOption[]` | `[{key:'zh-CN',value:'简体中文'},{key:'en-US',value:'English'}]` | 语言选项列表 |
+| `languageOptions` | `LanguageOption[]` | `[{key:'en',value:'English'},{key:'zh-HK',value:'繁體中文'},{key:'zh_CN',value:'简体中文'}]` | 语言选项列表 |
 | `switchThemeText` | `string` | `'切换主题'` | 切换主题文本 |
 | `selectLanguageText` | `string` | `'选择语言'` | 选择语言文本 |
 | `logoutText` | `string` | `'退出登录'` | 退出登录文本 |
@@ -503,7 +503,7 @@ adp-chat-component/
 | Props | 类型 | 默认值 | 说明 |
 |-------|------|--------|------|
 | `msg` | `Message` | **必填** | 工具调用消息对象 |
-| `language` | `string` | `'zh-CN'` | 当前语言标识 |
+| `language` | `string` | `'zh-HK'` | 当前语言标识 |
 | `chatI18n` | `ChatI18n` | `{}` | 国际化文本（不传则根据 language 自动选择默认值） |
 | `theme` | `'light' \| 'dark'` | `'light'` | 主题模式 |
 
@@ -587,7 +587,7 @@ adp-chat-component/
 | `chatItemI18n` | `object` | - | ChatItem 国际化文本 |
 | `senderI18n` | `object` | - | Sender 国际化文本 |
 | `filePreviewI18n` | `FilePreviewI18n` | - | 文件预览面板国际化文本 |
-| `language` | `string` | `'zh-CN'` | 当前语言标识，用于选择中/英文默认 i18n |
+| `language` | `string` | `'zh-HK'` | 当前语言标识，用于选择中/英文默认 i18n |
 | `apiConfig` | `ApiConfig` | - | API 配置（传入则启用 API 模式） |
 | `autoLoad` | `boolean` | `true` | 是否自动加载数据 |
 

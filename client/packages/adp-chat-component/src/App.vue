@@ -221,7 +221,7 @@ const internalIsOverlay = ref(props.isOverlay);
 const internalTheme = ref(props.theme ?? "light");
 
 // 内部 language 状态（用于没有 onChangeLanguage 回调时的内部切换）
-const internalLanguage = ref(props.language ?? "zh-CN");
+const internalLanguage = ref(props.language ?? "zh-HK");
 let cleanupVisualViewportCssVars: (() => void) | null = null;
 
 onMounted(() => {
@@ -498,8 +498,8 @@ const actualAiWarningText = computed(() => {
   return props.aiWarningText;
 });
 
-// 根据内部语言状态获取默认 i18n
-const defaultI18n = computed(() => getI18nByLanguage(internalLanguage.value));
+// 根据最终渲染语言获取默认 i18n。config-url 模式下语言可能来自 chatbotConfig。
+const defaultI18n = computed(() => getI18nByLanguage(actualLanguage.value));
 // 如果外部传入了 i18n，优先使用外部的；否则使用根据语言计算的默认值
 const actualSideI18n = computed(
   () => props.sideI18n ?? defaultI18n.value.sideI18n,

@@ -40,7 +40,7 @@ interface Props extends ThemeProps {
   role?: 'user' | 'assistant' | 'system';
   /** 聊天模式：claw-简化模式, standard-标准模式 */
   mode?: ChatMode;
-  /** 语言设置（如 'zh-CN'、'en-US'），用于 widget 国际化 */
+  /** 语言设置（如 'en'、'zh-HK'、'zh_CN'），用于 widget 国际化 */
   locale?: string;
   /** 当前语言标识，优先级高于 locale */
   language?: string;
@@ -64,7 +64,7 @@ interface Props extends ThemeProps {
 const props = withDefaults(defineProps<Props>(), {
   role: 'assistant',
   mode: 'standard',
-  locale: 'zh-CN',
+  locale: 'zh-HK',
   language: '',
   widgetId: '',
   widgetRunId: '',
@@ -80,6 +80,8 @@ const effectiveLocale = computed(() => {
     const langMap: Record<string, string> = {
       'zh': 'zh-CN',
       'en': 'en-US',
+      'zh-HK': 'zh-CN',
+      'zh_CN': 'zh-CN',
       'zh-CN': 'zh-CN',
       'zh-TW': 'zh-TW',
       'en-US': 'en-US',

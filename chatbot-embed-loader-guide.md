@@ -19,7 +19,7 @@ The loader creates `window.ADPChatEmbed`.
 <script
   src="https://e7fd-45-144-227-44.ngrok-free.app/static/adp-chat-component/umd/embed.js"
   data-logo-title="Support"
-  data-language="en-US"
+  data-language="en"
   data-theme="light"
   data-launcher-icon-url="https://example.com/bot.gif"
   data-launcher-position="bottom-right"
@@ -34,7 +34,7 @@ After the script loads, call:
 ```js
 ADPChatEmbed.open();
 ADPChatEmbed.close();
-ADPChatEmbed.changeLanguage('zh-CN');
+ADPChatEmbed.changeLanguage('zh-HK');
 ```
 
 ## Initial Data Attributes
@@ -44,7 +44,7 @@ Use these attributes on the embed `<script>` tag.
 | Attribute | Example | Description |
 | --- | --- | --- |
 | `data-logo-title` | `Support` | Header/title text inside the chatbot. |
-| `data-language` | `en-US` | Initial language. Built-in defaults support `zh-CN` and `en-US`. |
+| `data-language` | `en` | Initial language. Supported public keys are `en`, `zh-HK`, and `zh_CN`. |
 | `data-theme` | `light` | Initial theme: `light` or `dark`. |
 | `data-width` | `420` | Chat panel width. Number values are treated as pixels. |
 | `data-height` | `80vh` | Chat panel height. |
@@ -110,14 +110,15 @@ ADPChatEmbed.update({
 ### Language
 
 ```js
-ADPChatEmbed.setLanguage('en-US');
-ADPChatEmbed.changeLanguage('zh-CN');
+ADPChatEmbed.setLanguage('en');
+ADPChatEmbed.changeLanguage('zh-HK');
+ADPChatEmbed.changeLanguage('zh_CN');
 ```
 
 With custom i18n overrides:
 
 ```js
-ADPChatEmbed.changeLanguage('en-US', {
+ADPChatEmbed.changeLanguage('en', {
   chatI18n: {
     sendError: 'Unable to send message'
   },
@@ -130,8 +131,9 @@ ADPChatEmbed.changeLanguage('en-US', {
 Language aliases are normalized:
 
 ```text
-en, en-US, english -> en-US
-zh, zh-CN, chinese -> zh-CN
+en, en-US, english -> en
+zh-HK, zh_HK, zh-Hant -> zh-HK
+zh, zh-CN, zh_CN, zh-Hans, chinese -> zh_CN
 ```
 
 ### Theme
@@ -159,12 +161,7 @@ Or change it after load:
 ADPChatEmbed.setLauncherIcon('https://example.com/custom-chatbot.gif');
 ```
 
-The image should be a public HTTPS URL. If no custom image is passed, the default launcher is:
-
-```text
-zh-CN: https://carers-webchat.aienchat.com/avatar-zh-hk-v5.gif
-en-US: https://carers-webchat.aienchat.com/avatar-en-us-v5.gif
-```
+The image should be a public HTTPS URL. If no custom image is passed, the embed has no built-in launcher image unless a chatbot config provides `assistant.launcherAvatarUrl`.
 
 Put campaign-specific or third-party-site-specific GIFs on the third-party site or a shared CDN, then pass the public URL with `data-launcher-icon-url` or `ADPChatEmbed.setLauncherIcon(url)`. Put a GIF in this chatbot project only when it should become a built-in default for every embed.
 
@@ -206,7 +203,7 @@ ADPChatEmbed.setFileUpload(false);
 
 ```js
 ADPChatEmbed.setAccessibility({
-  language: 'en-US',
+  language: 'en',
   label: 'Customer support chatbot',
   role: 'region',
   fontScale: 1.2,
@@ -269,7 +266,7 @@ Set `window.ADPChatEmbedConfig` before loading the script:
 <script>
   window.ADPChatEmbedConfig = {
     theme: 'light',
-    language: 'en-US',
+    language: 'en',
     isOpen: false,
     launcherPosition: 'bottom-right',
     launcherOffsetX: 24,

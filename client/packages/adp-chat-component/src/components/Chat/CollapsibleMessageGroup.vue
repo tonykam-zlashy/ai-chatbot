@@ -28,7 +28,7 @@ const props = withDefaults(defineProps<Props>(), {
     messages: () => [],
     isStreaming: false,
     isTerminated: false,
-    language: 'zh-CN',
+    language: 'zh-HK',
 });
 
 const expanded = ref(false);

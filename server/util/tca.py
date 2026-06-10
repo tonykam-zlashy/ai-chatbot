@@ -129,7 +129,7 @@ def asr_query_string(param):
     return signstr
 
 
-def asr_url(engine_model_type="16k_yue", voice_format=1):
+def asr_url(engine_model_type="16k_zh_dialect", voice_format=1):
     # https://cloud.tencent.com/document/api/1093/48982
     ts = int(time.time())
     param = {

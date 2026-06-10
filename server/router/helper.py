@@ -42,7 +42,7 @@ class TCADPHelperAsrFileApi(HTTPMethodView):
             raise SanicException("audio file is required", status_code=400)
 
         audio_data = audio_file.body
-        engine_type = request.args.get('engine_type', '16k_yue')
+        engine_type = request.args.get('engine_type', '16k_zh_dialect')
 
         data_b64 = base64.b64encode(audio_data).decode('utf-8')
 

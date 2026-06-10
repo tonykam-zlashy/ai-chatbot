@@ -52,7 +52,7 @@ interface Props extends CommonLayoutProps {
   showActions?: boolean;
   /** 国际化文本 */
   i18n?: ChatItemI18n;
-  /** 当前语言标识（如 'zh-CN'、'en-US'），用于 widget 国际化 */
+  /** 当前语言标识（如 'en'、'zh-HK'、'zh_CN'），用于 widget 国际化 */
   language?: string;
   /** 聊天模式：claw-简化模式, standard-标准模式 */
   mode?: ChatMode;
@@ -63,7 +63,7 @@ interface Props extends CommonLayoutProps {
 const props = withDefaults(defineProps<Props>(), {
   isLastMsg: false,
   showActions: true,
-  language: "zh-CN",
+  language: "zh-HK",
   mode: "standard",
   ...commonLayoutPropsDefaults,
   i18n: () => ({}),

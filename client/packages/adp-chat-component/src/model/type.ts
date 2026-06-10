@@ -286,7 +286,7 @@ export interface CommonLayoutProps
 
 /** 聊天相关 Props - 组合聊天组件常用 props */
 export interface ChatRelatedProps extends CommonLayoutProps {
-  /** 当前语言标识，用于自动选择内部默认 i18n（如 'zh-CN'、'en-US'） */
+  /** 当前语言标识，用于自动选择内部默认 i18n（如 'en'、'zh-HK'、'zh_CN'） */
   language?: string;
   /** 聊天模式：claw-简化模式，standard-标准模式 */
   mode?: ChatMode;
@@ -326,14 +326,15 @@ export const commonLayoutPropsDefaults = {
 /** 聊天相关 Props 默认值 */
 export const chatRelatedPropsDefaults = {
   ...commonLayoutPropsDefaults,
-  language: "zh-CN",
+  language: "zh-HK",
   mode: "standard" as ChatMode,
 };
 
 /** 默认语言选项 */
 export const defaultLanguageOptions: LanguageOption[] = [
-  { key: "zh-CN", value: "简体中文" },
-  { key: "en-US", value: "English" },
+  { key: "en", value: "English" },
+  { key: "zh-HK", value: "繁體中文" },
+  { key: "zh_CN", value: "简体中文" },
 ];
 
 // ============================================================
