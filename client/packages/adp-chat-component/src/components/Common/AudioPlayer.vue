@@ -59,8 +59,8 @@ function drawWaveform(playedBars: number = 0) {
   ctx.clearRect(0, 0, w, h);
 
   const isDark = props.theme === 'dark';
-  const playedColor = isDark ? '#4a9eff' : '#1677ff';
-  const unplayedColor = isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.12)';
+  const playedColor = isDark ? '#4a9eff' : '#fff';
+  const unplayedColor = isDark ? 'rgba(255,255,255,0.2)' : '#713614';
   const midY = h / 2;
 
   for (let i = 0; i < waveformData.value.length; i++) {

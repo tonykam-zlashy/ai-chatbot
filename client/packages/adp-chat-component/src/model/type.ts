@@ -1,28 +1,28 @@
-import type { Application } from './application'
-import type { ChatConversation, Record } from './chat-v2'
-import type { ApiConfig } from '../service/api'
+import type { Application } from "./application";
+import type { ChatConversation, Record } from "./chat-v2";
+import type { ApiConfig } from "../service/api";
 
 // ============================================================
 // 公共类型定义
 // ============================================================
 
 /** 主题类型 */
-export type ThemeType = 'light' | 'dark'
+export type ThemeType = "light" | "dark";
 
 /** 聊天模式：claw-简化模式（无文件预览/无解析进度），standard-标准模式（有解析进度） */
-export type ChatMode = 'claw' | 'standard'
+export type ChatMode = "claw" | "standard";
 
 /** 语言选项 */
 export interface LanguageOption {
-  key: string
-  value: string
+  key: string;
+  value: string;
 }
 
 /** 用户信息 */
 export interface UserInfo {
-  avatarUrl?: string
-  avatarName?: string
-  name?: string
+  avatarUrl?: string;
+  avatarName?: string;
+  name?: string;
 }
 
 // ============================================================
@@ -30,87 +30,87 @@ export interface UserInfo {
 // ============================================================
 
 export interface ChatbotAssistantConfig {
-  name: string
-  headerTitle?: string
-  launcherAvatarUrl: string
-  messageAvatarUrl: string
-  greeting: string
+  name: string;
+  headerTitle?: string;
+  launcherAvatarUrl: string;
+  messageAvatarUrl: string;
+  greeting: string;
 }
 
 export interface ChatbotLauncherConfig {
-  enabled: boolean
-  prompt?: string
-  position: 'bottom-right' | 'bottom-left' | 'top-right' | 'top-left'
-  offsetX: number
-  offsetY: number
+  enabled: boolean;
+  prompt?: string;
+  position: "bottom-right" | "bottom-left" | "top-right" | "top-left";
+  offsetX: number;
+  offsetY: number;
 }
 
 export interface ChatbotPanelConfig {
-  width: number
-  height: number
-  mobileMode: 'fullscreen' | 'panel'
+  width: number;
+  height: number;
+  mobileMode: "fullscreen" | "panel";
 }
 
 export interface ChatbotThemeConfig {
-  mode?: string
-  headerBackground: string
-  surfaceBackground: string
-  primaryAction: string
-  bubbleBorder: string
-  userBubbleBackground?: string
-  userBubbleText?: string
-  userBubbleBorder?: string
-  assistantBubbleBackground?: string
-  assistantText?: string
-  timestampText?: string
-  footerBackground?: string
-  footerIconColor?: string
-  hotlineBackground?: string
-  hotlineText?: string
+  mode?: string;
+  headerBackground: string;
+  surfaceBackground: string;
+  primaryAction: string;
+  bubbleBorder: string;
+  userBubbleBackground?: string;
+  userBubbleText?: string;
+  userBubbleBorder?: string;
+  assistantBubbleBackground?: string;
+  assistantText?: string;
+  timestampText?: string;
+  footerBackground?: string;
+  footerIconColor?: string;
+  hotlineBackground?: string;
+  hotlineText?: string;
 }
 
 export interface ChatbotTermsLinkConfig {
-  label: string
-  url: string
+  label: string;
+  url: string;
 }
 
 export interface ChatbotTermsConfig {
-  enabled: boolean
-  storageScope: 'global' | 'application' | 'conversation'
-  intro: string
-  links: ChatbotTermsLinkConfig[]
-  acceptInstruction: string
-  scamNoticeBefore: string
-  scamHotlineLabel?: string
-  scamHotlineUrl?: string
-  scamNoticeAfter?: string
-  acceptButton: string
-  declineButton: string
-  acceptedUserText: string
+  enabled: boolean;
+  storageScope: "global" | "application" | "conversation";
+  intro: string;
+  links: ChatbotTermsLinkConfig[];
+  acceptInstruction: string;
+  scamNoticeBefore: string;
+  scamHotlineLabel?: string;
+  scamHotlineUrl?: string;
+  scamNoticeAfter?: string;
+  acceptButton: string;
+  declineButton: string;
+  acceptedUserText: string;
 }
 
 export interface ChatbotComposerConfig {
-  disabledPlaceholder: string
-  enabledPlaceholder: string
+  disabledPlaceholder: string;
+  enabledPlaceholder: string;
 }
 
 export interface ChatbotHotlineConfig {
-  number: string
-  label: string
-  description?: string
-  url?: string
+  number: string;
+  label: string;
+  description?: string;
+  url?: string;
 }
 
 export interface ChatbotFeatureConfig {
-  termsGate: boolean
-  fileUpload: boolean
-  voiceInput: boolean
-  mockChat: boolean
+  termsGate: boolean;
+  fileUpload: boolean;
+  voiceInput: boolean;
+  mockChat: boolean;
 }
 
 export interface ChatbotMockChatConfig {
-  reply: string
-  errorReply?: string
+  reply: string;
+  errorReply?: string;
 }
 
 /**
@@ -118,17 +118,17 @@ export interface ChatbotMockChatConfig {
  * public chatbot config API response.
  */
 export interface ChatbotConfig {
-  appId: string
-  language: string
-  assistant: ChatbotAssistantConfig
-  launcher: ChatbotLauncherConfig
-  panel: ChatbotPanelConfig
-  theme: ChatbotThemeConfig
-  terms: ChatbotTermsConfig
-  composer: ChatbotComposerConfig
-  hotline: ChatbotHotlineConfig
-  features: ChatbotFeatureConfig
-  mockChat: ChatbotMockChatConfig
+  appId: string;
+  language: string;
+  assistant: ChatbotAssistantConfig;
+  launcher: ChatbotLauncherConfig;
+  panel: ChatbotPanelConfig;
+  theme: ChatbotThemeConfig;
+  terms: ChatbotTermsConfig;
+  composer: ChatbotComposerConfig;
+  hotline: ChatbotHotlineConfig;
+  features: ChatbotFeatureConfig;
+  mockChat: ChatbotMockChatConfig;
 }
 
 // ============================================================
@@ -138,153 +138,156 @@ export interface ChatbotConfig {
 /** 主题相关 Props */
 export interface ThemeProps {
   /** 主题模式 */
-  theme?: ThemeType
+  theme?: ThemeType;
 }
 
 /** 移动端相关 Props（内部组件使用） */
 export interface MobileProps {
   /** 是否为移动端（由父组件计算后传入，不对外暴露） */
-  isMobile?: boolean
+  isMobile?: boolean;
 }
 
 /** 浮层相关 Props */
 export interface OverlayProps {
   /** 是否显示浮层按钮 */
-  showOverlayButton?: boolean
+  showOverlayButton?: boolean;
 }
 
 /** 侧边栏国际化文本 */
 export interface SideI18n {
-  more?: string
-  collapse?: string
-  today?: string
-  recent?: string
-  switchTheme?: string
-  selectLanguage?: string
-  logout?: string
+  more?: string;
+  collapse?: string;
+  today?: string;
+  recent?: string;
+  switchTheme?: string;
+  selectLanguage?: string;
+  logout?: string;
 }
 
 /** 聊天国际化文本 */
 export interface ChatI18n {
-  uploading?:string;
-  loading?: string
-  thinking?: string
-  checkAll?: string
-  shareFor?: string
-  copyUrl?: string
-  cancelShare?: string
-  sendError?: string
-  networkError?: string
-  loginExpired?: string
-  createConversation?: string
-  copySuccess?: string
-  copyFailed?: string
+  uploading?: string;
+  loading?: string;
+  thinking?: string;
+  checkAll?: string;
+  shareFor?: string;
+  copyUrl?: string;
+  cancelShare?: string;
+  sendError?: string;
+  networkError?: string;
+  loginExpired?: string;
+  createConversation?: string;
+  copySuccess?: string;
+  copyFailed?: string;
   /** 复制按钮 title */
-  copy?: string
+  copy?: string;
   /** 查看按钮文本 */
-  view?: string
-  shareFailed?: string
-  loadMoreFailed?: string
-  rateFailed?: string
-  getAppListFailed?: string
-  getConversationListFailed?: string
-  getConversationDetailFailed?: string
+  view?: string;
+  shareFailed?: string;
+  loadMoreFailed?: string;
+  rateFailed?: string;
+  getAppListFailed?: string;
+  getConversationListFailed?: string;
+  getConversationDetailFailed?: string;
 }
 
 /** ChatItem 国际化文本 */
 export interface ChatItemI18n {
-  thinking?: string
-  deepThinkingFinished?: string
-  deepThinkingExpand?: string
-  copy?: string
-  replay?: string
-  share?: string
-  good?: string
-  bad?: string
-  thxForGood?: string
-  thxForBad?: string
-  references?: string
-  openSource?: string
-  referenceSlice?: string
+  thinking?: string;
+  deepThinkingFinished?: string;
+  deepThinkingExpand?: string;
+  copy?: string;
+  replay?: string;
+  share?: string;
+  good?: string;
+  bad?: string;
+  thxForGood?: string;
+  thxForBad?: string;
+  references?: string;
+  openSource?: string;
+  referenceSlice?: string;
   /** widget action 用户消息显示文本 */
-  actionPerformed?: string
+  actionPerformed?: string;
   /** AI 生成免责提示 */
-  aiDisclaimer?: string
+  aiDisclaimer?: string;
 }
 
 /** Sender 国际化文本 */
 export interface SenderI18n {
-  placeholder?: string
-  placeholderMobile?: string
-  uploadImg?: string
+  placeholder?: string;
+  placeholderMobile?: string;
+  uploadImg?: string;
   /** 上传菜单"图片"选项 */
-  uploadImage?: string
+  uploadImage?: string;
   /** 上传菜单"文件"选项 */
-  uploadFile?: string
+  uploadFile?: string;
   /** 文件数量超出限制提示（{count} 为数量占位符） */
-  fileLimitExceeded?: string
+  fileLimitExceeded?: string;
   /** 文件大小超出限制提示（{size} 为大小占位符） */
-  fileSizeExceeded?: string
+  fileSizeExceeded?: string;
   /** 文件上传/解析中提示 */
-  uploadingWait?: string
-  startRecord?: string
-  stopRecord?: string
-  answering?: string
-  notSupport?: string
-  uploadError?: string
-  recordTooLong?: string
-  asrServiceFailed?: string
-  recordFailed?: string
-  chromeSecurityError?: string
-  browserNotSupport?: string
-  audioContextNotSupport?: string
-  webAudioApiNotSupport?: string
-  mediaStreamSourceNotSupport?: string
+  uploadingWait?: string;
+  startRecord?: string;
+  stopRecord?: string;
+  recording?: string;
+  tapToStop?: string;
+  answering?: string;
+  notSupport?: string;
+  uploadError?: string;
+  recordTooLong?: string;
+  asrServiceFailed?: string;
+  recordFailed?: string;
+  chromeSecurityError?: string;
+  browserNotSupport?: string;
+  audioContextNotSupport?: string;
+  webAudioApiNotSupport?: string;
+  mediaStreamSourceNotSupport?: string;
 }
 
 /** 文件预览面板国际化文本 */
 export interface FilePreviewI18n {
   /** 文档列表标题 */
-  docList?: string
+  docList?: string;
   /** 刷新按钮 title */
-  refresh?: string
+  refresh?: string;
   /** 加载中文本 */
-  loading?: string
+  loading?: string;
   /** 加载文档预览中 */
-  loadingPreview?: string
+  loadingPreview?: string;
   /** 预览加载失败 */
-  previewFailed?: string
+  previewFailed?: string;
   /** 重试按钮 */
-  retry?: string
+  retry?: string;
   /** 打开文件列表按钮 tooltip */
-  openFileList?: string
+  openFileList?: string;
   /** 显示文档列表按钮 title */
-  showDocList?: string
+  showDocList?: string;
   /** 隐藏文档列表按钮 title */
-  hideDocList?: string
+  hideDocList?: string;
   /** 不支持预览的文件格式提示 */
-  unsupported?: string
+  unsupported?: string;
   /** 下载按钮 title */
-  download?: string
+  download?: string;
   /** 开始下载提示（{name} 为文件名占位符） */
-  downloadStarted?: string
+  downloadStarted?: string;
 }
 
 /** 侧边栏布局 Props */
 export interface SidePanelProps {
   /** 侧边栏是否使用overlay模式（覆盖内容区域） */
-  isSidePanelOverlay?: boolean
+  isSidePanelOverlay?: boolean;
 }
 
 /** 通用布局 Props - 组合多个常用 props */
-export interface CommonLayoutProps extends ThemeProps, MobileProps, SidePanelProps {}
+export interface CommonLayoutProps
+  extends ThemeProps, MobileProps, SidePanelProps {}
 
 /** 聊天相关 Props - 组合聊天组件常用 props */
 export interface ChatRelatedProps extends CommonLayoutProps {
   /** 当前语言标识，用于自动选择内部默认 i18n（如 'zh-CN'、'en-US'） */
-  language?: string
+  language?: string;
   /** 聊天模式：claw-简化模式，standard-标准模式 */
-  mode?: ChatMode
+  mode?: ChatMode;
 }
 
 // ============================================================
@@ -293,43 +296,43 @@ export interface ChatRelatedProps extends CommonLayoutProps {
 
 /** 主题 Props 默认值 */
 export const themePropsDefaults = {
-  theme: 'light' as ThemeType,
-}
+  theme: "light" as ThemeType,
+};
 
 /** 移动端 Props 默认值 */
 export const mobilePropsDefaults = {
   isMobile: false,
-}
+};
 
 /** 侧边栏布局 Props 默认值 */
 export const sidePanelPropsDefaults = {
   isSidePanelOverlay: true,
-}
+};
 
 /** 浮层 Props 默认值 */
 export const overlayPropsDefaults = {
   showOverlayButton: true,
-}
+};
 
 /** 通用布局 Props 默认值 */
 export const commonLayoutPropsDefaults = {
   ...themePropsDefaults,
   ...mobilePropsDefaults,
   ...sidePanelPropsDefaults,
-}
+};
 
 /** 聊天相关 Props 默认值 */
 export const chatRelatedPropsDefaults = {
   ...commonLayoutPropsDefaults,
-  language: 'zh-CN',
-  mode: 'standard' as ChatMode,
-}
+  language: "zh-CN",
+  mode: "standard" as ChatMode,
+};
 
 /** 默认语言选项 */
 export const defaultLanguageOptions: LanguageOption[] = [
-  { key: 'zh-CN', value: '简体中文' },
-  { key: 'en-US', value: 'English' },
-]
+  { key: "zh-CN", value: "简体中文" },
+  { key: "en-US", value: "English" },
+];
 
 // ============================================================
 // I18n 默认值
@@ -337,99 +340,102 @@ export const defaultLanguageOptions: LanguageOption[] = [
 
 /** 侧边栏 i18n 默认值 */
 export const defaultSideI18n: Required<SideI18n> = {
-  more: '更多',
-  collapse: '收起',
-  today: '今天',
-  recent: '最近',
-  switchTheme: '切换主题',
-  selectLanguage: '选择语言',
-  logout: '退出登录',
-}
+  more: "更多",
+  collapse: "收起",
+  today: "今天",
+  recent: "最近",
+  switchTheme: "切换主题",
+  selectLanguage: "选择语言",
+  logout: "退出登录",
+};
 
 /** 聊天 i18n 默认值 */
 export const defaultChatI18n: Required<ChatI18n> = {
-  uploading: '文件上传中',
-  loading: '加载中',
-  thinking: '思考中',
-  checkAll: '全选',
-  shareFor: '分享至',
-  copyUrl: '链接',
-  cancelShare: '取消分享',
-  sendError: '发送失败',
-  networkError: '网络错误',
-  loginExpired: '登录过期，请重新登录',
-  createConversation: '新建对话',
-  copySuccess: '复制成功',
-  copyFailed: '复制失败',
-  copy: '复制',
-  view: '查看',
-  shareFailed: '分享失败',
-  loadMoreFailed: '加载更多失败',
-  rateFailed: '评分失败',
-  getAppListFailed: '获取应用列表失败',
-  getConversationListFailed: '获取会话列表失败',
-  getConversationDetailFailed: '获取会话详情失败',
-}
+  uploading: "文件上传中",
+  loading: "加载中",
+  thinking: "思考中",
+  checkAll: "全选",
+  shareFor: "分享至",
+  copyUrl: "链接",
+  cancelShare: "取消分享",
+  sendError: "发送失败",
+  networkError: "网络错误",
+  loginExpired: "登录过期，请重新登录",
+  createConversation: "新建对话",
+  copySuccess: "复制成功",
+  copyFailed: "复制失败",
+  copy: "复制",
+  view: "查看",
+  shareFailed: "分享失败",
+  loadMoreFailed: "加载更多失败",
+  rateFailed: "评分失败",
+  getAppListFailed: "获取应用列表失败",
+  getConversationListFailed: "获取会话列表失败",
+  getConversationDetailFailed: "获取会话详情失败",
+};
 
 /** ChatItem i18n 默认值 */
 export const defaultChatItemI18n: Required<ChatItemI18n> = {
-  thinking: '思考中',
-  deepThinkingFinished: '深度思考完成',
-  deepThinkingExpand: '展开深度思考',
-  copy: '复制',
-  replay: '重新生成',
-  share: '分享',
-  good: '点赞',
-  bad: '踩',
-  thxForGood: '感谢您的反馈',
-  thxForBad: '感谢您的反馈',
-  references: '参考来源',
-  openSource: '打开原文',
-  referenceSlice: '引用切片',
-  actionPerformed: '已进行操作',
-  aiDisclaimer: '该回答由AI助手生成，请谨慎识别',
-}
+  thinking: "思考中",
+  deepThinkingFinished: "深度思考完成",
+  deepThinkingExpand: "展开深度思考",
+  copy: "复制",
+  replay: "重新生成",
+  share: "分享",
+  good: "点赞",
+  bad: "踩",
+  thxForGood: "感谢您的反馈",
+  thxForBad: "感谢您的反馈",
+  references: "参考来源",
+  openSource: "打开原文",
+  referenceSlice: "引用切片",
+  actionPerformed: "已进行操作",
+  aiDisclaimer: "该回答由AI助手生成，请谨慎识别",
+};
 
 /** Sender i18n 默认值 */
 export const defaultSenderI18n: Required<SenderI18n> = {
-  placeholder: '请输入消息...',
-  placeholderMobile: '请输入',
-  uploadImg: '上传图片或文件',
-  uploadImage: '图片',
-  uploadFile: '文件',
-  fileLimitExceeded: '最多上传 {count} 个文件',
-  fileSizeExceeded: '文件大小不能超过 {size}',
-  uploadingWait: '文件上传/解析中，请稍候',
-  startRecord: '点击开始录音',
-  stopRecord: '点击停止录音',
-  answering: '回答中...',
-  notSupport: '当前浏览器不支持录音',
-  uploadError: '上传失败',
-  recordTooLong: '录音时长超过限制',
-  asrServiceFailed: '获取语音识别服务失败',
-  recordFailed: '录音失败',
-  chromeSecurityError: 'Chrome下获取录音功能需要在localhost、127.0.0.1或https下才能获取权限',
-  browserNotSupport: '无法获取浏览器录音功能，请升级浏览器或使用Chrome',
-  audioContextNotSupport: '浏览器不支持AudioContext',
-  webAudioApiNotSupport: '浏览器不支持webAudioApi相关接口',
-  mediaStreamSourceNotSupport: '不支持MediaStreamSource',
-}
+  placeholder: "请输入消息...",
+  placeholderMobile: "请输入",
+  uploadImg: "上传图片或文件",
+  uploadImage: "图片",
+  uploadFile: "文件",
+  fileLimitExceeded: "最多上传 {count} 个文件",
+  fileSizeExceeded: "文件大小不能超过 {size}",
+  uploadingWait: "文件上传/解析中，请稍候",
+  startRecord: "点击开始录音",
+  stopRecord: "点击停止录音",
+  recording: "錄音中...",
+  tapToStop: "點擊任意位置停止錄音",
+  answering: "回答中...",
+  notSupport: "当前浏览器不支持录音",
+  uploadError: "上传失败",
+  recordTooLong: "录音时长超过限制",
+  asrServiceFailed: "获取语音识别服务失败",
+  recordFailed: "录音失败",
+  chromeSecurityError:
+    "Chrome下获取录音功能需要在localhost、127.0.0.1或https下才能获取权限",
+  browserNotSupport: "无法获取浏览器录音功能，请升级浏览器或使用Chrome",
+  audioContextNotSupport: "浏览器不支持AudioContext",
+  webAudioApiNotSupport: "浏览器不支持webAudioApi相关接口",
+  mediaStreamSourceNotSupport: "不支持MediaStreamSource",
+};
 
 /** 文件预览面板 i18n 默认值 */
 export const defaultFilePreviewI18n: Required<FilePreviewI18n> = {
-  docList: '文档列表',
-  refresh: '刷新',
-  loading: '正在加载...',
-  loadingPreview: '正在加载文档预览...',
-  previewFailed: '预览加载失败',
-  retry: '重试',
-  openFileList: '展开工作区',
-  showDocList: '显示文档列表',
-  hideDocList: '隐藏文档列表',
-  unsupported: '暂不支持预览该文件格式',
-  download: '下载',
-  downloadStarted: '开始下载: {name}',
-}
+  docList: "文档列表",
+  refresh: "刷新",
+  loading: "正在加载...",
+  loadingPreview: "正在加载文档预览...",
+  previewFailed: "预览加载失败",
+  retry: "重试",
+  openFileList: "展开工作区",
+  showDocList: "显示文档列表",
+  hideDocList: "隐藏文档列表",
+  unsupported: "暂不支持预览该文件格式",
+  download: "下载",
+  downloadStarted: "开始下载: {name}",
+};
 
 // ============================================================
 // I18n 英文默认值
@@ -437,188 +443,195 @@ export const defaultFilePreviewI18n: Required<FilePreviewI18n> = {
 
 /** 侧边栏 i18n 英文默认值 */
 export const defaultSideI18nEn: Required<SideI18n> = {
-  more: 'More',
-  collapse: 'Collapse',
-  today: 'Today',
-  recent: 'Recent',
-  switchTheme: 'Switch Theme',
-  selectLanguage: 'Select Language',
-  logout: 'Logout',
-}
+  more: "More",
+  collapse: "Collapse",
+  today: "Today",
+  recent: "Recent",
+  switchTheme: "Switch Theme",
+  selectLanguage: "Select Language",
+  logout: "Logout",
+};
 
 /** 聊天 i18n 英文默认值 */
 export const defaultChatI18nEn: Required<ChatI18n> = {
-  uploading: 'Uploading',
-  loading: 'Loading',
-  thinking: 'Thinking',
-  checkAll: 'Select All',
-  shareFor: 'Share to',
-  copyUrl: 'Link',
-  cancelShare: 'Cancel Share',
-  sendError: 'Send Failed',
-  networkError: 'Network Error',
-  loginExpired: 'Session expired, please log in again',
-  createConversation: 'New Conversation',
-  copySuccess: 'Copied',
-  copyFailed: 'Copy Failed',
-  copy: 'Copy',
-  view: 'View',
-  shareFailed: 'Share Failed',
-  loadMoreFailed: 'Load More Failed',
-  rateFailed: 'Rate Failed',
-  getAppListFailed: 'Failed to get app list',
-  getConversationListFailed: 'Failed to get conversation list',
-  getConversationDetailFailed: 'Failed to get conversation detail',
-}
+  uploading: "Uploading",
+  loading: "Loading",
+  thinking: "Thinking",
+  checkAll: "Select All",
+  shareFor: "Share to",
+  copyUrl: "Link",
+  cancelShare: "Cancel Share",
+  sendError: "Send Failed",
+  networkError: "Network Error",
+  loginExpired: "Session expired, please log in again",
+  createConversation: "New Conversation",
+  copySuccess: "Copied",
+  copyFailed: "Copy Failed",
+  copy: "Copy",
+  view: "View",
+  shareFailed: "Share Failed",
+  loadMoreFailed: "Load More Failed",
+  rateFailed: "Rate Failed",
+  getAppListFailed: "Failed to get app list",
+  getConversationListFailed: "Failed to get conversation list",
+  getConversationDetailFailed: "Failed to get conversation detail",
+};
 
 /** ChatItem i18n 英文默认值 */
 export const defaultChatItemI18nEn: Required<ChatItemI18n> = {
-  thinking: 'Thinking',
-  deepThinkingFinished: 'Deep thinking completed',
-  deepThinkingExpand: 'Expand deep thinking',
-  copy: 'Copy',
-  replay: 'Regenerate',
-  share: 'Share',
-  good: 'Like',
-  bad: 'Dislike',
-  thxForGood: 'Thanks for your feedback',
-  thxForBad: 'Thanks for your feedback',
-  references: 'References',
-  openSource: 'Open Source',
-  referenceSlice: 'Reference Slice',
-  actionPerformed: 'Action performed',
-  aiDisclaimer: 'This answer is generated by AI assistant, please verify carefully',
-}
+  thinking: "Thinking",
+  deepThinkingFinished: "Deep thinking completed",
+  deepThinkingExpand: "Expand deep thinking",
+  copy: "Copy",
+  replay: "Regenerate",
+  share: "Share",
+  good: "Like",
+  bad: "Dislike",
+  thxForGood: "Thanks for your feedback",
+  thxForBad: "Thanks for your feedback",
+  references: "References",
+  openSource: "Open Source",
+  referenceSlice: "Reference Slice",
+  actionPerformed: "Action performed",
+  aiDisclaimer:
+    "This answer is generated by AI assistant, please verify carefully",
+};
 
 /** Sender i18n 英文默认值 */
 export const defaultSenderI18nEn: Required<SenderI18n> = {
-  placeholder: 'Type a message...',
-  placeholderMobile: 'Type here',
-  uploadImg: 'Upload Image or File',
-  uploadImage: 'Image',
-  uploadFile: 'File',
-  fileLimitExceeded: 'Upload up to {count} files',
-  fileSizeExceeded: 'File size cannot exceed {size}',
-  uploadingWait: 'Uploading/parsing files, please wait',
-  startRecord: 'Start Recording',
-  stopRecord: 'Stop Recording',
-  answering: 'Answering...',
-  notSupport: 'Recording not supported',
-  uploadError: 'Upload Failed',
-  recordTooLong: 'Recording too long',
-  asrServiceFailed: 'Failed to get ASR service',
-  recordFailed: 'Recording failed',
-  chromeSecurityError: 'Chrome requires localhost, 127.0.0.1 or HTTPS to access recording',
-  browserNotSupport: 'Browser does not support recording, please upgrade or use Chrome',
-  audioContextNotSupport: 'Browser does not support AudioContext',
-  webAudioApiNotSupport: 'Browser does not support Web Audio API',
-  mediaStreamSourceNotSupport: 'MediaStreamSource is not supported',
-}
+  placeholder: "Type a message...",
+  placeholderMobile: "Type here",
+  uploadImg: "Upload Image or File",
+  uploadImage: "Image",
+  uploadFile: "File",
+  fileLimitExceeded: "Upload up to {count} files",
+  fileSizeExceeded: "File size cannot exceed {size}",
+  uploadingWait: "Uploading/parsing files, please wait",
+  startRecord: "Start Recording",
+  stopRecord: "Stop Recording",
+  recording: "Recording",
+  tapToStop: "Tap anywhere to stop recording",
+  answering: "Answering...",
+  notSupport: "Recording not supported",
+  uploadError: "Upload Failed",
+  recordTooLong: "Recording too long",
+  asrServiceFailed: "Failed to get ASR service",
+  recordFailed: "Recording failed",
+  chromeSecurityError:
+    "Chrome requires localhost, 127.0.0.1 or HTTPS to access recording",
+  browserNotSupport:
+    "Browser does not support recording, please upgrade or use Chrome",
+  audioContextNotSupport: "Browser does not support AudioContext",
+  webAudioApiNotSupport: "Browser does not support Web Audio API",
+  mediaStreamSourceNotSupport: "MediaStreamSource is not supported",
+};
 
 /** 文件预览面板 i18n 英文默认值 */
 export const defaultFilePreviewI18nEn: Required<FilePreviewI18n> = {
-  docList: 'Documents',
-  refresh: 'Refresh',
-  loading: 'Loading...',
-  loadingPreview: 'Loading document preview...',
-  previewFailed: 'Preview failed to load',
-  retry: 'Retry',
-  openFileList: 'Open file list',
-  showDocList: 'Show document list',
-  hideDocList: 'Hide document list',
-  unsupported: 'This file format is not supported for preview',
-  download: 'Download',
-  downloadStarted: 'Downloading: {name}',
-}
+  docList: "Documents",
+  refresh: "Refresh",
+  loading: "Loading...",
+  loadingPreview: "Loading document preview...",
+  previewFailed: "Preview failed to load",
+  retry: "Retry",
+  openFileList: "Open file list",
+  showDocList: "Show document list",
+  hideDocList: "Hide document list",
+  unsupported: "This file format is not supported for preview",
+  download: "Download",
+  downloadStarted: "Downloading: {name}",
+};
 
 /** 根据语言获取 i18n 默认值 */
 export const getI18nByLanguage = (language: string) => {
-  const isEnglish = language.startsWith('en')
+  const isEnglish = language.startsWith("en");
   return {
     sideI18n: isEnglish ? defaultSideI18nEn : defaultSideI18n,
     chatI18n: isEnglish ? defaultChatI18nEn : defaultChatI18n,
     chatItemI18n: isEnglish ? defaultChatItemI18nEn : defaultChatItemI18n,
     senderI18n: isEnglish ? defaultSenderI18nEn : defaultSenderI18n,
-    filePreviewI18n: isEnglish ? defaultFilePreviewI18nEn : defaultFilePreviewI18n,
-  }
-}
+    filePreviewI18n: isEnglish
+      ? defaultFilePreviewI18nEn
+      : defaultFilePreviewI18n,
+  };
+};
 
 export interface ChatConfig extends ChatRelatedProps, OverlayProps {
-  container?: string
+  container?: string;
   /** Frontend-only POC mode: skips backend loading and can use local mock chat behavior */
-  frontendPocMode?: boolean
+  frontendPocMode?: boolean;
   /** Public chatbot config contract for fixture/API-driven UI */
-  chatbotConfig?: ChatbotConfig
+  chatbotConfig?: ChatbotConfig;
   /** 是否为浮层模式：true-使用 width/height 浮动在容器上，false-宽高100%撑满容器 */
-  isOverlay?: boolean
+  isOverlay?: boolean;
   /** 宽度（仅在 isOverlay 为 true 时生效） */
-  width?: string | number
+  width?: string | number;
   /** 高度（仅在 isOverlay 为 true 时生效） */
-  height?: string | number
+  height?: string | number;
   /** 是否显示关闭按钮 */
-  showCloseButton?: boolean
+  showCloseButton?: boolean;
   /** 应用列表 */
-  applications?: Application[]
+  applications?: Application[];
   /** 当前选中的应用 */
-  currentApplication?: Application
+  currentApplication?: Application;
   /** 当前选中的应用 ID（优先级高于 currentApplication） */
-  currentApplicationId?: string
+  currentApplicationId?: string;
   /** 会话列表 */
-  conversations?: ChatConversation[]
+  conversations?: ChatConversation[];
   /** 当前选中的会话 */
-  currentConversation?: ChatConversation
+  currentConversation?: ChatConversation;
   /** 当前选中的会话 ID（优先级高于 currentConversation） */
-  currentConversationId?: string
+  currentConversationId?: string;
   /** 聊天消息列表 */
-  chatList?: Record[]
+  chatList?: Record[];
   /** 是否正在聊天中 */
-  isChatting?: boolean
+  isChatting?: boolean;
   /** 用户信息 */
-  user?: UserInfo
+  user?: UserInfo;
   /** 语言选项列表 */
-  languageOptions?: LanguageOption[]
+  languageOptions?: LanguageOption[];
   /** Logo URL */
-  logoUrl?: string
+  logoUrl?: string;
   /** Logo 标题 */
-  logoTitle?: string
+  logoTitle?: string;
   /** 最大应用显示数量 */
-  maxAppLen?: number
+  maxAppLen?: number;
   /** 浮层状态切换回调 */
-  onOverlayChange?: (isOverlay: boolean) => void
+  onOverlayChange?: (isOverlay: boolean) => void;
   /** 主题切换回调 */
-  onToggleTheme?: () => void
+  onToggleTheme?: () => void;
   /** 语言切换回调 */
-  onChangeLanguage?: (key: string) => void
+  onChangeLanguage?: (key: string) => void;
   /** 是否展开面板 */
-  isOpen?: boolean
+  isOpen?: boolean;
   /** 面板展开状态变化回调 */
-  onOpenChange?: (isOpen: boolean) => void
+  onOpenChange?: (isOpen: boolean) => void;
   /** 是否显示悬浮切换按钮 */
-  showToggleButton?: boolean
+  showToggleButton?: boolean;
   /** 悬浮切换按钮图标 URL（支持 gif/png/webp/svg） */
-  launcherIconUrl?: string
+  launcherIconUrl?: string;
   /** 悬浮切换按钮提示文案 */
-  launcherPrompt?: string
+  launcherPrompt?: string;
   /** 悬浮切换按钮位置 */
-  launcherPosition?: 'bottom-right' | 'bottom-left' | 'top-right' | 'top-left'
+  launcherPosition?: "bottom-right" | "bottom-left" | "top-right" | "top-left";
   /** 悬浮切换按钮水平边距 */
-  launcherOffsetX?: string | number
+  launcherOffsetX?: string | number;
   /** 悬浮切换按钮垂直边距 */
-  launcherOffsetY?: string | number
+  launcherOffsetY?: string | number;
   /** AI警告文本 */
-  aiWarningText?: string
+  aiWarningText?: string;
   /** 侧边栏国际化文本 */
-  sideI18n?: SideI18n
+  sideI18n?: SideI18n;
   /** 聊天国际化文本 */
-  chatI18n?: ChatI18n
+  chatI18n?: ChatI18n;
   /** ChatItem 国际化文本 */
-  chatItemI18n?: ChatItemI18n
+  chatItemI18n?: ChatItemI18n;
   /** Sender 国际化文本 */
-  senderI18n?: SenderI18n
+  senderI18n?: SenderI18n;
   /** 文件预览面板国际化文本 */
-  filePreviewI18n?: FilePreviewI18n
+  filePreviewI18n?: FilePreviewI18n;
   /** API 配置 - 如果传入则使用 HTTP 请求获取数据 */
-  apiConfig?: ApiConfig
+  apiConfig?: ApiConfig;
   /** 是否自动加载数据（仅在使用 apiConfig 时生效） */
-  autoLoad?: boolean
+  autoLoad?: boolean;
 }

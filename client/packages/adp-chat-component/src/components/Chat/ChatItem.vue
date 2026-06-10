@@ -1244,9 +1244,19 @@ const referenceDialogTitle = computed(() => {
   gap: var(--td-comp-margin-xs);
   margin: var(--td-comp-margin-s) 0;
   max-width: min(280px, 100%);
+  background: #b95a25;
+  border-radius: 8px;
+  padding: 8px;
 }
 
+.audio-attachments :deep(.duration) {
+  color: #fff;
+  font-weight: bold;
+}
 
+.audio-attachments :deep(.play-btn) {
+  background: #713614;
+}
 
 .msg-inline-image {
   max-width: 200px;

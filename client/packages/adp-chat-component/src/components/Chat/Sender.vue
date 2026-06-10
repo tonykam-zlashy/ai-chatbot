@@ -100,10 +100,11 @@ const emit = defineEmits<{
 const editorHtml = ref("");
 const inputFocus = ref(false);
 const recording = ref(false);
+const recordingTime = ref(0);
+let recordingTimer: ReturnType<typeof setInterval> | null = null;
 const fileList = ref<FileProps[]>([]);
 const recorder = ref<WebRecorder | null>(null);
 const recordMaxTime = 10;
-const recordRef = ref<ReturnType<typeof setTimeout> | null>(null);
 const qaEditorRef = ref<InstanceType<typeof QaEditor> | null>(null);
 const inputValueBefore = ref("");
 
@@ -347,20 +348,27 @@ const handleStartRecord = async () => {
     return;
   }
   recording.value = true;
+  recordingTime.value = 0;
+  recordingTimer = setInterval(() => {
+    recordingTime.value++;
+    if (recordingTime.value >= recordMaxTime) {
+      recordingTime.value = recordMaxTime;
+      nextTick(() => {
+        handleStopRecord();
+        if (props.useInternalRecord) {
+          const text =
+            i18n.value.recordTooLong ||
+            getMessage(MessageCode.RECORD_TOO_LONG).message;
+          MessagePlugin.warning(text);
+          emit("message", MessageCode.RECORD_TOO_LONG, text);
+        }
+      });
+    }
+  }, 1000);
 
   if (props.useInternalRecord) {
     inputValueBefore.value = getPlainText(editorHtml.value);
     startRecording();
-    recordRef.value = setTimeout(() => {
-      if (recording.value) {
-        const text =
-          i18n.value.recordTooLong ||
-          getMessage(MessageCode.RECORD_TOO_LONG).message;
-        MessagePlugin.warning(text);
-        emit("message", MessageCode.RECORD_TOO_LONG, text);
-        handleStopRecord();
-      }
-    }, recordMaxTime * 1000);
   }
 
   emit("startRecord");
@@ -423,6 +431,11 @@ const startRecording = () => {
     MessagePlugin.error(errMsg);
     emit("message", errCode, errMsg);
     recording.value = false;
+    if (recordingTimer) {
+      clearInterval(recordingTimer);
+      recordingTimer = null;
+    }
+    recordingTime.value = 0;
   };
   recorder.value.OnStop = async (data: number[]) => {
     if (data.length === 0) {
@@ -491,14 +504,15 @@ const startRecording = () => {
 const handleStopRecord = () => {
   if (!recording.value) return;
   recording.value = false;
+  if (recordingTimer) {
+    clearInterval(recordingTimer);
+    recordingTimer = null;
+  }
+  recordingTime.value = 0;
 
   if (props.useInternalRecord) {
     recorder.value?.stop();
     recorder.value = null;
-    if (recordRef.value) {
-      clearTimeout(recordRef.value);
-      recordRef.value = null;
-    }
   }
 
   emit("stopRecord");
@@ -710,6 +724,20 @@ defineExpose({
       </div>
     </div>
   </div>
+
+  <!-- audio recording overlay -->
+  <Teleport to="body">
+    <div v-if="recording" class="recording-overlay" @click="handleStopRecord">
+      <div class="recording-popup" @click.stop>
+        <RecordIcon />
+        <div class="recording-label">{{ i18n.recording }}</div>
+        <div class="recording-timer">
+          {{ recordingTime }}s / {{ recordMaxTime }}s
+        </div>
+        <div class="recording-tap-hint">{{ i18n.tapToStop }}</div>
+      </div>
+    </div>
+  </Teleport>
 </template>
 
 <style scoped>
@@ -841,5 +869,58 @@ defineExpose({
   opacity: 0.4;
   cursor: not-allowed;
   pointer-events: none;
+}
+
+/* audio recording overlay */
+.recording-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+}
+
+.recording-popup {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 40px 60px;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.16);
+  animation: popup-enter 0.2s ease-out;
+}
+
+@keyframes popup-enter {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.recording-label {
+  font-size: 18px;
+  font-weight: 600;
+  color: rgba(0, 0, 0, 0.85);
+}
+
+.recording-timer {
+  font-size: 14px;
+  color: rgba(0, 0, 0, 0.45);
+  font-variant-numeric: tabular-nums;
+}
+
+.recording-tap-hint {
+  font-size: 13px;
+  color: rgba(0, 0, 0, 0.35);
+  margin-top: -8px;
 }
 </style>

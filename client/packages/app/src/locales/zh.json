@@ -94,7 +94,7 @@
     "stopRecord": "點擊結束錄音",
     "uploadError": "上載失敗，請重試",
     "references": "參考來源",
-    "recordTooLong": "語音輸入最長60s，已停止並轉為文字",
+    "recordTooLong": "語音輸入最長10s",
     "notSupport": "暫不支持該類型文件(支持類型：png、jpg)",
     "answering": "回答中，請稍後操作或點擊停止回答",
     "asrServiceFailed": "獲取語音識別服務失敗",
