@@ -184,6 +184,7 @@ export interface Record {
   Messages?: Message[]
   Procedures?: Procedure[]
   StatInfo?: StatInfo
+  Timestamp?: NumberLike
   ExtraInfo?: RecordExtraInfo
   Score?: ScoreValue
 }

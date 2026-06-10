@@ -169,17 +169,15 @@ const primaryMessage = computed(() => {
 
 const extractMessageText = (
   message?: Message,
-  options: { lastContentTextOverride?: string } = {},
+  options: { contentTextOverrides?: Map<number, string> } = {},
 ) => {
   if (!message?.Contents?.length) return "";
   const contents = message.Contents;
   return contents.map((content, index) => {
     const parts: string[] = [];
-    const contentText =
-      options.lastContentTextOverride !== undefined &&
-      index === contents.length - 1
-        ? options.lastContentTextOverride
-        : content.Text;
+    const contentText = options.contentTextOverrides?.has(index)
+      ? options.contentTextOverrides.get(index)
+      : content.Text;
 
     // 先处理文本内容（如果有）
     if (contentText) {
@@ -361,9 +359,12 @@ const optionCards = computed(() => {
 const fileAttachments = computed<FileInfo[]>(() => {
   const files: FileInfo[] = [];
   const seen = new Set<string>();
+  const replyMessages = messages.value.filter((msg) => msg.Type === "reply");
   const msgs = isFromSelf.value
     ? [primaryMessage.value]
-    : [primaryMessage.value];
+    : replyMessages.length > 0
+      ? replyMessages
+      : [primaryMessage.value];
   for (const msg of msgs) {
     if (!msg?.Contents?.length) continue;
     for (const content of msg.Contents) {
@@ -386,11 +387,22 @@ const IMAGE_EXT_RE = /\.(jpg|jpeg|png|bmp|webp|gif)$/i;
 const AUDIO_TYPE_RE = /^audio\//i;
 /** 通过文件名判断音频 */
 const AUDIO_EXT_RE = /\.(wav|mp3|m4a|aac|ogg|webm)(?:[?#]|$)/i;
-/** AI 回复尾部可识别的音频链接 */
-const TRAILING_AUDIO_MARKDOWN_LINK_RE =
-  /^([\s\S]*?)(?:\s*\n)?\s*\[[^\]]*\]\((https?:\/\/[^)\s]+)\)\s*$/i;
-const TRAILING_AUDIO_RAW_URL_RE =
-  /^([\s\S]*?)(?:^|\s)<?(https?:\/\/\S+)>?\s*$/i;
+/** AI 回复中可识别的音频链接 */
+const AUDIO_EXT_PATTERN = "wav|mp3|m4a|aac|ogg|webm";
+const AUDIO_URL_PATTERN =
+  `https?:\\/\\/[^\\s<>)]+?\\.(?:${AUDIO_EXT_PATTERN})(?:[?#][^\\s<>)]*)?`;
+const AUDIO_MARKDOWN_LINK_RE = new RegExp(
+  `\\[[^\\]]*\\]\\((${AUDIO_URL_PATTERN})\\)`,
+  "gi",
+);
+const PENDING_AUDIO_MARKDOWN_LINK_RE = new RegExp(
+  [
+    `\\[[^\\]]*(?:\\.(?:${AUDIO_EXT_PATTERN})|\\/tts\\/audio_file\\/)[^\\]]*\\]\\([^)]*$`,
+    `\\[[^\\]]*\\]\\([^)]*(?:\\.(?:${AUDIO_EXT_PATTERN})|\\/tts\\/audio_file\\/)[^)]*$`,
+  ].join("|"),
+  "gi",
+);
+const AUDIO_RAW_URL_RE = new RegExp(`<?(${AUDIO_URL_PATTERN})>?`, "gi");
 
 const imageAttachments = computed<FileInfo[]>(() => {
   return fileAttachments.value.filter(
@@ -420,28 +432,41 @@ const docAttachments = computed<FileInfo[]>(() => {
   );
 });
 
-const splitTrailingAudioLink = (text: string | undefined) => {
-  if (!text) return { text: "", audioUrl: "" };
+const extractAudioLinksFromText = (text: string | undefined) => {
+  if (!text) return { text: "", audioUrls: [] as string[] };
 
-  const markdownMatch = text.match(TRAILING_AUDIO_MARKDOWN_LINK_RE);
-  const markdownUrl = markdownMatch?.[2] || "";
-  if (markdownUrl && AUDIO_EXT_RE.test(markdownUrl)) {
-    return {
-      text: (markdownMatch?.[1] || "").trimEnd(),
-      audioUrl: markdownUrl,
-    };
-  }
+  const audioUrls: string[] = [];
+  AUDIO_MARKDOWN_LINK_RE.lastIndex = 0;
+  const withoutMarkdownLinks = text.replace(
+    AUDIO_MARKDOWN_LINK_RE,
+    (_match, audioUrl: string) => {
+      audioUrls.push(audioUrl);
+      return "";
+    },
+  );
 
-  const rawUrlMatch = text.match(TRAILING_AUDIO_RAW_URL_RE);
-  const rawUrl = rawUrlMatch?.[2] || "";
-  if (rawUrl && AUDIO_EXT_RE.test(rawUrl)) {
-    return {
-      text: (rawUrlMatch?.[1] || "").trimEnd(),
-      audioUrl: rawUrl,
-    };
-  }
+  PENDING_AUDIO_MARKDOWN_LINK_RE.lastIndex = 0;
+  const withoutPendingMarkdownLinks = withoutMarkdownLinks.replace(
+    PENDING_AUDIO_MARKDOWN_LINK_RE,
+    "",
+  );
 
-  return { text, audioUrl: "" };
+  AUDIO_RAW_URL_RE.lastIndex = 0;
+  const cleanedText = withoutPendingMarkdownLinks.replace(
+    AUDIO_RAW_URL_RE,
+    (_match, audioUrl: string) => {
+      audioUrls.push(audioUrl);
+      return "";
+    },
+  );
+
+  return {
+    text: cleanedText
+      .replace(/[ \t]+\n/g, "\n")
+      .replace(/\n{3,}/g, "\n\n")
+      .trimEnd(),
+    audioUrls,
+  };
 };
 
 const getFileNameFromUrl = (url: string) => {
@@ -454,29 +479,39 @@ const getFileNameFromUrl = (url: string) => {
   }
 };
 
-const getInlineAudioAttachmentFromMessage = (
+const getInlineAudioAttachmentsFromMessage = (
   message?: Message,
-): FileInfo | undefined => {
+): FileInfo[] => {
+  const files: FileInfo[] = [];
   const contents = message?.Contents ?? [];
-  if (message?.Type !== "reply" || contents.length === 0) return undefined;
-  const lastContent = contents[contents.length - 1];
-  const { audioUrl } = splitTrailingAudioLink(lastContent?.Text);
-  if (!audioUrl) return undefined;
+  if (message?.Type !== "reply" || contents.length === 0) return files;
 
-  return {
-    FileName: getFileNameFromUrl(audioUrl),
-    FileSize: "",
-    FileUrl: audioUrl,
-    FileType: "audio/wav",
-    MimeType: "audio/wav",
-  };
+  for (const content of contents) {
+    const { audioUrls } = extractAudioLinksFromText(content.Text);
+    for (const audioUrl of audioUrls) {
+      files.push({
+        FileName: getFileNameFromUrl(audioUrl),
+        FileSize: "",
+        FileUrl: audioUrl,
+        FileType: "audio/wav",
+        MimeType: "audio/wav",
+      });
+    }
+  }
+
+  return files;
 };
 
 const extractDisplayMessageText = (message?: Message) => {
-  const lastContent = message?.Contents?.[message.Contents.length - 1];
-  const { text, audioUrl } = splitTrailingAudioLink(lastContent?.Text);
+  const contentTextOverrides = new Map<number, string>();
+  for (const [index, content] of (message?.Contents ?? []).entries()) {
+    const { text, audioUrls } = extractAudioLinksFromText(content.Text);
+    if (audioUrls.length > 0 || text !== (content.Text || "")) {
+      contentTextOverrides.set(index, text);
+    }
+  }
   return extractMessageText(message, {
-    lastContentTextOverride: audioUrl ? text : undefined,
+    contentTextOverrides,
   });
 };
 
@@ -492,24 +527,39 @@ const displayText = computed(() => {
   return text;
 });
 
+const hasUserDisplayText = computed(() => displayText.value.trim().length > 0);
+
+const shouldShowUserImageTextPlaceholder = computed(() => {
+  return (
+    isFromSelf.value &&
+    props.mode !== "claw" &&
+    imageAttachments.value.length > 0 &&
+    !hasUserDisplayText.value
+  );
+});
+
 const assistantAudioAttachments = computed<FileInfo[]>(() => {
   if (isFromSelf.value) return [];
 
-  const files = [...audioAttachments.value];
-  const replyMessages = messages.value.filter((msg) => msg.Type === "reply");
-  const source =
-    replyMessages.length > 0
-      ? replyMessages[replyMessages.length - 1]
-      : primaryMessage.value;
-  const inlineAudio = getInlineAudioAttachmentFromMessage(source);
-  if (!inlineAudio) return files;
+  const files: FileInfo[] = [];
+  const seen = new Set<string>();
+  const addFile = (file: FileInfo) => {
+    const key = file.FileUrl || file.Url || file.FileName;
+    if (key && seen.has(key)) return;
+    if (key) seen.add(key);
+    files.push(file);
+  };
 
-  const inlineUrl = inlineAudio.FileUrl || inlineAudio.Url;
-  const hasSameAudio = files.some((file) => {
-    const fileUrl = file.FileUrl || file.Url;
-    return fileUrl && inlineUrl && fileUrl === inlineUrl;
-  });
-  return hasSameAudio ? files : [...files, inlineAudio];
+  audioAttachments.value.forEach(addFile);
+
+  const replyMessages = messages.value.filter((msg) => msg.Type === "reply");
+  const sourceMessages =
+    replyMessages.length > 0 ? replyMessages : [primaryMessage.value];
+  for (const msg of sourceMessages) {
+    getInlineAudioAttachmentsFromMessage(msg).forEach(addFile);
+  }
+
+  return files;
 });
 
 /** 点击图片附件，新窗口打开预览 */
@@ -551,13 +601,20 @@ const isFinal = computed(() => {
   return record.value.Status !== "processing";
 });
 
+const normalizeTimestamp = (value: unknown) => {
+  if (value === undefined || value === null || value === "") return undefined;
+  const timestamp = Number(value);
+  if (!Number.isFinite(timestamp) || timestamp <= 0) return undefined;
+  return timestamp < 1e12 ? timestamp * 1000 : timestamp;
+};
+
 /**
- * 消息时间（从 ExtraInfo.StartTime 提取）
+ * 消息时间（优先从 Record.Timestamp 提取）
  */
 const replyTime = computed(() => {
-  const startTime = record.value.ExtraInfo?.StartTime;
-  if (!startTime) return "";
-  const ts = Number(startTime);
+  const ts = normalizeTimestamp(
+    record.value.Timestamp ?? record.value.ExtraInfo?.StartTime,
+  );
   if (!ts) return "";
   const date = new Date(ts);
   const hours = String(date.getHours()).padStart(2, "0");
@@ -810,7 +867,7 @@ const referenceDialogTitle = computed(() => {
               />
             </div>
             <MdContent
-              v-if="displayText"
+              v-if="hasUserDisplayText"
               :content="displayText"
               role="user"
               :theme="theme"
@@ -821,6 +878,12 @@ const referenceDialogTitle = computed(() => {
               :enableScale="isMobile"
               @widgetEvent="handleWidgetEvent"
             />
+            <span
+              v-else-if="shouldShowUserImageTextPlaceholder"
+              class="user-message-empty-description"
+            >
+              no text description input
+            </span>
             <span v-if="replyTime" class="user-message-time">{{
               replyTime
             }}</span>
@@ -1172,6 +1235,14 @@ const referenceDialogTitle = computed(() => {
   line-height: 18px;
   white-space: nowrap;
 }
+
+.user-message-empty-description {
+  color: var(--td-text-color-placeholder);
+  font-size: var(--td-font-size-body-small);
+  line-height: 20px;
+  margin-top: var(--td-comp-margin-xxs);
+}
+
 .collapsed-thinking-text {
   color: var(--td-text-color-placeholder);
   display: flex;

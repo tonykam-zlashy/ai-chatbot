@@ -1189,48 +1189,10 @@ class TCADP(BaseVendor):
 
     # FileInterface:
     async def upload(self, db: AsyncSession, request: Request, account_id: str, mime_type: str, mode: str = 'standard') -> str:
-        action = "DescribeStorageCredential"
+        import uuid
+
         file_type = self._resolve_file_type(mime_type)
-        is_image = mime_type.startswith('image/')
-
-        # claw/agent 模式使用 BotBizId='0' + IsPublic=True，确保文件在公有桶中可被 Claw Agent 下载
-        if mode == 'claw':
-            payload = {
-                "BotBizId": '0',
-                "FileType": file_type,
-                "IsPublic": True,
-                "TypeKey": 'realtime',
-            }
-        else:
-            payload = {
-                "BotBizId": self.config.get('AppId', ''),
-                "FileType": file_type,
-                "IsPublic": is_image,
-                "TypeKey": 'realtime',
-            }
-        logging.info(f"DescribeStorageCredential mode={mode}, payload={payload}")
-        resp = await tc_request(self.tc_config(), action, payload)
-        resp = resp['Response']
-        if 'Error' in resp:
-            logging.error(resp)
-            raise Exception(resp['Error']['Message'])
-
-        logging.info(f"DescribeStorageCredential mode={mode}, response keys: {[k for k in resp.keys() if k != 'Credentials']}")
-
-        # 新协议将路径信息放在 StoragePath 子对象中，需要展平到 resp 顶层以保持后续逻辑一致
-        if 'StoragePath' in resp:
-            storage_path = resp['StoragePath']
-            logging.info(f"DescribeStorageCredential StoragePath type={type(storage_path).__name__}, value={storage_path}")
-            if isinstance(storage_path, dict):
-                for key in ('FilePath', 'FileUrl', 'ImagePath', 'UploadPath', 'UploadUrl', 'DownloadUrl'):
-                    if key in storage_path and key not in resp:
-                        resp[key] = storage_path[key]
-            elif isinstance(storage_path, str) and storage_path:
-                # adp 2026-05-20 协议：StoragePath 直接就是上传路径字符串
-                if 'UploadPath' not in resp:
-                    resp['UploadPath'] = storage_path
-
-        logging.info(f"DescribeStorageCredential UploadPath: {resp.get('UploadPath')}, FileUrl: {resp.get('FileUrl')}, UploadUrl: {resp.get('UploadUrl')}, DownloadUrl: {resp.get('DownloadUrl')}")
+        ext = f'.{file_type}' if '.' not in file_type else ''
 
         # 读取完整请求体
         file_data = bytearray()
@@ -1240,68 +1202,26 @@ class TCADP(BaseVendor):
                 break
             file_data += body
 
-        logging.info(f"upload: file size {len(file_data)} bytes")
+        logging.info(f"upload (direct COS): file size {len(file_data)} bytes")
 
-        # 使用 DescribeStorageCredential 返回的 UploadUrl（已签名）直接 PUT 上传
-        upload_url = resp.get('UploadUrl')
-        if upload_url:
-            import aiohttp
-            async with aiohttp.ClientSession() as session:
-                async with session.put(
-                    upload_url,
-                    data=bytes(file_data),
-                    headers={'Content-Length': str(len(file_data))}
-                ) as put_resp:
-                    if put_resp.status not in (200, 201, 204):
-                        text = await put_resp.text()
-                        logging.error(f"upload PUT failed: status={put_resp.status}, body={text}")
-                        raise Exception(f"File upload failed: {put_resp.status}")
-        else:
-            # 回退到 S3 SDK 简单上传
-            cos = AsyncWareHouseS3(
-                secretId=resp['Credentials']['TmpSecretId'],
-                secretKey=resp['Credentials']['TmpSecretKey'],
-                tmpToken=resp['Credentials']['Token'],
-                region=resp['Region'],
-                bucket=resp['Bucket'],
-                config=self.tc_config()['cos'],
-            )
-            await cos.put(resp['UploadPath'], bytes(file_data))
-
-        # 优先使用 DescribeStorageCredential 返回的 FileUrl（LKE 平台可识别的地址）
-        url = resp.get('FileUrl') or resp.get('file_url') or (
-            f"https://{resp['Bucket']}.cos.{resp['Region']}.myqcloud.com{resp['UploadPath']}"
+        # Use configured COS credentials directly (bypass DescribeStorageCredential)
+        upload_path = f"/uploads/{account_id}/{uuid.uuid4().hex}{ext}"
+        cos = AsyncWareHouseS3(
+            secretId=tagentic_config.TC_SECRET_ID,
+            secretKey=tagentic_config.TC_SECRET_KEY,
+            tmpToken='',
+            region=tagentic_config.COS_REGION,
+            bucket=tagentic_config.COS_BUCKET,
+            config=self.tc_config().get('cos', {}),
         )
-        cos_url = resp.get('UploadPath', '')
+        await cos.put(upload_path, bytes(file_data))
 
-        # claw 模式：上传完成后需再次调用 DescribeStorageCredential 获取 DownloadUrl
-        # 对齐 webim openclaw 的 handleAgentDoc → cos.getDownloadUrl 逻辑
-        if mode == 'claw' and cos_url:
-            download_payload = {
-                "BotBizId": '0',
-                "FileType": file_type,
-                "IsPublic": True,
-                "TypeKey": 'realtime',
-                "CosUrl": cos_url,
-            }
-            try:
-                dl_resp = await tc_request(self.tc_config(), action, download_payload)
-                dl_resp = dl_resp['Response']
-                # 新协议：路径信息在 StoragePath 子对象中
-                dl_storage = dl_resp.get('StoragePath', {})
-                download_url = dl_resp.get('DownloadUrl') or dl_storage.get('FileUrl') or dl_resp.get('FileUrl') or dl_resp.get('file_url')
-                if download_url:
-                    logging.info(f"claw mode DownloadUrl obtained: {download_url[:80]}...")
-                    url = download_url
-                else:
-                    logging.warning(f"claw mode: DownloadUrl not found in response, keys: {list(dl_resp.keys())}")
-            except Exception as e:
-                logging.warning(f"claw mode: failed to get DownloadUrl, using FileUrl. Error: {e}")
+        url = f"https://{tagentic_config.COS_BUCKET}.cos.{tagentic_config.COS_REGION}.myqcloud.com{upload_path}"
 
         return {
             'Url': url,
-            'CosUrl': cos_url,
-            'CosBucket': resp.get('Bucket', ''),
+            'CosUrl': upload_path,
+            'CosBucket': tagentic_config.COS_BUCKET,
         }
 
     # FeedbackInterface

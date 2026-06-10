@@ -40,6 +40,37 @@ function formatTime(seconds: number): string {
   return `${m}:${s.toString().padStart(2, '0')}`;
 }
 
+function getPlayedBars(): number {
+  if (totalDuration.value > 0) {
+    return Math.floor((currentTime.value / totalDuration.value) * NUM_BARS);
+  }
+  if (currentTime.value > 0) {
+    return Math.floor(((currentTime.value % 30) / 30) * NUM_BARS);
+  }
+  return 0;
+}
+
+function createFallbackWaveform(seedText: string): number[] {
+  let seed = 0;
+  for (let i = 0; i < seedText.length; i++) {
+    seed = (seed * 31 + seedText.charCodeAt(i)) >>> 0;
+  }
+
+  const data: number[] = [];
+  for (let i = 0; i < NUM_BARS; i++) {
+    seed = (seed * 1664525 + 1013904223) >>> 0;
+    const random = seed / 0xffffffff;
+    const wave = 0.5 + 0.35 * Math.sin(i * 0.55) + 0.15 * Math.sin(i * 1.35);
+    data.push(Math.max(0.18, Math.min(0.95, wave * 0.75 + random * 0.25)));
+  }
+  return data;
+}
+
+function useFallbackWaveform() {
+  waveformData.value = createFallbackWaveform(props.src || 'audio');
+  drawWaveform(getPlayedBars());
+}
+
 function drawWaveform(playedBars: number = 0) {
   const canvas = canvasRef.value;
   if (!canvas || waveformData.value.length === 0) return;
@@ -82,8 +113,9 @@ function drawWaveform(playedBars: number = 0) {
 
 async function loadAudio() {
   if (!props.src) return;
-  isLoading.value = true;
   loadError.value = false;
+  useFallbackWaveform();
+  isLoading.value = false;
   try {
     const response = await fetch(props.src);
     const arrayBuffer = await response.arrayBuffer();
@@ -110,8 +142,8 @@ async function loadAudio() {
     isLoading.value = false;
   } catch (e) {
     console.warn('AudioPlayer: failed to decode audio for waveform', e);
+    useFallbackWaveform();
     loadError.value = true;
-    isLoading.value = false;
   }
 }
 
@@ -126,17 +158,17 @@ function togglePlay() {
 
 function onLoadedMetadata() {
   if (audioEl.value) {
-    totalDuration.value = audioEl.value.duration || 0;
+    totalDuration.value = Number.isFinite(audioEl.value.duration)
+      ? audioEl.value.duration
+      : 0;
+    drawWaveform(getPlayedBars());
   }
 }
 
 function onTimeUpdate() {
   if (audioEl.value) {
     currentTime.value = audioEl.value.currentTime || 0;
-    const playedBars = totalDuration.value > 0
-      ? Math.floor((currentTime.value / totalDuration.value) * NUM_BARS)
-      : 0;
-    drawWaveform(playedBars);
+    drawWaveform(getPlayedBars());
   }
 }
 
@@ -151,7 +183,8 @@ function onPlay() { isPlaying.value = true; }
 function onPause() { isPlaying.value = false; }
 
 watch(() => props.src, () => {
-  loadAudio();
+  waveformData.value = [];
+  if (props.src) loadAudio();
   totalDuration.value = 0;
   currentTime.value = 0;
   isPlaying.value = false;
@@ -212,11 +245,11 @@ onUnmounted(() => {
         <span class="loading-text">Loading...</span>
       </div>
       <canvas
-        v-show="!isLoading && !loadError"
+        v-show="!isLoading && waveformData.length > 0"
         ref="canvasRef"
         class="waveform"
       />
-      <div v-if="loadError && !isLoading" class="waveform-placeholder">
+      <div v-if="!isLoading && waveformData.length === 0" class="waveform-placeholder">
         <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" class="audio-icon">
           <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z" />
         </svg>
