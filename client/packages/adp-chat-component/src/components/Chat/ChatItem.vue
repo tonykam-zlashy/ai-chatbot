@@ -601,6 +601,14 @@ const isFinal = computed(() => {
   return record.value.Status !== "processing";
 });
 
+const TERMS_ACCEPT_RECORD_ID = "local-terms-accepted";
+const TERMS_ACCEPTED_GREETING_RECORD_ID = "local-terms-accepted-greeting";
+const HIDE_TIMESTAMP_RECORD_IDS = new Set([
+  // TODO: Show these timestamps when API stores the whole chat history timestamp.
+  TERMS_ACCEPT_RECORD_ID,
+  TERMS_ACCEPTED_GREETING_RECORD_ID,
+]);
+
 const normalizeTimestamp = (value: unknown) => {
   if (value === undefined || value === null || value === "") return undefined;
   const timestamp = Number(value);
@@ -612,6 +620,7 @@ const normalizeTimestamp = (value: unknown) => {
  * 消息时间（优先从 Record.Timestamp 提取）
  */
 const replyTime = computed(() => {
+  if (HIDE_TIMESTAMP_RECORD_IDS.has(record.value.RecordId)) return "";
   const ts = normalizeTimestamp(
     record.value.Timestamp ?? record.value.ExtraInfo?.StartTime,
   );
