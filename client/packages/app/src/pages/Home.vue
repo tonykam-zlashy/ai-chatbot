@@ -4,6 +4,7 @@ import {
   type ApiConfig,
   type Application,
   type ChatConversation,
+  type ChatMode,
   type ChatbotConfig,
 } from "adp-chat-component";
 import { onMounted, onUnmounted, computed, ref, watch } from "vue";
@@ -11,7 +12,7 @@ import { useUiStore } from "@/stores/ui";
 import { logout } from "@/service/login";
 import { useRoute, useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
-import { languageMap } from "@/i18n";
+import { languageMap, type LanguageType } from "@/i18n";
 import { getBaseURL } from "@/utils/url";
 import { loadChatbotConfigFixture } from "@/utils/chatbotConfig";
 import Logo from "@/assets/img/favicon.png";
@@ -30,12 +31,43 @@ const chatbotConfigLoading = ref(false);
 const chatbotConfigError = ref("");
 const externalPocConfigReceived = ref(false);
 const embedHostMode = ref(false);
+const embedConfig = ref<ADPChatEmbedRuntimeConfig>({});
 
 const LAST_CHAT_STORAGE_KEY = "adp_chat_last_conversation";
 
 type LastChatState = {
   conversationId?: string;
   applicationId?: string;
+};
+
+type ADPChatEmbedRuntimeConfig = {
+  theme?: "light" | "dark";
+  language?: string;
+  mode?: ChatMode;
+  isOpen?: boolean;
+  width?: string | number;
+  height?: string | number;
+  showToggleButton?: boolean;
+  showCloseButton?: boolean;
+  showOverlayButton?: boolean;
+  launcherPosition?: "bottom-right" | "bottom-left" | "top-right" | "top-left";
+  launcherOffsetX?: string | number;
+  launcherOffsetY?: string | number;
+  launcherIconUrl?: string;
+  launcherPrompt?: string;
+  apiConfig?: ApiConfig;
+  chatbotConfig?: ChatbotConfig;
+  autoLoad?: boolean;
+};
+
+const normalizeEmbedLanguage = (
+  language: string | undefined,
+): LanguageType | null => {
+  const value = String(language || "").toLowerCase();
+  if (!value) return null;
+  if (value.startsWith("en")) return "en";
+  if (value.startsWith("zh")) return "zh";
+  return null;
 };
 
 const hasBrowserStorage = () =>
@@ -89,7 +121,7 @@ const clearLastChatState = () => {
 
 // API 配置 - 使用组件自动加载数据
 
-const apiConfig: ApiConfig = {
+const defaultApiConfig: ApiConfig = {
   baseURL: getBaseURL(),
   timeout: 1000 * 60,
   apiDetailConfig: {
@@ -105,6 +137,34 @@ const apiConfig: ApiConfig = {
     systemConfigApi: "/system/config",
   },
 };
+
+const apiConfig = computed<ApiConfig>(() => {
+  const runtimeApiConfig = embedConfig.value.apiConfig || {};
+
+  return {
+    ...defaultApiConfig,
+    ...runtimeApiConfig,
+    apiDetailConfig: {
+      ...defaultApiConfig.apiDetailConfig,
+      ...runtimeApiConfig.apiDetailConfig,
+    },
+  };
+});
+
+const actualTheme = computed(() => {
+  if (FRONTEND_POC_MODE && chatbotConfig.value) return "light";
+  return embedConfig.value.theme || uiStore.theme || "light";
+});
+
+const actualLanguage = computed(() => {
+  if (FRONTEND_POC_MODE) return pocLanguage.value;
+  return embedConfig.value.language || uiStore.language || "zh";
+});
+
+const actualAutoLoad = computed(() => {
+  if (FRONTEND_POC_MODE) return false;
+  return embedConfig.value.autoLoad ?? true;
+});
 
 // 语言选项
 const languageOptions = computed(() => {
@@ -206,9 +266,6 @@ const pocLanguage = computed(
     chatbotConfig.value?.language ||
     (uiStore.language === "en" ? "en-US" : "zh-HK"),
 );
-const pocTheme = computed(() =>
-  chatbotConfig.value ? "light" : uiStore.theme || "light",
-);
 const pocFeatureFlags = computed(
   () =>
     chatbotConfig.value?.features || {
@@ -251,6 +308,44 @@ const handlePocConfigMessage = (event: MessageEvent) => {
   chatbotConfigLoading.value = false;
 };
 
+const handleEmbedConfigMessage = (event: MessageEvent) => {
+  if (window.parent === window || event.source !== window.parent) return;
+
+  const data = event.data as {
+    type?: string;
+    config?: ADPChatEmbedRuntimeConfig;
+  };
+  if (data?.type !== "adp-chat-embed-config" || !data.config) return;
+
+  embedHostMode.value = true;
+  const normalizedLanguage = normalizeEmbedLanguage(data.config.language);
+  if (normalizedLanguage) {
+    uiStore.setLanguage(normalizedLanguage);
+  }
+  if (data.config.theme === "light" || data.config.theme === "dark") {
+    uiStore.setTheme(data.config.theme);
+  }
+  embedConfig.value = {
+    ...embedConfig.value,
+    ...data.config,
+    apiConfig: {
+      ...(embedConfig.value.apiConfig || {}),
+      ...(data.config.apiConfig || {}),
+      apiDetailConfig: {
+        ...embedConfig.value.apiConfig?.apiDetailConfig,
+        ...data.config.apiConfig?.apiDetailConfig,
+      },
+    },
+  };
+
+  if (data.config.chatbotConfig) {
+    externalPocConfigReceived.value = true;
+    chatbotConfig.value = data.config.chatbotConfig;
+    chatbotConfigError.value = "";
+    chatbotConfigLoading.value = false;
+  }
+};
+
 watch(
   () => uiStore.language,
   () => {
@@ -268,6 +363,10 @@ watch(
 onMounted(async () => {
   console.log("[onMounted]");
   window.addEventListener("message", handlePocConfigMessage);
+  window.addEventListener("message", handleEmbedConfigMessage);
+  if (window.parent !== window) {
+    window.parent.postMessage({ type: "adp-chat-embed-ready" }, "*");
+  }
 
   // url参数 -> store
   updateFromUrl();
@@ -275,6 +374,7 @@ onMounted(async () => {
 
 onUnmounted(() => {
   window.removeEventListener("message", handlePocConfigMessage);
+  window.removeEventListener("message", handleEmbedConfigMessage);
 });
 
 /**
@@ -441,16 +541,30 @@ const handleConversationChange = (conversationId: string) => {
   <ADPChat
     v-else
     :apiConfig="apiConfig"
-    :autoLoad="!FRONTEND_POC_MODE"
+    :autoLoad="actualAutoLoad"
     :frontendPocMode="FRONTEND_POC_MODE"
-    :chatbotConfig="chatbotConfig || undefined"
-    :theme="pocTheme"
-    :language="FRONTEND_POC_MODE ? pocLanguage : uiStore.language || 'zh'"
+    :chatbotConfig="chatbotConfig || embedConfig.chatbotConfig || undefined"
+    :theme="actualTheme"
+    :language="actualLanguage"
     :languageOptions="languageOptions"
+    :isOpen="embedHostMode ? true : embedConfig.isOpen"
     :isOverlay="false"
     :isSidePanelOverlay="true"
-    :showCloseButton="!(FRONTEND_POC_MODE && embedHostMode)"
-    :showOverlayButton="!(FRONTEND_POC_MODE && embedHostMode)"
+    :showToggleButton="embedHostMode ? false : embedConfig.showToggleButton"
+    :showCloseButton="
+      embedHostMode ? false : embedConfig.showCloseButton ?? true
+    "
+    :showOverlayButton="
+      embedHostMode ? false : embedConfig.showOverlayButton ?? true
+    "
+    :width="embedConfig.width"
+    :height="embedConfig.height"
+    :mode="embedConfig.mode || 'standard'"
+    :launcherPosition="embedConfig.launcherPosition"
+    :launcherOffsetX="embedConfig.launcherOffsetX"
+    :launcherOffsetY="embedConfig.launcherOffsetY"
+    :launcherIconUrl="embedConfig.launcherIconUrl"
+    :launcherPrompt="embedConfig.launcherPrompt"
     :logoUrl="Logo"
     :currentApplication="FRONTEND_POC_MODE ? pocApplication : undefined"
     :currentApplicationId="
