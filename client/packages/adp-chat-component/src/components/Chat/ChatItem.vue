@@ -169,19 +169,21 @@ const primaryMessage = computed(() => {
 
 const extractMessageText = (
   message?: Message,
-  options: { omitLastContentText?: boolean } = {},
+  options: { lastContentTextOverride?: string } = {},
 ) => {
   if (!message?.Contents?.length) return "";
   const contents = message.Contents;
   return contents.map((content, index) => {
     const parts: string[] = [];
+    const contentText =
+      options.lastContentTextOverride !== undefined &&
+      index === contents.length - 1
+        ? options.lastContentTextOverride
+        : content.Text;
 
     // 先处理文本内容（如果有）
-    if (
-      content.Text &&
-      !(options.omitLastContentText && index === contents.length - 1)
-    ) {
-      parts.push(content.Text);
+    if (contentText) {
+      parts.push(contentText);
     }
 
     // 处理 widget 类型内容，转换为 Markdown 代码块
@@ -384,9 +386,11 @@ const IMAGE_EXT_RE = /\.(jpg|jpeg|png|bmp|webp|gif)$/i;
 const AUDIO_TYPE_RE = /^audio\//i;
 /** 通过文件名判断音频 */
 const AUDIO_EXT_RE = /\.(wav|mp3|m4a|aac|ogg|webm)(?:[?#]|$)/i;
-/** AI 回复最后一个 content 中可识别的音频链接 */
-const AUDIO_LINK_RE = /^\s*\[([^\]]*)\]\(([^)\s]+)\)\s*$/;
-const RAW_URL_RE = /^\s*<?(https?:\/\/\S+?)>?\s*$/i;
+/** AI 回复尾部可识别的音频链接 */
+const TRAILING_AUDIO_MARKDOWN_LINK_RE =
+  /^([\s\S]*?)(?:\s*\n)?\s*\[[^\]]*\]\((https?:\/\/[^)\s]+)\)\s*$/i;
+const TRAILING_AUDIO_RAW_URL_RE =
+  /^([\s\S]*?)(?:^|\s)<?(https?:\/\/\S+)>?\s*$/i;
 
 const imageAttachments = computed<FileInfo[]>(() => {
   return fileAttachments.value.filter(
@@ -416,22 +420,28 @@ const docAttachments = computed<FileInfo[]>(() => {
   );
 });
 
-const getAudioUrlFromText = (text: string | undefined) => {
-  const trimmed = text?.trim();
-  if (!trimmed) return "";
+const splitTrailingAudioLink = (text: string | undefined) => {
+  if (!text) return { text: "", audioUrl: "" };
 
-  const markdownMatch = trimmed.match(AUDIO_LINK_RE);
+  const markdownMatch = text.match(TRAILING_AUDIO_MARKDOWN_LINK_RE);
   const markdownUrl = markdownMatch?.[2] || "";
   if (markdownUrl && AUDIO_EXT_RE.test(markdownUrl)) {
-    return markdownUrl;
+    return {
+      text: (markdownMatch?.[1] || "").trimEnd(),
+      audioUrl: markdownUrl,
+    };
   }
 
-  const rawUrl = trimmed.match(RAW_URL_RE)?.[1] || "";
+  const rawUrlMatch = text.match(TRAILING_AUDIO_RAW_URL_RE);
+  const rawUrl = rawUrlMatch?.[2] || "";
   if (rawUrl && AUDIO_EXT_RE.test(rawUrl)) {
-    return rawUrl;
+    return {
+      text: (rawUrlMatch?.[1] || "").trimEnd(),
+      audioUrl: rawUrl,
+    };
   }
 
-  return "";
+  return { text, audioUrl: "" };
 };
 
 const getFileNameFromUrl = (url: string) => {
@@ -450,7 +460,7 @@ const getInlineAudioAttachmentFromMessage = (
   const contents = message?.Contents ?? [];
   if (message?.Type !== "reply" || contents.length === 0) return undefined;
   const lastContent = contents[contents.length - 1];
-  const audioUrl = getAudioUrlFromText(lastContent?.Text);
+  const { audioUrl } = splitTrailingAudioLink(lastContent?.Text);
   if (!audioUrl) return undefined;
 
   return {
@@ -463,8 +473,10 @@ const getInlineAudioAttachmentFromMessage = (
 };
 
 const extractDisplayMessageText = (message?: Message) => {
+  const lastContent = message?.Contents?.[message.Contents.length - 1];
+  const { text, audioUrl } = splitTrailingAudioLink(lastContent?.Text);
   return extractMessageText(message, {
-    omitLastContentText: Boolean(getInlineAudioAttachmentFromMessage(message)),
+    lastContentTextOverride: audioUrl ? text : undefined,
   });
 };
 
