@@ -148,8 +148,8 @@ const props = withDefaults(defineProps<Props>(), {
   launcherOffsetX: 18,
   launcherOffsetY: 18,
   aiWarningText: DEFAULT_AI_WARNING_TEXT_ZH,
-  enableVoiceInput: true,
-  enableFileUpload: true,
+  enableVoiceInput: false,
+  enableFileUpload: false,
   apiConfig: () => ({ apiDetailConfig: defaultApiDetailConfig }),
   autoLoad: true,
 });
@@ -548,6 +548,7 @@ const actualAutoLoad = computed(() => props.autoLoad);
       @keydown.esc="setOpen(false)"
       tabindex="0"
       :class="[
+        'panel-park',
         {
           'panel-park--full': !actualIsOverlay,
           'panel-park--overlay': actualIsOverlay,
@@ -785,6 +786,7 @@ const actualAutoLoad = computed(() => props.autoLoad);
   background: white;
   box-sizing: border-box;
   overflow: hidden;
+  pointer-events: auto;
 }
 
 .panel-park--full {

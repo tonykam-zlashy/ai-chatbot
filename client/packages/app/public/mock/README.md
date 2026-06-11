@@ -8,6 +8,10 @@ The app uses the carer fixtures under `carer/chatbot-config.*.json`. The
 top-level `chatbot-config.*.json` files are kept as compatibility aliases for
 older cached bundles or host pages.
 
+Each fixture set should include the same public language filenames:
+`chatbot-config.en.json`, `chatbot-config.zh-HK.json`, and
+`chatbot-config.zh_CN.json`.
+
 Expected backend fields:
 
 - `appId`, `language`

@@ -184,8 +184,8 @@ const props = withDefaults(defineProps<Props>(), {
   maxAppLen: 4,
   showCloseButton: true,
   aiWarningText: DEFAULT_AI_WARNING_TEXT_ZH,
-  enableVoiceInput: true,
-  enableFileUpload: true,
+  enableVoiceInput: false,
+  enableFileUpload: false,
   apiConfig: () => ({}),
   autoLoad: true,
   frontendPocMode: false,
@@ -571,15 +571,10 @@ const useApiMode = computed(() => !props.frontendPocMode);
 
 // 是否启用语音输入
 const enableVoiceInput = computed(
-  () =>
-    props.enableVoiceInput &&
-    props.chatbotConfig?.features.voiceInput !== false &&
-    internalSystemConfig.value.EnableVoiceInput,
+  () => props.enableVoiceInput && internalSystemConfig.value.EnableVoiceInput,
 );
 const enableFileUpload = computed(
-  () =>
-    props.enableFileUpload &&
-    props.chatbotConfig?.features.fileUpload !== false,
+  () => props.enableFileUpload,
 );
 
 // 合并默认值和传入值的 chatI18n（根据 language 选择对应语言的默认值）

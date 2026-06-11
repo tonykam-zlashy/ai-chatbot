@@ -4,8 +4,9 @@ Dark theme test data for the chatbot UI. To use:
 
 **Option A — Swap into the app's load path:**
 ```bash
-cp mock/test/chatbot-config.en-US.json mock/carer/chatbot-config.en-US.json
+cp mock/test/chatbot-config.en.json mock/carer/chatbot-config.en.json
 cp mock/test/chatbot-config.zh-HK.json mock/carer/chatbot-config.zh-HK.json
+cp mock/test/chatbot-config.zh_CN.json mock/carer/chatbot-config.zh_CN.json
 ```
 
 **Option B — Change the fixture path in code:**

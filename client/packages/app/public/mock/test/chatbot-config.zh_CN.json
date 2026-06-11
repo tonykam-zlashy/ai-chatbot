@@ -1,0 +1,78 @@
+{
+  "appId": "midnight-ocean-test",
+  "language": "zh_CN",
+  "assistant": {
+    "name": "鹦鹉螺号",
+    "headerTitle": "鹦鹉螺号 - 深海导航员",
+    "launcherAvatarUrl": "https://carers-webchat.aienchat.com/avatar-en-us-v5.gif",
+    "messageAvatarUrl": "https://carers-webchat.aienchat.com/message-en-us-v5.gif",
+    "greeting": "🌊 欢迎登船！我是鹦鹉螺号，您的深海导航员。关于海洋探索的任何问题都可以问我！"
+  },
+  "launcher": {
+    "enabled": true,
+    "prompt": "潜入深海",
+    "position": "bottom-right",
+    "offsetX": 16,
+    "offsetY": 16
+  },
+  "panel": {
+    "width": 420,
+    "height": 680,
+    "mobileMode": "panel"
+  },
+  "theme": {
+    "mode": "dark-ocean",
+    "headerBackground": "linear-gradient(135deg, #0a1628 0%, #1a3a5c 50%, #0d2847 100%)",
+    "surfaceBackground": "#0f1a2e",
+    "primaryAction": "#00d4aa",
+    "bubbleBorder": "#00d4aa",
+    "userBubbleBackground": "#00d4aa",
+    "userBubbleText": "#0a1628",
+    "userBubbleBorder": "1px solid #00ffc8",
+    "assistantBubbleBackground": "#162a45",
+    "assistantText": "#b8d8f0",
+    "timestampText": "#5a7a9a",
+    "footerBackground": "linear-gradient(180deg, #0f1a2e 0%, #0a1628 100%)",
+    "footerIconColor": "#00d4aa",
+    "hotlineBackground": "#1a2a45",
+    "hotlineText": "#4fc3f7"
+  },
+  "terms": {
+    "enabled": true,
+    "storageScope": "global",
+    "intro": "欢迎使用深海探索聊天机器人。请在开始前仔细阅读并接受以下条款。",
+    "links": [
+      { "label": "服务条款", "url": "https://example.com/tos" },
+      { "label": "隐私政策", "url": "https://example.com/privacy" },
+      { "label": "数据使用", "url": "https://example.com/data" }
+    ],
+    "acceptInstruction": "点击接受即表示您已阅读并同意以上条款。您的对话记录将用于服务质量改进。",
+    "scamNoticeBefore": "鹦鹉螺号绝不会要求您提供个人或财务资料。如有疑问，请联系我们的支援团队：",
+    "scamHotlineLabel": "支援中心",
+    "scamHotlineUrl": "https://example.com/support",
+    "scamNoticeAfter": "寻求协助。您必须接受条款才能继续使用。",
+    "acceptButton": "接受并潜航",
+    "declineButton": "拒绝",
+    "acceptedUserText": "条款已接受"
+  },
+  "composer": {
+    "disabledPlaceholder": "请先接受条款",
+    "enabledPlaceholder": "问我关于海洋的问题..."
+  },
+  "hotline": {
+    "number": "1-800-555-0199",
+    "label": "海洋支援热线",
+    "description": "24小时提供技术支援及鹦鹉螺号聊天机器人服务查询。",
+    "url": "https://example.com/help"
+  },
+  "features": {
+    "termsGate": true,
+    "fileUpload": true,
+    "voiceInput": true,
+    "mockChat": true
+  },
+  "mockChat": {
+    "reply": "有趣的问题！海洋最深处是马里亚纳海沟的挑战者深渊，深度约为海平面以下 11,034 米（36,201 英尺）。🐟 您想了解更多关于深海生物的知识吗？",
+    "errorReply": "对不起，系统暂时未能分析您的查询。请您重新输入问题，或提供其他资料以便系统再作分析。"
+  }
+}

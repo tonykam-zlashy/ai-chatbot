@@ -1,0 +1,84 @@
+{
+  "appId": "carers-poc",
+  "language": "zh_CN",
+  "assistant": {
+    "name": "阿尖",
+    "headerTitle": "阿尖",
+    "launcherAvatarUrl": "https://carers-webchat.aienchat.com/avatar-zh-hk-v5.gif",
+    "messageAvatarUrl": "https://carers-webchat.aienchat.com/message-zh-hk-v5.gif",
+    "greeting": "您好👋🏻 我是阿尖！请问您想找什么信息？"
+  },
+  "launcher": {
+    "enabled": true,
+    "prompt": "",
+    "position": "bottom-right",
+    "offsetX": 22,
+    "offsetY": 16
+  },
+  "panel": {
+    "width": 380,
+    "height": 600,
+    "mobileMode": "fullscreen"
+  },
+  "theme": {
+    "mode": "carers",
+    "headerBackground": "linear-gradient(180deg, #FFC284 0%, #FF7833 100%)",
+    "surfaceBackground": "#ffffff",
+    "primaryAction": "#B84319",
+    "bubbleBorder": "#B84319",
+    "userBubbleBackground": "#B84319",
+    "userBubbleText": "#FFFFFF",
+    "userBubbleBorder": "none",
+    "assistantBubbleBackground": "#FFEFD6",
+    "assistantText": "#B84319",
+    "timestampText": "#777",
+    "footerBackground": "linear-gradient(0deg, rgb(255, 239, 214) 16.5%, rgb(255, 255, 255) 100%), linear-gradient(rgb(255, 239, 214) 0%, rgb(255, 194, 132) 100%)",
+    "footerIconColor": "#FF7833",
+    "hotlineBackground": "#ECFDF0",
+    "hotlineText": "#139C6C"
+  },
+  "terms": {
+    "enabled": true,
+    "storageScope": "global",
+    "intro": "请细阅下列有关使用人工智能聊天机器人对话系统的条款及细则。",
+    "links": [
+      { "label": "免责声明", "url": "https://www.carers.hk/disclaimers" },
+      {
+        "label": "版权声明",
+        "url": "https://www.carers.hk/copyright-statement"
+      },
+      {
+        "label": "隐私政策及个人资料收集声明",
+        "url": "https://www.carers.hk/personal-information-collection-statement"
+      }
+    ],
+    "acceptInstruction": "如同意使用条款及细则，请点击“接受”按钮。点击接受按钮后，即表示您已阅读、理解并同意使用条款及细则。",
+    "scamNoticeBefore": "请注意，人工智能聊天机器人对话系统不会向用户索取任何个人资料。如有怀疑，请致电反诈骗咨询热线",
+    "scamHotlineLabel": "“防骗易18222”",
+    "scamHotlineUrl": "tel:18222",
+    "scamNoticeAfter": "向警方求助。此外，用户必须点击“接受”按钮，才能使用人工智能聊天机器人对话系统。",
+    "acceptButton": "接受",
+    "declineButton": "拒绝",
+    "acceptedUserText": "接受"
+  },
+  "composer": {
+    "disabledPlaceholder": "请先接受条款与细则后继续",
+    "enabledPlaceholder": "请输入（不要提供个人资料！）"
+  },
+  "hotline": {
+    "number": "182 183",
+    "label": "24小时照顾者支援专线",
+    "description": "如需要社工协助，请致电182183。",
+    "url": "https://carers.hk/chatbot-tutorial"
+  },
+  "features": {
+    "termsGate": true,
+    "fileUpload": true,
+    "voiceInput": true,
+    "mockChat": true
+  },
+  "mockChat": {
+    "reply": "这是 FE 回复 placeholder，正式聊天功能会在 BE 整合阶段接入。",
+    "errorReply": "对不起，系统暂时未能分析您的查询。请您重新输入问题，或提供其他资料以便系统再作分析。"
+  }
+}

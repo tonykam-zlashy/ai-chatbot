@@ -10,16 +10,19 @@ import {
 } from "react";
 
 type ADPChatEmbedApi = {
-  init?: (config?: Record<string, unknown>) => void;
-  update?: (config: Record<string, unknown>) => void;
+  init?: (config?: Record<string, unknown>) => unknown;
+  update?: (config: Record<string, unknown>) => unknown;
   open?: () => void;
   close?: () => void;
   toggle?: () => void;
-  setLanguage?: (language: string) => void;
+  setLanguage?: (
+    language: string,
+    overrides?: Record<string, unknown>,
+  ) => unknown;
   changeLanguage?: (
     language: string,
     overrides?: Record<string, unknown>,
-  ) => void;
+  ) => unknown;
   setTheme?: (theme: string) => void;
   setLauncherIcon?: (url: string) => void;
   setLauncherPosition?: (
@@ -93,6 +96,14 @@ const mapLocaleToAdpLanguage = (locale: string) => {
   return "en";
 };
 
+const getConfigLanguageFileKey = (language: string) => {
+  if (language === "zh-HK") {
+    return "zh-HK";
+  }
+
+  return "en";
+};
+
 const getAccessibilityLabel = (locale: string) => {
   if (locale === "zh") {
     return "客戶支援聊天機械人";
@@ -109,7 +120,8 @@ const AdpChatEmbedControls = ({ locale }: AdpChatEmbedControlsProps) => {
   const [status, setStatus] = useState("closed");
   const [isFrameExpanded, setIsFrameExpanded] = useState(false);
   const [accessibilityEnabled, setAccessibilityEnabled] = useState(false);
-  const [featureTogglesEnabled, setFeatureTogglesEnabled] = useState(true);
+  const [voiceInputEnabled, setVoiceInputEnabled] = useState(false);
+  const [fileUploadEnabled, setFileUploadEnabled] = useState(false);
   const [darkThemeEnabled, setDarkThemeEnabled] = useState(false);
   const adpLanguage = mapLocaleToAdpLanguage(locale);
   const embedConfig = useMemo(
@@ -118,6 +130,8 @@ const AdpChatEmbedControls = ({ locale }: AdpChatEmbedControlsProps) => {
       language: adpLanguage,
       mode: "standard",
       isOpen: false,
+      enableVoiceInput: false,
+      enableFileUpload: false,
       launcherPosition: "bottom-right",
       apiConfig: {
         baseURL: embedOrigin,
@@ -126,6 +140,7 @@ const AdpChatEmbedControls = ({ locale }: AdpChatEmbedControlsProps) => {
     }),
     [adpLanguage],
   );
+  const configLanguageFileKey = getConfigLanguageFileKey(adpLanguage);
 
   const iframeSrcDoc = useMemo(
     () => `<!doctype html>
@@ -163,8 +178,10 @@ const AdpChatEmbedControls = ({ locale }: AdpChatEmbedControlsProps) => {
 		</script>
 		<script
 			src="${embedOrigin}/static/adp-chat-component/umd/embed.js"
-			data-config-url="${embedOrigin}/mock/carer/chatbot-config.zh-HK.json"
+			data-config-url="${embedOrigin}/mock/carer/chatbot-config.${configLanguageFileKey}.json"
 			data-language="${adpLanguage}"
+			data-enable-voice-input="false"
+			data-enable-file-upload="false"
 			data-launcher-offset-x="84"
 			data-launcher-offset-y="32"
 			data-theme="light"
@@ -172,7 +189,7 @@ const AdpChatEmbedControls = ({ locale }: AdpChatEmbedControlsProps) => {
 		></script>
 	</body>
 </html>`,
-    [adpLanguage, embedConfig],
+    [adpLanguage, configLanguageFileKey, embedConfig],
   );
 
   const getEmbedApi = useCallback(() => {
@@ -184,7 +201,11 @@ const AdpChatEmbedControls = ({ locale }: AdpChatEmbedControlsProps) => {
   }, []);
 
   const syncEmbedSettings = useCallback(
-    (nextAccessibilityEnabled = accessibilityEnabled) => {
+    (
+      nextAccessibilityEnabled = accessibilityEnabled,
+      nextVoiceInputEnabled = voiceInputEnabled,
+      nextFileUploadEnabled = fileUploadEnabled,
+    ) => {
       const api = getEmbedApi();
 
       if (!api) {
@@ -195,14 +216,21 @@ const AdpChatEmbedControls = ({ locale }: AdpChatEmbedControlsProps) => {
         adpLanguage,
         getAccessibilityLabel(locale),
         nextAccessibilityEnabled ? "a11y-on" : "a11y-off",
+        nextVoiceInputEnabled ? "voice-on" : "voice-off",
+        nextFileUploadEnabled ? "upload-on" : "upload-off",
       ].join("|");
 
       if (syncedSettingsKeyRef.current === settingsKey) {
         return true;
       }
 
-      api.changeLanguage?.(adpLanguage);
-      api.setLanguage?.(adpLanguage);
+      if (api.changeLanguage) {
+        api.changeLanguage(adpLanguage);
+      } else {
+        api.setLanguage?.(adpLanguage);
+      }
+      api.setVoiceInput?.(nextVoiceInputEnabled);
+      api.setFileUpload?.(nextFileUploadEnabled);
       api.setAccessibility({
         language: adpLanguage,
         label: getAccessibilityLabel(locale),
@@ -216,7 +244,14 @@ const AdpChatEmbedControls = ({ locale }: AdpChatEmbedControlsProps) => {
 
       return true;
     },
-    [accessibilityEnabled, adpLanguage, getEmbedApi, locale],
+    [
+      accessibilityEnabled,
+      adpLanguage,
+      fileUploadEnabled,
+      getEmbedApi,
+      locale,
+      voiceInputEnabled,
+    ],
   );
 
   useEffect(() => {
@@ -284,7 +319,7 @@ const AdpChatEmbedControls = ({ locale }: AdpChatEmbedControlsProps) => {
     if (syncEmbedSettings()) {
       setStatus(adpLanguage);
     }
-  }, [adpLanguage, syncEmbedSettings]);
+  }, [adpLanguage, fileUploadEnabled, syncEmbedSettings, voiceInputEnabled]);
 
   const runAction = useCallback(
     (label: string, action: (api: ADPChatEmbedApi) => void) => {
@@ -361,9 +396,10 @@ const AdpChatEmbedControls = ({ locale }: AdpChatEmbedControlsProps) => {
         ref={iframeRef}
         title="ADP chat embed test"
         srcDoc={iframeSrcDoc}
+        allow="microphone; clipboard-read; clipboard-write"
         className={
           isFrameExpanded
-            ? "fixed inset-0 z-[1001] h-screen w-screen max-h-none max-w-none border-0 bg-transparent"
+            ? "fixed inset-0 z-[1001] h-[100dvh] w-screen max-h-none max-w-none border-0 bg-transparent"
             : "fixed bottom-0 right-0 z-[999] h-[620px] w-[430px] max-h-[100vh] max-w-[100vw] border-0 bg-transparent"
         }
       />
@@ -454,8 +490,11 @@ const AdpChatEmbedControls = ({ locale }: AdpChatEmbedControlsProps) => {
           disabled={!isReady}
           onClick={() =>
             runAction("en", (api) => {
-              api.changeLanguage?.("en");
-              api.setLanguage?.("en");
+              if (api.changeLanguage) {
+                api.changeLanguage("en");
+              } else {
+                api.setLanguage?.("en");
+              }
               api.setAccessibility({
                 language: "en",
                 label: "Customer support chatbot",
@@ -477,8 +516,11 @@ const AdpChatEmbedControls = ({ locale }: AdpChatEmbedControlsProps) => {
           disabled={!isReady}
           onClick={() =>
             runAction("zh-HK", (api) => {
-              api.changeLanguage?.("zh-HK");
-              api.setLanguage?.("zh-HK");
+              if (api.changeLanguage) {
+                api.changeLanguage("zh-HK");
+              } else {
+                api.setLanguage?.("zh-HK");
+              }
               api.setAccessibility({
                 language: "zh-HK",
                 label: "客戶支援聊天機械人",
@@ -500,8 +542,11 @@ const AdpChatEmbedControls = ({ locale }: AdpChatEmbedControlsProps) => {
           disabled={!isReady}
           onClick={() =>
             runAction("zh_CN", (api) => {
-              api.changeLanguage?.("zh_CN");
-              api.setLanguage?.("zh_CN");
+              if (api.changeLanguage) {
+                api.changeLanguage("zh_CN");
+              } else {
+                api.setLanguage?.("zh_CN");
+              }
             })
           }
         >
@@ -554,18 +599,29 @@ const AdpChatEmbedControls = ({ locale }: AdpChatEmbedControlsProps) => {
           style={buttonStyle}
           disabled={!isReady}
           onClick={() =>
-            runAction(
-              featureTogglesEnabled ? "features off" : "features on",
-              (api) => {
-                const enabled = !featureTogglesEnabled;
-                api.setVoiceInput?.(enabled);
-                api.setFileUpload?.(enabled);
-                setFeatureTogglesEnabled(enabled);
-              },
-            )
+            runAction(voiceInputEnabled ? "voice off" : "voice on", (api) => {
+              const enabled = !voiceInputEnabled;
+              api.setVoiceInput?.(enabled);
+              setVoiceInputEnabled(enabled);
+            })
           }
         >
-          Features
+          {voiceInputEnabled ? "Voice On" : "Voice Off"}
+        </button>
+        <button
+          type="button"
+          className={buttonClass}
+          style={buttonStyle}
+          disabled={!isReady}
+          onClick={() =>
+            runAction(fileUploadEnabled ? "upload off" : "upload on", (api) => {
+              const enabled = !fileUploadEnabled;
+              api.setFileUpload?.(enabled);
+              setFileUploadEnabled(enabled);
+            })
+          }
+        >
+          {fileUploadEnabled ? "Upload On" : "Upload Off"}
         </button>
         <button
           type="button"
@@ -618,12 +674,13 @@ const AdpChatEmbedControls = ({ locale }: AdpChatEmbedControlsProps) => {
             runAction("reset", (api) => {
               setAccessibilityEnabled(false);
               setDarkThemeEnabled(false);
-              setFeatureTogglesEnabled(true);
-              api.setVoiceInput?.(true);
-              api.setFileUpload?.(true);
+              setVoiceInputEnabled(false);
+              setFileUploadEnabled(false);
+              api.setVoiceInput?.(false);
+              api.setFileUpload?.(false);
               api.setTheme?.("light");
               api.setLauncherPosition?.("bottom-right", 84, 32);
-              syncEmbedSettings(false);
+              syncEmbedSettings(false, false, false);
             })
           }
         >

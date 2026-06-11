@@ -107,8 +107,14 @@
           : config.launcherOffsetY,
       showToggleButton:
         launcher.enabled !== false && config.showToggleButton !== false,
-      enableVoiceInput: features.voiceInput !== false,
-      enableFileUpload: features.fileUpload !== false,
+      enableVoiceInput:
+        config.enableVoiceInput !== undefined
+          ? config.enableVoiceInput
+          : features.voiceInput !== false,
+      enableFileUpload:
+        config.enableFileUpload !== undefined
+          ? config.enableFileUpload
+          : features.fileUpload !== false,
       currentApplication: {
         ApplicationId: chatbotConfig.appId || "",
         Name: assistant.headerTitle || assistant.name || "",
@@ -285,6 +291,57 @@
     return /^(ar|fa|he|ur)(-|$)/i.test(language || "") ? "rtl" : "ltr";
   }
 
+  function configFileLanguage(language) {
+    var normalized = normalizeLanguage(language);
+    if (normalized === "zh-HK") return "zh-HK";
+    if (normalized === "zh_CN") return "zh_CN";
+    return "en";
+  }
+
+  function resolveLanguageConfigUrl(configUrl, language) {
+    if (!configUrl) return "";
+
+    var fileLanguage = configFileLanguage(language);
+    var tokenPattern = /\{lang\}/g;
+    if (tokenPattern.test(configUrl)) {
+      return configUrl.replace(tokenPattern, encodeURIComponent(fileLanguage));
+    }
+
+    try {
+      var url = new URL(configUrl, document.baseURI);
+      var path = url.pathname;
+      var nextPath = path.replace(
+        /(chatbot-config\.)(en|en-US|zh-HK|zh_CN|zh-CN)(\.json)$/i,
+        "$1" + fileLanguage + "$3",
+      );
+
+      if (nextPath !== path) {
+        url.pathname = nextPath;
+        return url.href;
+      }
+
+      url.searchParams.set("lang", normalizeLanguage(language));
+      return url.href;
+    } catch (error) {
+      var nextConfigUrl = configUrl.replace(
+        /(chatbot-config\.)(en|en-US|zh-HK|zh_CN|zh-CN)(\.json)(\?.*)?$/i,
+        "$1" + fileLanguage + "$3$4",
+      );
+
+      if (nextConfigUrl !== configUrl) {
+        return nextConfigUrl;
+      }
+
+      var separator = configUrl.indexOf("?") >= 0 ? "&" : "?";
+      return (
+        configUrl +
+        separator +
+        "lang=" +
+        encodeURIComponent(normalizeLanguage(language))
+      );
+    }
+  }
+
   function ensureAccessibilityStyle() {
     if (document.getElementById("adp-chat-embed-accessibility-style")) return;
 
@@ -390,8 +447,8 @@
       showCloseButton: toBool(getAttr("show-close-button", ""), true),
       showOverlayButton: toBool(getAttr("show-overlay-button", ""), true),
       showToggleButton: toBool(getAttr("show-toggle-button", ""), true),
-      enableVoiceInput: toBool(getAttr("enable-voice-input", ""), true),
-      enableFileUpload: toBool(getAttr("enable-file-upload", ""), true),
+      enableVoiceInput: toBool(getAttr("enable-voice-input", ""), false),
+      enableFileUpload: toBool(getAttr("enable-file-upload", ""), false),
       apiConfig: {
         baseURL: apiBase,
         withCredentials: true,
@@ -417,7 +474,7 @@
     state.configUrl = built.configUrl;
     loadStylesheet(cssUrl);
 
-    return fetchJson(built.configUrl)
+    return fetchJson(resolveLanguageConfigUrl(built.configUrl, config.language))
       .then(function (chatbotConfig) {
         if (chatbotConfig) {
           config = mergeConfig(config, {
@@ -505,12 +562,7 @@
       var self = this;
       var normalized = normalizeLanguage(language);
       var config = mergeConfig({ language: normalized }, i18nConfig || {});
-      var langUrl = "";
-
-      if (state.configUrl) {
-        var separator = state.configUrl.indexOf("?") >= 0 ? "&" : "?";
-        langUrl = state.configUrl + separator + "lang=" + encodeURIComponent(normalized);
-      }
+      var langUrl = resolveLanguageConfigUrl(state.configUrl, normalized);
 
       return fetchJson(langUrl).then(function (chatbotConfig) {
         if (chatbotConfig) {

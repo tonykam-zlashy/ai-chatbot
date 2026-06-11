@@ -53,8 +53,8 @@ Use these attributes on the embed `<script>` tag.
 | `data-show-toggle-button` | `true` | Whether to show the launcher button. |
 | `data-show-close-button` | `true` | Whether to show the panel close button. |
 | `data-show-overlay-button` | `true` | Whether to show the overlay mode button. |
-| `data-enable-voice-input` | `true` | Enable or disable voice input. |
-| `data-enable-file-upload` | `true` | Enable or disable file upload. |
+| `data-enable-voice-input` | `true` | Enable or disable voice input. Defaults to `false`. |
+| `data-enable-file-upload` | `true` | Enable or disable file upload. Defaults to `false`. |
 | `data-launcher-icon-url` | `https://example.com/bot.gif` | Custom launcher GIF/image URL. |
 | `data-launcher-position` | `bottom-right` | Launcher position. |
 | `data-launcher-offset-x` | `24` | Horizontal offset. Number values are treated as pixels. |
@@ -131,6 +131,18 @@ ADPChatEmbed.changeLanguage('en', {
 ```
 
 `setLanguage()` and `changeLanguage()` are functionally identical — `changeLanguage` delegates to `setLanguage`.
+
+When `data-config-url` points at a static language config file, the loader swaps the filename during runtime language changes:
+
+```html
+data-config-url="https://your-host.example.com/mock/carer/chatbot-config.zh-HK.json"
+```
+
+Calling `ADPChatEmbed.changeLanguage('en')` will request `chatbot-config.en.json`; calling `ADPChatEmbed.changeLanguage('zh-HK')` will request `chatbot-config.zh-HK.json`; calling `ADPChatEmbed.changeLanguage('zh_CN')` will request `chatbot-config.zh_CN.json`. You can also use a placeholder URL:
+
+```html
+data-config-url="https://your-host.example.com/mock/carer/chatbot-config.{lang}.json"
+```
 
 Language aliases are normalized:
 
