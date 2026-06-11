@@ -10,11 +10,6 @@ import {
 } from "react";
 
 type ADPChatEmbedApi = {
-  init?: (config?: Record<string, unknown>) => unknown;
-  update?: (config: Record<string, unknown>) => unknown;
-  open?: () => void;
-  close?: () => void;
-  toggle?: () => void;
   setLanguage?: (
     language: string,
     overrides?: Record<string, unknown>,
@@ -23,26 +18,14 @@ type ADPChatEmbedApi = {
     language: string,
     overrides?: Record<string, unknown>,
   ) => unknown;
-  setTheme?: (theme: string) => void;
-  setLauncherIcon?: (url: string) => void;
-  setLauncherPosition?: (
-    position: string,
-    offsetX?: string | number,
-    offsetY?: string | number,
-  ) => void;
   setVoiceInput?: (enabled: boolean) => void;
   setFileUpload?: (enabled: boolean) => void;
-  setAccessibility: (options: {
+  setAccessibility?: (options: {
     language?: string;
     label?: string;
     role?: string;
     fontScale?: number;
-    highContrast?: boolean;
-    reducedMotion?: boolean;
-    theme?: string;
   }) => void;
-  getConfig?: () => unknown;
-  getAccessibility?: () => unknown;
 };
 
 declare global {
@@ -51,83 +34,83 @@ declare global {
   }
 }
 
-const buttonClass =
+type AdpChatEmbedControlsProps = {
+  locale: string;
+};
+
+type FontSize = "small" | "medium" | "large";
+
+const embedOrigin = "https://e7fd-45-144-227-44.ngrok-free.app";
+
+const controlClass =
   "rounded px-3 py-2 text-xs font-medium shadow-md transition disabled:cursor-not-allowed disabled:opacity-50";
 
-const buttonStyle: CSSProperties = {
+const controlStyle: CSSProperties = {
   backgroundColor: "#ffffff",
   border: "1px solid #d1d5db",
   color: "#111827",
 };
 
-const statusStyle: CSSProperties = {
+const activeControlStyle: CSSProperties = {
+  ...controlStyle,
   backgroundColor: "#111827",
+  border: "1px solid #111827",
   color: "#ffffff",
 };
 
-const embedOrigin = "https://e7fd-45-144-227-44.ngrok-free.app";
-const launcherIconUrl = "https://example.com/custom-chatbot.gif";
-const publicApiMethods = [
-  "init",
-  "open",
-  "close",
-  "toggle",
-  "update",
-  "setLanguage",
-  "changeLanguage",
-  "setTheme",
-  "setLauncherIcon",
-  "setLauncherPosition",
-  "setVoiceInput",
-  "setFileUpload",
-  "setAccessibility",
-  "getConfig",
-  "getAccessibility",
-] as const;
-
-type AdpChatEmbedControlsProps = {
-  locale: string;
-};
-
 const mapLocaleToAdpLanguage = (locale: string) => {
-  if (locale === "zh") {
-    return "zh-HK";
-  }
+  if (locale === "zh") return "zh-HK";
   return "en";
 };
 
 const getConfigLanguageFileKey = (language: string) => {
-  if (language === "zh-HK") {
-    return "zh-HK";
-  }
-
+  if (language === "zh-HK") return "zh-HK";
+  if (language === "zh_CN") return "zh_CN";
   return "en";
 };
 
-const getAccessibilityLabel = (locale: string) => {
-  if (locale === "zh") {
-    return "客戶支援聊天機械人";
-  }
-  return "Customer support chatbot";
+const getAccessibilityLabel = (language: string) => {
+  if (language === "en") return "Customer support chatbot";
+  if (language === "zh_CN") return "客户支援聊天机器人";
+  return "客戶支援聊天機械人";
 };
 
+const fontScaleBySize: Record<FontSize, number> = {
+  small: 0.9,
+  medium: 1,
+  large: 1.25,
+};
+
+const languageOptions = [
+  { label: "EN", value: "en" },
+  { label: "ZH-HK", value: "zh-HK" },
+  { label: "ZH-CN", value: "zh_CN" },
+] as const;
+
+const fontSizeOptions = [
+  { label: "Small", value: "small" },
+  { label: "Medium", value: "medium" },
+  { label: "Large", value: "large" },
+] as const;
+
 const AdpChatEmbedControls = ({ locale }: AdpChatEmbedControlsProps) => {
+  const initialLanguageRef = useRef(mapLocaleToAdpLanguage(locale));
   const iframeRef = useRef<HTMLIFrameElement>(null);
-  const openedFrameRef = useRef(false);
   const syncedSettingsKeyRef = useRef("");
   const [isReady, setIsReady] = useState(false);
-  const [isOpen, setIsOpen] = useState(false);
-  const [status, setStatus] = useState("closed");
   const [isFrameExpanded, setIsFrameExpanded] = useState(false);
-  const [accessibilityEnabled, setAccessibilityEnabled] = useState(false);
+  const [language, setLanguage] = useState(initialLanguageRef.current);
   const [voiceInputEnabled, setVoiceInputEnabled] = useState(false);
   const [fileUploadEnabled, setFileUploadEnabled] = useState(false);
-  const [darkThemeEnabled, setDarkThemeEnabled] = useState(false);
-  const adpLanguage = mapLocaleToAdpLanguage(locale);
+  const [fontSize, setFontSize] = useState<FontSize>("medium");
+
+  const initialLanguage = initialLanguageRef.current;
+  const initialConfigLanguageFileKey =
+    getConfigLanguageFileKey(initialLanguage);
   const embedConfig = useMemo(
     () => ({
       theme: "light",
-      language: adpLanguage,
+      language: initialLanguage,
       mode: "standard",
       isOpen: false,
       enableVoiceInput: false,
@@ -138,9 +121,8 @@ const AdpChatEmbedControls = ({ locale }: AdpChatEmbedControlsProps) => {
         withCredentials: true,
       },
     }),
-    [adpLanguage],
+    [initialLanguage],
   );
-  const configLanguageFileKey = getConfigLanguageFileKey(adpLanguage);
 
   const iframeSrcDoc = useMemo(
     () => `<!doctype html>
@@ -178,8 +160,8 @@ const AdpChatEmbedControls = ({ locale }: AdpChatEmbedControlsProps) => {
 		</script>
 		<script
 			src="${embedOrigin}/static/adp-chat-component/umd/embed.js"
-			data-config-url="${embedOrigin}/mock/carer/chatbot-config.${configLanguageFileKey}.json"
-			data-language="${adpLanguage}"
+			data-config-url="${embedOrigin}/mock/carer/chatbot-config.${initialConfigLanguageFileKey}.json"
+			data-language="${initialLanguage}"
 			data-enable-voice-input="false"
 			data-enable-file-upload="false"
 			data-launcher-offset-x="84"
@@ -189,7 +171,7 @@ const AdpChatEmbedControls = ({ locale }: AdpChatEmbedControlsProps) => {
 		></script>
 	</body>
 </html>`,
-    [adpLanguage, configLanguageFileKey, embedConfig],
+    [embedConfig, initialConfigLanguageFileKey, initialLanguage],
   );
 
   const getEmbedApi = useCallback(() => {
@@ -202,22 +184,19 @@ const AdpChatEmbedControls = ({ locale }: AdpChatEmbedControlsProps) => {
 
   const syncEmbedSettings = useCallback(
     (
-      nextAccessibilityEnabled = accessibilityEnabled,
+      nextLanguage = language,
       nextVoiceInputEnabled = voiceInputEnabled,
       nextFileUploadEnabled = fileUploadEnabled,
+      nextFontSize = fontSize,
     ) => {
       const api = getEmbedApi();
-
-      if (!api) {
-        return false;
-      }
+      if (!api) return false;
 
       const settingsKey = [
-        adpLanguage,
-        getAccessibilityLabel(locale),
-        nextAccessibilityEnabled ? "a11y-on" : "a11y-off",
+        nextLanguage,
         nextVoiceInputEnabled ? "voice-on" : "voice-off",
         nextFileUploadEnabled ? "upload-on" : "upload-off",
+        nextFontSize,
       ].join("|");
 
       if (syncedSettingsKeyRef.current === settingsKey) {
@@ -225,45 +204,32 @@ const AdpChatEmbedControls = ({ locale }: AdpChatEmbedControlsProps) => {
       }
 
       if (api.changeLanguage) {
-        api.changeLanguage(adpLanguage);
+        api.changeLanguage(nextLanguage);
       } else {
-        api.setLanguage?.(adpLanguage);
+        api.setLanguage?.(nextLanguage);
       }
+
       api.setVoiceInput?.(nextVoiceInputEnabled);
       api.setFileUpload?.(nextFileUploadEnabled);
-      api.setAccessibility({
-        language: adpLanguage,
-        label: getAccessibilityLabel(locale),
+      api.setAccessibility?.({
+        language: nextLanguage,
+        label: getAccessibilityLabel(nextLanguage),
         role: "region",
-        fontScale: nextAccessibilityEnabled ? 1.25 : 1,
-        highContrast: nextAccessibilityEnabled,
-        reducedMotion: nextAccessibilityEnabled,
-        theme: nextAccessibilityEnabled ? "dark" : "light",
+        fontScale: fontScaleBySize[nextFontSize],
       });
-      syncedSettingsKeyRef.current = settingsKey;
 
+      syncedSettingsKeyRef.current = settingsKey;
       return true;
     },
-    [
-      accessibilityEnabled,
-      adpLanguage,
-      fileUploadEnabled,
-      getEmbedApi,
-      locale,
-      voiceInputEnabled,
-    ],
+    [fileUploadEnabled, fontSize, getEmbedApi, language, voiceInputEnabled],
   );
 
   useEffect(() => {
     const handleEmbedMessage = (event: MessageEvent) => {
-      if (event.source !== iframeRef.current?.contentWindow) {
-        return;
-      }
+      if (event.source !== iframeRef.current?.contentWindow) return;
 
       const data = event.data;
-      if (!data || data.source !== "ADPChatEmbed") {
-        return;
-      }
+      if (!data || data.source !== "ADPChatEmbed") return;
 
       if (data.type === "ADP_CHAT_OVERLAY_CHANGE") {
         setIsFrameExpanded(data.isExpanded === true);
@@ -275,120 +241,65 @@ const AdpChatEmbedControls = ({ locale }: AdpChatEmbedControlsProps) => {
     };
 
     window.addEventListener("message", handleEmbedMessage);
-
-    return () => {
-      window.removeEventListener("message", handleEmbedMessage);
-    };
+    return () => window.removeEventListener("message", handleEmbedMessage);
   }, []);
 
   useEffect(() => {
     const updateReadyState = () => {
-      const api = getEmbedApi();
-      const ready = Boolean(api);
+      const ready = Boolean(getEmbedApi());
       setIsReady(ready);
 
       if (ready) {
         syncEmbedSettings();
-
-        if (isOpen && !openedFrameRef.current) {
-          api?.open();
-          openedFrameRef.current = true;
-          setStatus("open");
-        } else {
-          setStatus((current) =>
-            current === "opening" || current === "closed" ? "ready" : current,
-          );
-        }
       } else {
         syncedSettingsKeyRef.current = "";
-        openedFrameRef.current = false;
-        setIsReady(false);
       }
     };
 
     updateReadyState();
-
     const intervalId = window.setInterval(updateReadyState, 500);
-
-    return () => {
-      window.clearInterval(intervalId);
-    };
-  }, [getEmbedApi, isOpen, syncEmbedSettings]);
+    return () => window.clearInterval(intervalId);
+  }, [getEmbedApi, syncEmbedSettings]);
 
   useEffect(() => {
-    if (syncEmbedSettings()) {
-      setStatus(adpLanguage);
-    }
-  }, [adpLanguage, fileUploadEnabled, syncEmbedSettings, voiceInputEnabled]);
+    syncEmbedSettings();
+  }, [
+    fileUploadEnabled,
+    fontSize,
+    language,
+    syncEmbedSettings,
+    voiceInputEnabled,
+  ]);
 
-  const runAction = useCallback(
-    (label: string, action: (api: ADPChatEmbedApi) => void) => {
-      const api = getEmbedApi();
+  const updateLanguage = (nextLanguage: string) => {
+    setLanguage(nextLanguage);
+    syncEmbedSettings(
+      nextLanguage,
+      voiceInputEnabled,
+      fileUploadEnabled,
+      fontSize,
+    );
+  };
 
-      if (!api) {
-        setStatus("not ready");
-        return;
-      }
+  const updateVoiceInput = (enabled: boolean) => {
+    setVoiceInputEnabled(enabled);
+    syncEmbedSettings(language, enabled, fileUploadEnabled, fontSize);
+  };
 
-      try {
-        action(api);
-        setStatus(label);
-      } catch (error) {
-        setStatus(error instanceof Error ? error.message : "failed");
-      }
-    },
-    [getEmbedApi],
-  );
+  const updateFileUpload = (enabled: boolean) => {
+    setFileUploadEnabled(enabled);
+    syncEmbedSettings(language, voiceInputEnabled, enabled, fontSize);
+  };
 
-  const runApiSmokeTest = useCallback(() => {
-    runAction("api smoke", (api) => {
-      const missingMethods = publicApiMethods.filter(
-        (method) => typeof api[method] !== "function",
-      );
-
-      if (missingMethods.length > 0) {
-        throw new Error(`missing: ${missingMethods.join(", ")}`);
-      }
-
-      api.init?.(embedConfig);
-      api.update?.({
-        logoTitle: "Support",
-        width: 420,
-        height: "80vh",
-        isOpen: true,
-        theme: "dark",
-      });
-      api.setLanguage?.("en");
-      api.changeLanguage?.("zh-HK", {
-        chatI18n: {
-          sendError: "Unable to send message",
-        },
-        senderI18n: {
-          placeholder: "Type your message",
-        },
-      });
-      api.changeLanguage?.("zh_CN");
-      api.setTheme?.("light");
-      api.setLauncherIcon?.(launcherIconUrl);
-      api.setLauncherPosition?.("bottom-left", 24, 32);
-      api.setVoiceInput?.(true);
-      api.setFileUpload?.(true);
-      api.setAccessibility({
-        language: adpLanguage,
-        label: getAccessibilityLabel(locale),
-        role: "region",
-        fontScale: 1.2,
-        highContrast: true,
-        reducedMotion: true,
-        theme: "dark",
-      });
-      api.getConfig?.();
-      api.getAccessibility?.();
-      api.open?.();
-      api.toggle?.();
-      api.close?.();
-    });
-  }, [adpLanguage, embedConfig, locale, runAction]);
+  const updateFontSize = (nextFontSize: FontSize) => {
+    setFontSize(nextFontSize);
+    syncEmbedSettings(
+      language,
+      voiceInputEnabled,
+      fileUploadEnabled,
+      nextFontSize,
+    );
+  };
 
   return (
     <>
@@ -404,295 +315,55 @@ const AdpChatEmbedControls = ({ locale }: AdpChatEmbedControlsProps) => {
         }
       />
       <div className="fixed right-4 top-4 z-[1000] flex max-w-[calc(100vw-2rem)] flex-wrap items-center justify-end gap-2">
+        {languageOptions.map((option) => (
+          <button
+            key={option.value}
+            type="button"
+            className={controlClass}
+            style={
+              language === option.value ? activeControlStyle : controlStyle
+            }
+            disabled={!isReady}
+            onClick={() => updateLanguage(option.value)}
+          >
+            {option.label}
+          </button>
+        ))}
+
         <button
           type="button"
-          className={buttonClass}
-          style={buttonStyle}
-          onClick={() => {
-            openedFrameRef.current = false;
-            setIsOpen(true);
-            setStatus("opening");
-          }}
-        >
-          Open
-        </button>
-        <button
-          type="button"
-          className={buttonClass}
-          style={buttonStyle}
+          className={controlClass}
+          style={voiceInputEnabled ? activeControlStyle : controlStyle}
           disabled={!isReady}
-          onClick={() =>
-            runAction("init", (api) => {
-              api.init?.(embedConfig);
-              openedFrameRef.current = false;
-              setIsOpen(false);
-            })
-          }
+          onClick={() => updateVoiceInput(!voiceInputEnabled)}
         >
-          Init
+          Voice {voiceInputEnabled ? "On" : "Off"}
         </button>
+
         <button
           type="button"
-          className={buttonClass}
-          style={buttonStyle}
+          className={controlClass}
+          style={fileUploadEnabled ? activeControlStyle : controlStyle}
           disabled={!isReady}
-          onClick={() =>
-            runAction("close", (api) => {
-              api.close?.();
-              openedFrameRef.current = false;
-              setIsOpen(false);
-              setIsFrameExpanded(false);
-              setIsReady(false);
-              setStatus("closed");
-            })
-          }
+          onClick={() => updateFileUpload(!fileUploadEnabled)}
         >
-          Close
+          Upload {fileUploadEnabled ? "On" : "Off"}
         </button>
-        <button
-          type="button"
-          className={buttonClass}
-          style={buttonStyle}
-          disabled={!isReady}
-          onClick={() =>
-            runAction("toggle", (api) => {
-              api.toggle?.();
-              setIsOpen((current) => !current);
-            })
-          }
-        >
-          Toggle
-        </button>
-        <button
-          type="button"
-          className={buttonClass}
-          style={buttonStyle}
-          disabled={!isReady}
-          onClick={() =>
-            runAction("update", (api) => {
-              api.update?.({
-                logoTitle: "Support",
-                width: 420,
-                height: "80vh",
-                isOpen: true,
-                theme: darkThemeEnabled ? "light" : "dark",
-              });
-              setDarkThemeEnabled((current) => !current);
-            })
-          }
-        >
-          Update
-        </button>
-        <button
-          type="button"
-          className={buttonClass}
-          style={buttonStyle}
-          disabled={!isReady}
-          onClick={() =>
-            runAction("en", (api) => {
-              if (api.changeLanguage) {
-                api.changeLanguage("en");
-              } else {
-                api.setLanguage?.("en");
-              }
-              api.setAccessibility({
-                language: "en",
-                label: "Customer support chatbot",
-                role: "region",
-                fontScale: accessibilityEnabled ? 1.25 : 1,
-                highContrast: accessibilityEnabled,
-                reducedMotion: accessibilityEnabled,
-                theme: accessibilityEnabled ? "dark" : "light",
-              });
-            })
-          }
-        >
-          EN
-        </button>
-        <button
-          type="button"
-          className={buttonClass}
-          style={buttonStyle}
-          disabled={!isReady}
-          onClick={() =>
-            runAction("zh-HK", (api) => {
-              if (api.changeLanguage) {
-                api.changeLanguage("zh-HK");
-              } else {
-                api.setLanguage?.("zh-HK");
-              }
-              api.setAccessibility({
-                language: "zh-HK",
-                label: "客戶支援聊天機械人",
-                role: "region",
-                fontScale: accessibilityEnabled ? 1.25 : 1,
-                highContrast: accessibilityEnabled,
-                reducedMotion: accessibilityEnabled,
-                theme: accessibilityEnabled ? "dark" : "light",
-              });
-            })
-          }
-        >
-          ZH-HK
-        </button>
-        <button
-          type="button"
-          className={buttonClass}
-          style={buttonStyle}
-          disabled={!isReady}
-          onClick={() =>
-            runAction("zh_CN", (api) => {
-              if (api.changeLanguage) {
-                api.changeLanguage("zh_CN");
-              } else {
-                api.setLanguage?.("zh_CN");
-              }
-            })
-          }
-        >
-          ZH_CN
-        </button>
-        <button
-          type="button"
-          className={buttonClass}
-          style={buttonStyle}
-          disabled={!isReady}
-          onClick={() =>
-            runAction(darkThemeEnabled ? "light" : "dark", (api) => {
-              const theme = darkThemeEnabled ? "light" : "dark";
-              api.setTheme?.(theme);
-              setDarkThemeEnabled((current) => !current);
-            })
-          }
-        >
-          Theme
-        </button>
-        <button
-          type="button"
-          className={buttonClass}
-          style={buttonStyle}
-          disabled={!isReady}
-          onClick={() =>
-            runAction("icon", (api) => {
-              api.setLauncherIcon?.(launcherIconUrl);
-            })
-          }
-        >
-          Icon
-        </button>
-        <button
-          type="button"
-          className={buttonClass}
-          style={buttonStyle}
-          disabled={!isReady}
-          onClick={() =>
-            runAction("position", (api) => {
-              api.setLauncherPosition?.("bottom-left", 24, 32);
-            })
-          }
-        >
-          Position
-        </button>
-        <button
-          type="button"
-          className={buttonClass}
-          style={buttonStyle}
-          disabled={!isReady}
-          onClick={() =>
-            runAction(voiceInputEnabled ? "voice off" : "voice on", (api) => {
-              const enabled = !voiceInputEnabled;
-              api.setVoiceInput?.(enabled);
-              setVoiceInputEnabled(enabled);
-            })
-          }
-        >
-          {voiceInputEnabled ? "Voice On" : "Voice Off"}
-        </button>
-        <button
-          type="button"
-          className={buttonClass}
-          style={buttonStyle}
-          disabled={!isReady}
-          onClick={() =>
-            runAction(fileUploadEnabled ? "upload off" : "upload on", (api) => {
-              const enabled = !fileUploadEnabled;
-              api.setFileUpload?.(enabled);
-              setFileUploadEnabled(enabled);
-            })
-          }
-        >
-          {fileUploadEnabled ? "Upload On" : "Upload Off"}
-        </button>
-        <button
-          type="button"
-          className={buttonClass}
-          style={buttonStyle}
-          disabled={!isReady}
-          onClick={() =>
-            runAction("a11y", () => {
-              setAccessibilityEnabled(true);
-              syncEmbedSettings(true);
-            })
-          }
-        >
-          A11y
-        </button>
-        <button
-          type="button"
-          className={buttonClass}
-          style={buttonStyle}
-          disabled={!isReady}
-          onClick={() =>
-            runAction("inspect", (api) => {
-              const config = api.getConfig?.();
-              const accessibility = api.getAccessibility?.();
-              setStatus(
-                `config:${config ? "yes" : "no"} a11y:${
-                  accessibility ? "yes" : "no"
-                }`,
-              );
-            })
-          }
-        >
-          Inspect
-        </button>
-        <button
-          type="button"
-          className={buttonClass}
-          style={buttonStyle}
-          disabled={!isReady}
-          onClick={runApiSmokeTest}
-        >
-          Smoke
-        </button>
-        <button
-          type="button"
-          className={buttonClass}
-          style={buttonStyle}
-          disabled={!isReady}
-          onClick={() =>
-            runAction("reset", (api) => {
-              setAccessibilityEnabled(false);
-              setDarkThemeEnabled(false);
-              setVoiceInputEnabled(false);
-              setFileUploadEnabled(false);
-              api.setVoiceInput?.(false);
-              api.setFileUpload?.(false);
-              api.setTheme?.("light");
-              api.setLauncherPosition?.("bottom-right", 84, 32);
-              syncEmbedSettings(false, false, false);
-            })
-          }
-        >
-          Reset
-        </button>
-        <span
-          className="rounded px-2 py-1 text-xs shadow-md"
-          style={statusStyle}
-          aria-live="polite"
-        >
-          {status}
-        </span>
+
+        {fontSizeOptions.map((option) => (
+          <button
+            key={option.value}
+            type="button"
+            className={controlClass}
+            style={
+              fontSize === option.value ? activeControlStyle : controlStyle
+            }
+            disabled={!isReady}
+            onClick={() => updateFontSize(option.value)}
+          >
+            {option.label}
+          </button>
+        ))}
       </div>
     </>
   );

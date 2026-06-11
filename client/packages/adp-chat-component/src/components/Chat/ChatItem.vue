@@ -22,6 +22,7 @@ import {
 } from "../../model/type";
 import { ChatItem as TChatItem } from "@tdesign-vue-next/chat";
 import {
+  Tooltip,
   Loading as TLoading,
   Link as TLink,
   Dialog as TDialog,
@@ -1065,6 +1066,47 @@ const referenceDialogTitle = computed(() => {
           class="actions-container"
           :class="{ isMobile: isMobile }"
         >
+          <div class="feedback-actions">
+            <Tooltip :content="i18n.good" destroyOnClose showArrow theme="default">
+              <CustomizedIcon
+                remote
+                :size="isMobile ? 'm' : 's'"
+                :class="{
+                  disabled:
+                    !canRate || (isRated() && recordScore !== ScoreValue.Like),
+                  'not-allowed': isRated() || !canRate,
+                }"
+                class="control-icon icon"
+                :name="
+                  recordScore === ScoreValue.Like
+                    ? 'basic_thumbsup_fill'
+                    : 'basic_thumbsup_line'
+                "
+                :theme="theme"
+                @click="rate(item, ScoreValue.Like)"
+              />
+            </Tooltip>
+            <Tooltip :content="i18n.bad" destroyOnClose showArrow theme="default">
+              <CustomizedIcon
+                remote
+                :size="isMobile ? 'm' : 's'"
+                :class="{
+                  disabled:
+                    !canRate ||
+                    (isRated() && recordScore !== ScoreValue.Dislike),
+                  'not-allowed': isRated() || !canRate,
+                }"
+                class="control-icon icon"
+                :name="
+                  recordScore === ScoreValue.Dislike
+                    ? 'basic_thumbsdown_fill'
+                    : 'basic_thumbsdown_line'
+                "
+                :theme="theme"
+                @click="rate(item, ScoreValue.Dislike)"
+              />
+            </Tooltip>
+          </div>
           <span class="actions-time">{{ replyTime }}</span>
         </div>
       </template>
@@ -1228,11 +1270,18 @@ const referenceDialogTitle = computed(() => {
 .actions-container {
   display: flex;
   align-items: center;
+  justify-content: space-between;
+  gap: var(--td-comp-margin-s);
+  width: 100%;
   list-style: none;
   padding: 2px 0 0;
   overflow: hidden;
   position: relative;
   padding-left: 0;
+}
+.feedback-actions {
+  display: flex;
+  align-items: center;
 }
 .actions-divider {
   width: 1px;

@@ -999,6 +999,15 @@ defineExpose({
   flex: 0 0 auto;
 }
 
+.carers-hotline-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--td-font-size-link-small);
+  line-height: 18px;
+}
+
 .carers-hotline-divider {
   width: 1px;
   height: 12px;

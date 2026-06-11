@@ -76,6 +76,16 @@ class TAgenticConfig(
         default="http://localhost",
     )
 
+    CORS_ALLOW_HEADERS: str = Field(
+        description="Allowed CORS request headers. Multiple headers separated by comma.",
+        default="Content-Type,Authorization,X-Device-ID,ngrok-skip-browser-warning",
+    )
+
+    CORS_SUPPORTS_CREDENTIALS: bool = Field(
+        description="Whether CORS responses should allow credentialed browser requests.",
+        default=False,
+    )
+
     IFRAME_ORIGINS: str = Field(
         description="Allowed parent origins for iframe embedding via CSP frame-ancestors. "
             "Multiple origins separated by comma, e.g. 'https://example.com,https://foo.bar'. "
