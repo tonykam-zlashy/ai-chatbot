@@ -187,9 +187,9 @@ const themeStyle = computed(() => ({
     "linear-gradient(0deg, #FFEFD6 16.5%, #fff 100%), linear-gradient(180deg, #FFEFD6 0%, #FFC284 100%)",
   "--adp-chat-layout-footer-height":
     showHotline.value && hotlineExpanded.value && hotlineDescription.value
-      ? "72px"
+      ? "80px"
       : showHotline.value
-        ? "40px"
+        ? "48px"
         : "32px",
   "--adp-chat-footer-icon-color":
     props.chatbotConfig?.theme.footerIconColor ||
@@ -349,7 +349,7 @@ defineExpose({
 <template>
   <TLayout
     class="main-layout"
-    :class="{ isMobile: isMobile }"
+    :class="{ isMobile: isMobile, 'is-overlay': isOverlay }"
     :style="themeStyle"
   >
     <THeader class="layout-header">
@@ -547,6 +547,7 @@ defineExpose({
 <style scoped>
 @import "../../styles/chat-overrides.css";
 .main-layout {
+  --adp-chat-layout-radius: 12px;
   flex: 1;
   min-width: 0;
   height: 100%;
@@ -556,9 +557,13 @@ defineExpose({
   font-size: 16px;
   background: var(--adp-chat-surface-background, #fff);
   border: 1px solid var(--adp-chat-bubble-border, #b95a25);
-  border-radius: 12px;
+  border-radius: var(--adp-chat-layout-radius);
   box-sizing: border-box;
   overflow: hidden;
+}
+
+.main-layout.is-overlay {
+  border-radius: var(--adp-chat-layout-radius);
 }
 .isMobile .layout-header {
   height: 38px;
@@ -906,7 +911,7 @@ defineExpose({
   justify-content: space-between;
   gap: 6px;
   min-height: 40px;
-  padding: 0 8px;
+  padding: 2px 8px;
   background: transparent;
   color: #101111;
   font-size: 14px;
@@ -918,7 +923,7 @@ defineExpose({
   align-items: center;
   flex: 1;
   min-width: 0;
-  gap: 8px;
+  gap: 6px;
   color: inherit;
   text-decoration: none;
 }
@@ -1000,12 +1005,13 @@ defineExpose({
 }
 
 .carers-hotline-label {
+  flex: 1 1 auto;
   min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
   font-size: var(--td-font-size-link-small);
-  line-height: 18px;
+  line-height: 16px;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: normal;
 }
 
 .carers-hotline-divider {

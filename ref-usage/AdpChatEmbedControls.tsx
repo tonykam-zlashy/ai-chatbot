@@ -76,9 +76,9 @@ const getAccessibilityLabel = (language: string) => {
 };
 
 const fontScaleBySize: Record<FontSize, number> = {
-  small: 0.9,
-  medium: 1,
-  large: 1.25,
+  small: 1,
+  medium: 1.05,
+  large: 1.1,
 };
 
 const languageOptions = [

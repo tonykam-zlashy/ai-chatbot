@@ -805,7 +805,7 @@ const actualAutoLoad = computed(() => props.autoLoad);
 
 .panel-park--overlay {
   /* 宽高由 style 动态设置 */
-  border-radius: 10px 10px 0 0;
+  border-radius: var(--adp-chat-layout-radius, 12px);
   box-shadow: 0 6px 28px rgba(79, 42, 18, 0.22);
 
   position: fixed;
@@ -813,8 +813,8 @@ const actualAutoLoad = computed(() => props.autoLoad);
   bottom: calc(18px + var(--adp-chat-viewport-bottom-offset, 0px));
   right: 18px;
   margin: 0;
-  background-color: var(--adp-chat-surface-background, #fff8e8);
-  border: 1px solid var(--adp-chat-bubble-border, #f6b36c);
+  background: transparent;
+  border: 0;
   overflow: hidden;
   max-height: calc(var(--adp-chat-visual-viewport-height, 100dvh) - 36px);
 }
@@ -839,7 +839,7 @@ const actualAutoLoad = computed(() => props.autoLoad);
   .panel-park--overlay {
     right: 0;
     bottom: var(--adp-chat-viewport-bottom-offset, 0px);
-    border-radius: 10px 10px 0 0;
+    border-radius: var(--adp-chat-layout-radius, 12px);
     max-width: 100vw;
     max-height: var(--adp-chat-visual-viewport-height, 100dvh);
   }
