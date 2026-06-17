@@ -237,6 +237,10 @@
       return window.ADPChatEmbed;
     }
 
+    function setLanguage(language, config) {
+      return update(mergeConfig(config || {}, { language: language }));
+    }
+
     elements.launcher.addEventListener("click", open);
     elements.close.addEventListener("click", close);
     elements.iframe.addEventListener("load", function () {
@@ -260,6 +264,10 @@
         state.isOpen ? close() : open();
       },
       update: update,
+      setLanguage: setLanguage,
+      changeLanguage: function (language, config) {
+        return setLanguage(language, config);
+      },
       getConfig: function () {
         return mergeConfig(state.config, {});
       },

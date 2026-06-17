@@ -205,6 +205,29 @@ window.ADPChatEmbed.update({ isOpen: true });
 window.ADPChatEmbed.update({ isOpen: false });
 ```
 
+### `setLanguage(language, config)`
+
+Changes the iframe app language at runtime. The optional `config` object is
+merged into the same update payload, so callers can send related i18n or app
+config overrides with the language change.
+
+`changeLanguage()` is an alias for `setLanguage()`.
+
+```js
+window.ADPChatEmbed.setLanguage('en');
+window.ADPChatEmbed.changeLanguage('zh-HK');
+```
+
+With related config overrides:
+
+```js
+window.ADPChatEmbed.changeLanguage('en', {
+  chatbotConfig: {
+    // optional public chatbot config for this language
+  }
+});
+```
+
 ### `getConfig()`
 
 Returns a shallow copy of the current merged loader config.
@@ -247,7 +270,7 @@ function onADPChatReady(callback) {
 }
 
 onADPChatReady((chat) => {
-  chat.update({ language: 'en' });
+  chat.changeLanguage('en');
 });
 ```
 
@@ -301,7 +324,7 @@ The loader also retries config delivery after iframe load to avoid timing races.
       });
 
       document.querySelector('#switch-lang').addEventListener('click', () => {
-        ADPChatEmbed.update({ language: 'zh-HK' });
+        ADPChatEmbed.changeLanguage('zh-HK');
       });
     </script>
   </body>
