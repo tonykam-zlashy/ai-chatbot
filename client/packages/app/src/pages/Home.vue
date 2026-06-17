@@ -70,6 +70,28 @@ const normalizeEmbedLanguage = (
   return null;
 };
 
+const normalizeContentLanguage = (
+  language: string | undefined,
+): "en" | "zh-HK" | "zh_CN" | null => {
+  const value = String(language || "").trim().toLowerCase().replace(/_/g, "-");
+  if (!value) return null;
+  if (value.startsWith("en")) return "en";
+  if (value === "zh-cn" || value === "zh-hans") return "zh_CN";
+  if (value === "zh-hk" || value === "zh-hant") return "zh-HK";
+  if (value.startsWith("zh")) return "zh-HK";
+  return null;
+};
+
+const chatbotConfigMatchesLanguage = (
+  config: ChatbotConfig | null | undefined,
+  language: string | undefined,
+) => {
+  if (!config) return false;
+  const configLanguage = normalizeContentLanguage(config.language);
+  const activeLanguage = normalizeContentLanguage(language);
+  return !configLanguage || !activeLanguage || configLanguage === activeLanguage;
+};
+
 const hasBrowserStorage = () =>
   typeof window !== "undefined" && !!window.localStorage;
 
@@ -162,6 +184,12 @@ const actualLanguage = computed(() => {
   return embedConfig.value.language || uiStore.language || "zh";
 });
 
+const activeChatbotConfig = computed(() => {
+  const config = chatbotConfig.value || embedConfig.value.chatbotConfig || null;
+  if (FRONTEND_POC_MODE) return config;
+  return chatbotConfigMatchesLanguage(config, actualLanguage.value) ? config : null;
+});
+
 const actualAutoLoad = computed(() => {
   if (FRONTEND_POC_MODE) return false;
   return embedConfig.value.autoLoad ?? true;
@@ -227,10 +255,10 @@ const chatItemI18n = computed(() => ({
 // Sender 国际化
 const senderI18n = computed(() => ({
   placeholder:
-    chatbotConfig.value?.composer.enabledPlaceholder ||
+    activeChatbotConfig.value?.composer?.enabledPlaceholder ||
     t("conversation.input.placeholder"),
   placeholderMobile:
-    chatbotConfig.value?.composer.enabledPlaceholder ||
+    activeChatbotConfig.value?.composer?.enabledPlaceholder ||
     t("conversation.input.placeholderMobile"),
   uploadImg: t("sender.uploadImg"),
   startRecord: t("sender.startRecord"),
@@ -544,7 +572,7 @@ const handleConversationChange = (conversationId: string) => {
     :apiConfig="apiConfig"
     :autoLoad="actualAutoLoad"
     :frontendPocMode="FRONTEND_POC_MODE"
-    :chatbotConfig="chatbotConfig || embedConfig.chatbotConfig || undefined"
+    :chatbotConfig="activeChatbotConfig || undefined"
     :theme="actualTheme"
     :language="actualLanguage"
     :languageOptions="languageOptions"

@@ -421,11 +421,34 @@ const chatItemI18n = computed(() => {
   return { ...defaults, ...props.chatItemI18n };
 });
 
+const normalizeContentLanguage = (
+  language: string | undefined,
+): "en" | "zh-HK" | "zh_CN" | null => {
+  const value = String(language || "").trim().toLowerCase().replace(/_/g, "-");
+  if (!value) return null;
+  if (value.startsWith("en")) return "en";
+  if (value === "zh-cn" || value === "zh-hans") return "zh_CN";
+  if (value === "zh-hk" || value === "zh-hant") return "zh-HK";
+  if (value.startsWith("zh")) return "zh-HK";
+  return null;
+};
+
+const activeChatbotConfig = computed(() => {
+  const configLanguage = normalizeContentLanguage(props.chatbotConfig?.language);
+  const activeLanguage = normalizeContentLanguage(props.language);
+  if (!props.chatbotConfig) return undefined;
+  if (!configLanguage || !activeLanguage || configLanguage === activeLanguage) {
+    return props.chatbotConfig;
+  }
+  return undefined;
+});
+
 const senderI18n = computed(() => {
   const defaults = props.language?.startsWith("en")
     ? defaultSenderI18nEn
     : defaultSenderI18n;
-  const enabledPlaceholder = props.chatbotConfig?.composer.enabledPlaceholder;
+  const enabledPlaceholder =
+    activeChatbotConfig.value?.composer?.enabledPlaceholder;
   const configuredI18n = enabledPlaceholder
     ? {
         placeholder: enabledPlaceholder,
@@ -532,7 +555,7 @@ const assistantName = computed(() =>
 );
 
 const termsCopy = computed(() => {
-  const config = props.chatbotConfig;
+  const config = activeChatbotConfig.value;
 
   return {
     title: "",
@@ -562,7 +585,7 @@ const termsCopy = computed(() => {
       currentApplicationGreeting.value ||
       (isEnglish.value ? "Hello" : "您好"),
     inputDisabledPlaceholder:
-      config?.composer.disabledPlaceholder ||
+      config?.composer?.disabledPlaceholder ||
       (isEnglish.value ? "Please accept T&C" : "請先接受條款與細則後繼續"),
   };
 });

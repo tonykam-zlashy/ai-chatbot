@@ -399,9 +399,9 @@ export const defaultChatItemI18n: Required<ChatItemI18n> = {
 
 /** Sender i18n 默认值 */
 export const defaultSenderI18n: Required<SenderI18n> = {
-  placeholder: "请输入消息...",
-  placeholderMobile: "请输入",
-  uploadImg: "上传图片或文件",
+  placeholder: "請輸入消息...",
+  placeholderMobile: "請輸入",
+  uploadImg: "上載圖片或文件",
   uploadImage: "图片",
   uploadFile: "文件",
   fileLimitExceeded: "最多上传 {count} 个文件",

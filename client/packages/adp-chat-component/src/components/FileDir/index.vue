@@ -14,7 +14,7 @@
         <div class="file-dir-tree">
             <div v-if="loading" class="file-dir-loading">
                 <t-icon name="loading" class="icon-spinning" />
-                <span>加载中...</span>
+                <span>{{ loadingText }}</span>
             </div>
             <t-tree
                 v-else
@@ -71,6 +71,8 @@ interface Props extends ThemeProps {
     docListText?: string;
     /** 刷新按钮 title 文本 */
     refreshText?: string;
+    /** 加载中文本 */
+    loadingText?: string;
     /** 下载按钮 title 文本 */
     downloadText?: string;
     /** 开始下载提示文本（{name} 为文件名占位符） */
@@ -85,6 +87,7 @@ const props = withDefaults(defineProps<Props>(), {
     rootPath: '/workdir',
     docListText: '文档列表',
     refreshText: '刷新',
+    loadingText: '加载中...',
     downloadText: '下载',
     downloadStartedText: '开始下载: {name}',
 });

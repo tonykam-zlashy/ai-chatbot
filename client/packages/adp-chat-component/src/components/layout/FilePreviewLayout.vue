@@ -259,6 +259,7 @@ defineExpose({
                     :workspace-id="workspaceId"
                     :doc-list-text="i18n.docList"
                     :refresh-text="i18n.refresh"
+                    :loading-text="i18n.loading"
                     :download-text="i18n.download"
                     :download-started-text="i18n.downloadStarted"
                     @select="handleFileDirSelect"
