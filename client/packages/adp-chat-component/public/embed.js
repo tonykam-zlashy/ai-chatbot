@@ -565,21 +565,18 @@
     update: function (config) {
       var nextConfig = config || {};
       if (nextConfig.language) {
+        var normalizedLanguage = normalizeLanguage(nextConfig.language);
         nextConfig = Object.assign({}, nextConfig, {
-          language: normalizeLanguage(nextConfig.language),
+          language: normalizedLanguage,
         });
         if (
           state.config &&
           state.config.chatbotConfig &&
-          !nextConfig.chatbotConfig
+          !Object.prototype.hasOwnProperty.call(nextConfig, "chatbotConfig") &&
+          normalizeLanguage(state.config.chatbotConfig.language) !==
+            normalizedLanguage
         ) {
-          nextConfig.chatbotConfig = Object.assign(
-            {},
-            state.config.chatbotConfig,
-            {
-              language: nextConfig.language,
-            },
-          );
+          nextConfig.chatbotConfig = null;
         }
       }
       state.config = withEmbedCallbacks(
@@ -613,10 +610,18 @@
       return fetchJson(langUrl).then(function (chatbotConfig) {
         if (chatbotConfig) {
           config.chatbotConfig = chatbotConfig;
-        } else if (state.config && state.config.chatbotConfig) {
-          config.chatbotConfig = Object.assign({}, state.config.chatbotConfig, {
-            language: normalized,
-          });
+        } else if (
+          state.config &&
+          state.config.chatbotConfig &&
+          !Object.prototype.hasOwnProperty.call(config, "chatbotConfig")
+        ) {
+          config.chatbotConfig = null;
+        }
+        return self.update(config);
+      }).catch(function (error) {
+        console.warn("[ADPChatEmbed] language config load failed:", error);
+        if (!Object.prototype.hasOwnProperty.call(config, "chatbotConfig")) {
+          config.chatbotConfig = null;
         }
         return self.update(config);
       });
@@ -649,17 +654,16 @@
         options || {},
       );
       if (state.accessibility.language) {
+        var accessibilityLanguage = normalizeLanguage(state.accessibility.language);
         state.config = mergeConfig(state.config || {}, {
-          language: normalizeLanguage(state.accessibility.language),
+          language: accessibilityLanguage,
         });
-        if (state.config.chatbotConfig) {
-          state.config.chatbotConfig = Object.assign(
-            {},
-            state.config.chatbotConfig,
-            {
-              language: state.config.language,
-            },
-          );
+        if (
+          state.config.chatbotConfig &&
+          normalizeLanguage(state.config.chatbotConfig.language) !==
+            accessibilityLanguage
+        ) {
+          state.config.chatbotConfig = null;
         }
       }
       if (state.accessibility.theme) {

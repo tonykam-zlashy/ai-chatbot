@@ -69,6 +69,9 @@ const getConfigLanguageFileKey = (language: string) => {
   return "en";
 };
 
+const getChatbotConfigUrl = (language: string) =>
+  `${embedOrigin}/mock/carer/chatbot-config.${getConfigLanguageFileKey(language)}.json`;
+
 const getAccessibilityLabel = (language: string) => {
   if (language === "en") return "Customer support chatbot";
   if (language === "zh_CN") return "客户支援聊天机器人";
@@ -97,6 +100,9 @@ const AdpChatEmbedControls = ({ locale }: AdpChatEmbedControlsProps) => {
   const initialLanguageRef = useRef(mapLocaleToAdpLanguage(locale));
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const syncedSettingsKeyRef = useRef("");
+  const chatbotConfigCacheRef = useRef(
+    new Map<string, Record<string, unknown> | null>(),
+  );
   const [isReady, setIsReady] = useState(false);
   const [isFrameExpanded, setIsFrameExpanded] = useState(false);
   const [language, setLanguage] = useState(initialLanguageRef.current);
@@ -105,8 +111,6 @@ const AdpChatEmbedControls = ({ locale }: AdpChatEmbedControlsProps) => {
   const [fontSize, setFontSize] = useState<FontSize>("medium");
 
   const initialLanguage = initialLanguageRef.current;
-  const initialConfigLanguageFileKey =
-    getConfigLanguageFileKey(initialLanguage);
   const embedConfig = useMemo(
     () => ({
       theme: "light",
@@ -160,7 +164,7 @@ const AdpChatEmbedControls = ({ locale }: AdpChatEmbedControlsProps) => {
 		</script>
 		<script
 			src="${embedOrigin}/static/adp-chat-component/umd/embed.js"
-			data-config-url="${embedOrigin}/mock/carer/chatbot-config.${initialConfigLanguageFileKey}.json"
+			data-config-url="${getChatbotConfigUrl(initialLanguage)}"
 			data-language="${initialLanguage}"
 			data-enable-voice-input="false"
 			data-enable-file-upload="false"
@@ -182,8 +186,31 @@ const AdpChatEmbedControls = ({ locale }: AdpChatEmbedControlsProps) => {
     }
   }, []);
 
+  const loadChatbotConfig = useCallback(async (nextLanguage: string) => {
+    const fileKey = getConfigLanguageFileKey(nextLanguage);
+    if (chatbotConfigCacheRef.current.has(fileKey)) {
+      return chatbotConfigCacheRef.current.get(fileKey);
+    }
+
+    try {
+      const response = await fetch(getChatbotConfigUrl(nextLanguage), {
+        cache: "no-store",
+      });
+      if (!response.ok) {
+        throw new Error(`Failed to load chatbot config: ${response.status}`);
+      }
+      const config = (await response.json()) as Record<string, unknown>;
+      chatbotConfigCacheRef.current.set(fileKey, config);
+      return config;
+    } catch (error) {
+      console.warn("[ADPChatEmbedControls] chatbot config load failed", error);
+      chatbotConfigCacheRef.current.set(fileKey, null);
+      return null;
+    }
+  }, []);
+
   const syncEmbedSettings = useCallback(
-    (
+    async (
       nextLanguage = language,
       nextVoiceInputEnabled = voiceInputEnabled,
       nextFileUploadEnabled = fileUploadEnabled,
@@ -203,15 +230,20 @@ const AdpChatEmbedControls = ({ locale }: AdpChatEmbedControlsProps) => {
         return true;
       }
 
-      if (api.changeLanguage) {
-        api.changeLanguage(nextLanguage);
+      const chatbotConfig = await loadChatbotConfig(nextLanguage);
+      const overrides = chatbotConfig ? { chatbotConfig } : undefined;
+      const currentApi = getEmbedApi();
+      if (!currentApi) return false;
+
+      if (currentApi.changeLanguage) {
+        currentApi.changeLanguage?.(nextLanguage, overrides);
       } else {
-        api.setLanguage?.(nextLanguage);
+        currentApi.setLanguage?.(nextLanguage, overrides);
       }
 
-      api.setVoiceInput?.(nextVoiceInputEnabled);
-      api.setFileUpload?.(nextFileUploadEnabled);
-      api.setAccessibility?.({
+      currentApi.setVoiceInput?.(nextVoiceInputEnabled);
+      currentApi.setFileUpload?.(nextFileUploadEnabled);
+      currentApi.setAccessibility?.({
         language: nextLanguage,
         label: getAccessibilityLabel(nextLanguage),
         role: "region",
@@ -221,7 +253,14 @@ const AdpChatEmbedControls = ({ locale }: AdpChatEmbedControlsProps) => {
       syncedSettingsKeyRef.current = settingsKey;
       return true;
     },
-    [fileUploadEnabled, fontSize, getEmbedApi, language, voiceInputEnabled],
+    [
+      fileUploadEnabled,
+      fontSize,
+      getEmbedApi,
+      language,
+      loadChatbotConfig,
+      voiceInputEnabled,
+    ],
   );
 
   useEffect(() => {

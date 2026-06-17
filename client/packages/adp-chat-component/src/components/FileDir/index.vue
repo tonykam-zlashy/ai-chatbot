@@ -87,7 +87,7 @@ const props = withDefaults(defineProps<Props>(), {
     rootPath: '/workdir',
     docListText: '文档列表',
     refreshText: '刷新',
-    loadingText: '加载中...',
+    loadingText: 'Loading...',
     downloadText: '下载',
     downloadStartedText: '开始下载: {name}',
 });

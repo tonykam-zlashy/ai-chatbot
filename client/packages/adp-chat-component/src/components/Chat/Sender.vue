@@ -625,7 +625,7 @@ defineExpose({
     <!-- 编辑器区域 -->
     <div class="sender-editor-area" @keydown="handleKeydown">
       <QaEditor
-        :key="disabled ? 'sender-disabled' : 'sender-enabled'"
+        :key="`${disabled ? 'sender-disabled' : 'sender-enabled'}-${placeholder}`"
         ref="qaEditorRef"
         :value="editorHtml"
         :placeholder="placeholder"
