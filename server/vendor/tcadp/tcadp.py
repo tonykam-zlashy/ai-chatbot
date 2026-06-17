@@ -814,10 +814,15 @@ class TCADP(BaseVendor):
         is_new_conversation: bool,
         conversation_cb: ConversationCallback,
         search_network=True,
-        custom_variables={}
+        custom_variables={},
+        language: str | None = None,
     ):
         if not contents:
             contents = [{"Type": "text", "Text": ""}]
+        if language:
+            custom_variables = dict(custom_variables or {})
+            custom_variables.setdefault("language", language)
+            custom_variables.setdefault("locale", language)
         if custom_variables:
             contents.append({"Type": "custom_variables", "CustomVariables": custom_variables})
 
@@ -846,7 +851,13 @@ class TCADP(BaseVendor):
                 "VisitorId": account_id,
                 "Stream": "enable",
             }
-            logging.info(f"[TCADP.chat] SSE param: ConversationId={conversation_id!r}, VisitorId={account_id!r}, is_new={is_new_conversation}")
+            if language:
+                param["Language"] = language
+            logging.info(
+                f"[TCADP.chat] SSE param: ConversationId={conversation_id!r}, "
+                f"VisitorId={account_id!r}, Language={language!r}, "
+                f"is_new={is_new_conversation}"
+            )
             headers = {
                 "Accept": "text/event-stream",
                 "Content-Type": "application/json",

@@ -267,6 +267,21 @@ const TERMS_ACCEPTED_STORAGE_PREFIX = "adp_chat_terms_accepted";
 const actualLanguageValue = computed(
   () => props.language || props.chatbotConfig?.language || "zh-HK",
 );
+const backendLanguage = computed(() => {
+  const value = String(actualLanguageValue.value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/_/g, "-");
+  if (value.startsWith("en")) return "en-US";
+  if (value === "zh-cn" || value === "zh-hans") return "zh_CN";
+  if (value === "zh-hk" || value === "zh-hant") return "zh-HK";
+  if (value.startsWith("zh")) return "zh-HK";
+  return actualLanguageValue.value || "zh-HK";
+});
+const languageCustomVariables = computed(() => ({
+  language: backendLanguage.value,
+  locale: backendLanguage.value,
+}));
 const isEnglish = computed(() => actualLanguageValue.value?.startsWith("en"));
 const defaultApplicationName = computed(
   () =>
@@ -1246,6 +1261,8 @@ const handleInternalSend = async (
           ConversationId: conversationId || undefined,
           ApplicationId: applicationId,
           FileInfos: backendFileList,
+          Language: backendLanguage.value,
+          CustomVariables: languageCustomVariables.value,
         },
         { signal: streamState.abortController?.signal },
         mergedApiDetailConfig.value.sendMessageApi,
@@ -1680,6 +1697,8 @@ const sendWidgetActionSSE = async (
           Contents: contents,
           ConversationId: conversationId || undefined,
           ApplicationId: applicationId,
+          Language: backendLanguage.value,
+          CustomVariables: languageCustomVariables.value,
         },
         { signal: streamState.abortController?.signal },
         mergedApiDetailConfig.value.sendMessageApi,

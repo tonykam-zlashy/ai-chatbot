@@ -44,6 +44,7 @@ class CoreChat:
         conversation_id: str,
         search_network: bool,
         custom_variables: dict,
+        language: Optional[str] = None,
         guest_device_id: Optional[str] = None,
     ):
         title_source = extract_text_from_contents(contents).strip()
@@ -86,7 +87,8 @@ class CoreChat:
             is_new_conversation,
             CoreConversationCallback(),
             search_network=search_network,
-            custom_variables=custom_variables
+            custom_variables=custom_variables,
+            language=language
         ):
             yield message
 

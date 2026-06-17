@@ -24,14 +24,21 @@ class ChatMessageApi(HTTPMethodView):
         parser.add_argument("ApplicationId", type=str, location="json")
         parser.add_argument("SearchNetwork", type=bool, default=True, location="json")
         parser.add_argument("CustomVariables", type=dict, default={}, location="json")
+        parser.add_argument("Language", type=str, location="json")
         args = parser.parse_args(request)
         logging.info(f"ChatMessageApi: {args}")
 
         application_id = args['ApplicationId']
         vendor_app = app.get_vendor_app(application_id)
+        language = args.get('Language')
+        custom_variables = dict(args.get('CustomVariables') or {})
+        if language:
+            custom_variables.setdefault('language', language)
+            custom_variables.setdefault('locale', language)
 
         logging.info(f"[ChatMessageApi] ApplicationId: {application_id},\n\
-            CustomVariables: {args['CustomVariables']},\n\
+            Language: {language},\n\
+            CustomVariables: {custom_variables},\n\
             vendor_app: {vendor_app}")
 
         async def streaming_fn(response):
@@ -41,7 +48,8 @@ class ChatMessageApi(HTTPMethodView):
                 args['Contents'],
                 args['ConversationId'],
                 args['SearchNetwork'],
-                args['CustomVariables'],
+                custom_variables,
+                language,
                 getattr(request.ctx, 'guest_device_id', None)
             ):
                 await response.write(data)

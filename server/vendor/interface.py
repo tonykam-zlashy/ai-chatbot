@@ -490,7 +490,8 @@ class ChatInterface:
         is_new_conversation: bool,
         conversation_cb: ConversationCallback,
         search_network=True,
-        custom_variables={}
+        custom_variables={},
+        language: Optional[str] = None,
     ):
         """执行聊天对话处理（异步方法）
 
@@ -510,6 +511,8 @@ class ChatInterface:
                 默认值: True (当查询需要实时数据时自动触发搜索)
             custom_variables (dict, optional): 自定义上下文变量
                 示例: {"user_level": "VIP"}
+            language (str, optional): Current chatbot UI/content language,
+                e.g. "en-US", "zh-HK", or "zh_CN".
 
         Returns:
             None: 结果通过 yield 进行流式多次返回

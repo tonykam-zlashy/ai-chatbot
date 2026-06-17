@@ -55,7 +55,8 @@ class OpenAICompatible(BaseVendor):
         is_new_conversation,
         conversation_cb,
         search_network=True,
-        custom_variables={}
+        custom_variables={},
+        language=None,
     ) -> AsyncGenerator:
         """
         Main chat method using OpenAI-compatible API (V2 Protocol)
