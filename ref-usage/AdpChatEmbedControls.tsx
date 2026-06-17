@@ -175,7 +175,7 @@ const AdpChatEmbedControls = ({ locale }: AdpChatEmbedControlsProps) => {
 		></script>
 	</body>
 </html>`,
-    [embedConfig, initialConfigLanguageFileKey, initialLanguage],
+    [embedConfig, initialLanguage],
   );
 
   const getEmbedApi = useCallback(() => {
@@ -236,9 +236,13 @@ const AdpChatEmbedControls = ({ locale }: AdpChatEmbedControlsProps) => {
       if (!currentApi) return false;
 
       if (currentApi.changeLanguage) {
-        currentApi.changeLanguage?.(nextLanguage, overrides);
+        await Promise.resolve(
+          currentApi.changeLanguage(nextLanguage, overrides),
+        );
       } else {
-        currentApi.setLanguage?.(nextLanguage, overrides);
+        await Promise.resolve(
+          currentApi.setLanguage?.(nextLanguage, overrides),
+        );
       }
 
       currentApi.setVoiceInput?.(nextVoiceInputEnabled);

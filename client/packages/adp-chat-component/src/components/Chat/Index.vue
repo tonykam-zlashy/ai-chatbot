@@ -455,7 +455,7 @@ const senderI18n = computed(() => {
         placeholderMobile: enabledPlaceholder,
       }
     : {};
-  return { ...defaults, ...configuredI18n, ...props.senderI18n };
+  return { ...defaults, ...props.senderI18n, ...configuredI18n };
 });
 
 const emit = defineEmits<{

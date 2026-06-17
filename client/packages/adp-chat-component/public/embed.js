@@ -409,7 +409,9 @@
   function applyAccessibility(options) {
     var root = getContainerElement();
     var language = normalizeLanguage(
-      (state.config && state.config.language) || "",
+      (options && options.language) ||
+        (state.config && state.config.language) ||
+        "",
     );
     var theme = state.config && state.config.theme;
 
@@ -607,23 +609,20 @@
       var config = mergeConfig({ language: normalized }, i18nConfig || {});
       var langUrl = resolveLanguageConfigUrl(state.configUrl, normalized);
 
+      if (config.chatbotConfig) {
+        return Promise.resolve(self.update(config));
+      }
+
       return fetchJson(langUrl).then(function (chatbotConfig) {
         if (chatbotConfig) {
           config.chatbotConfig = chatbotConfig;
-        } else if (
-          state.config &&
-          state.config.chatbotConfig &&
-          !Object.prototype.hasOwnProperty.call(config, "chatbotConfig")
-        ) {
-          config.chatbotConfig = null;
+        } else {
+          return false;
         }
         return self.update(config);
       }).catch(function (error) {
         console.warn("[ADPChatEmbed] language config load failed:", error);
-        if (!Object.prototype.hasOwnProperty.call(config, "chatbotConfig")) {
-          config.chatbotConfig = null;
-        }
-        return self.update(config);
+        return false;
       });
     },
     changeLanguage: function (language, i18nConfig) {
@@ -653,19 +652,6 @@
         state.accessibility || {},
         options || {},
       );
-      if (state.accessibility.language) {
-        var accessibilityLanguage = normalizeLanguage(state.accessibility.language);
-        state.config = mergeConfig(state.config || {}, {
-          language: accessibilityLanguage,
-        });
-        if (
-          state.config.chatbotConfig &&
-          normalizeLanguage(state.config.chatbotConfig.language) !==
-            accessibilityLanguage
-        ) {
-          state.config.chatbotConfig = null;
-        }
-      }
       if (state.accessibility.theme) {
         state.config = mergeConfig(state.config || {}, {
           theme: state.accessibility.theme,
