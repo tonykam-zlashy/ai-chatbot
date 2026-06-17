@@ -221,7 +221,7 @@ const internalIsOverlay = ref(props.isOverlay);
 const internalTheme = ref(props.theme ?? "light");
 
 // 内部 language 状态（用于没有 onChangeLanguage 回调时的内部切换）
-const internalLanguage = ref(props.language ?? "zh-HK");
+const internalLanguage = ref(props.language);
 let cleanupVisualViewportCssVars: (() => void) | null = null;
 
 onMounted(() => {
@@ -484,7 +484,7 @@ const actualTheme = computed(() => {
 });
 const actualLanguageOptions = computed(() => props.languageOptions);
 const actualLanguage = computed(
-  () => internalLanguage.value || props.chatbotConfig?.language,
+  () => internalLanguage.value || props.chatbotConfig?.language || "zh-HK",
 );
 const actualIsSidePanelOverlay = computed(() => props.isSidePanelOverlay);
 const actualLogoUrl = computed(() => props.logoUrl);

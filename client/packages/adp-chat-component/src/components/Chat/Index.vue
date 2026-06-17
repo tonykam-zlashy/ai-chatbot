@@ -425,7 +425,14 @@ const senderI18n = computed(() => {
   const defaults = props.language?.startsWith("en")
     ? defaultSenderI18nEn
     : defaultSenderI18n;
-  return { ...defaults, ...props.senderI18n };
+  const enabledPlaceholder = props.chatbotConfig?.composer.enabledPlaceholder;
+  const configuredI18n = enabledPlaceholder
+    ? {
+        placeholder: enabledPlaceholder,
+        placeholderMobile: enabledPlaceholder,
+      }
+    : {};
+  return { ...defaults, ...configuredI18n, ...props.senderI18n };
 });
 
 const emit = defineEmits<{
