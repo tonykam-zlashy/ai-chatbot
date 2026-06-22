@@ -22,6 +22,8 @@ export interface ApiDetailConfig {
   conversationListApi?: string;
   /** 会话详情接口路径 */
   conversationDetailApi?: string;
+  /** 删除会话接口路径 */
+  conversationDeleteApi?: string;
   /** 发送消息接口路径 */
   sendMessageApi?: string;
   /** 评分接口路径 */
@@ -67,6 +69,7 @@ export const defaultApiDetailConfig: ApiDetailConfig = {
   applicationListApi: "/application/list",
   conversationListApi: "/chat/conversations",
   conversationDetailApi: "/chat/messages",
+  conversationDeleteApi: "/chat/conversation/delete",
   sendMessageApi: "/chat/message",
   rateApi: "/feedback/rate",
   shareApi: "/share/create",
@@ -144,6 +147,19 @@ export const fetchConversationDetail = async (
     console.error("获取会话详情失败:", error);
     throw error;
   }
+};
+
+/**
+ * 删除会话及其可见历史
+ * @param conversationId 会话 ID
+ * @param apiPath API 路径
+ */
+export const deleteConversation = async (
+  conversationId: string,
+  apiPath?: string,
+): Promise<{ Success: number }> => {
+  if (!apiPath) throw new Error("apiPath is required");
+  return httpService.post(apiPath, { ConversationId: conversationId });
 };
 
 /** DescribeConversationMessageList 请求参数 */

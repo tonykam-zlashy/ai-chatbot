@@ -136,6 +136,8 @@ await `init()` after the document is ready:
 ```html
 <script>
   document.addEventListener('DOMContentLoaded', async () => {
+    window.ADPChatEmbed.setToken(window.currentUserToken);
+
     const chat = await window.ADPChatEmbed.init({
       logoTitle: 'Support'
     });
@@ -217,16 +219,71 @@ data-launcher-offset-y="calc(env(safe-area-inset-bottom) + 20px)"
 
 All functions are exposed on `window.ADPChatEmbed`.
 
+The complete host-page integration surface is:
+
+| Host action | Method | Return value |
+| --- | --- | --- |
+| Open the AI chatbot | `openAIChatbot()` or `open()` | Component update result |
+| Close the AI chatbot | `closeAIChatbot()` or `close()` | Component update result |
+| Clear the active chat history | `clearHistory()` | Promise resolving to a result object, or `false` before mount |
+| Change language | `changeLanguage(language)` | Promise resolving to the update result |
+| Set or replace the login token | `setToken(token)` | Component update result, or `true` when queued before initialization |
+
+A typical host integration is:
+
+```js
+const chat = window.ADPChatEmbed;
+
+chat.setToken(user.accessToken);
+await chat.init();
+
+document.querySelector('#open-chat').onclick = () => chat.openAIChatbot();
+document.querySelector('#close-chat').onclick = () => chat.closeAIChatbot();
+document.querySelector('#clear-chat').onclick = async () => {
+  console.log(await chat.clearHistory());
+};
+document.querySelector('#language').onchange = async (event) => {
+  await chat.changeLanguage(event.target.value);
+};
+```
+
+Use `data-auto-init="false"` with this pattern so the token is installed before
+the component makes its first Python API request.
+
 ### Panel Control
 
 ```js
 ADPChatEmbed.open();
 ADPChatEmbed.close();
 ADPChatEmbed.toggle();
+ADPChatEmbed.openAIChatbot();
+ADPChatEmbed.closeAIChatbot();
 ```
 
 These functions return the component update result. A `false` result means the
 component was not mounted.
+
+### Clear History
+
+```js
+const result = await ADPChatEmbed.clearHistory();
+```
+
+This clears the active conversation. For a persisted conversation, it first
+sends an authenticated request to Python's
+`POST /chat/conversation/delete`, then removes the conversation and messages
+from the component. For a new conversation that has not yet been persisted, it
+only clears local state. The promise rejects if backend deletion fails.
+
+Example successful result:
+
+```js
+{
+  success: true,
+  conversationId: 'conversation-id',
+  deletedFromServer: true
+}
+```
 
 ### General Update
 
@@ -293,6 +350,56 @@ ADPChatEmbed.setFileUpload(true);
 Enabling a UI feature does not configure its backend dependency. Voice input,
 uploads, authentication, storage, and agent APIs must also be configured on the
 server.
+
+### Authentication Token
+
+```js
+ADPChatEmbed.setToken('eyJ...');
+```
+
+`setToken()` accepts either a raw token or a value beginning with `Bearer `.
+The loader keeps it in memory and configures Axios to send:
+
+```http
+Authorization: Bearer eyJ...
+```
+
+Calling `setToken()` again replaces the header for subsequent requests. Calling
+`setToken('')` removes it. Do not put tokens in `data-*` attributes, URLs, or
+chatbot config JSON. The embedding page is responsible for obtaining and
+refreshing the token.
+
+To authenticate the initial data load, use manual initialization:
+
+```js
+ADPChatEmbed.setToken(currentToken);
+await ADPChatEmbed.init();
+```
+
+### Python API Request Contract
+
+The token and language reach Python through different request fields:
+
+```http
+POST /chat/message
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "Contents": [{ "Type": "text", "Text": "Hello" }],
+  "ApplicationId": "your-application-id",
+  "Language": "en",
+  "CustomVariables": {
+    "language": "en",
+    "locale": "en"
+  }
+}
+```
+
+Python validates the bearer token and uses it to establish the account context.
+It reads `Language` from the JSON body, adds language and locale custom
+variables, and passes the language to the configured agent vendor. The token is
+not forwarded to the agent vendor.
 
 ### Launcher
 

@@ -39,6 +39,7 @@ import {
   fetchApplicationList,
   fetchConversationList,
   fetchConversationDetail,
+  deleteConversation,
   fetchReferenceDetails,
   sendMessage,
   rateMessage,
@@ -1648,6 +1649,57 @@ const handleCreateConversation = () => {
   emit("createConversation");
 };
 
+const clearHistory = async () => {
+  const stateKey = currentConversationStateKey.value;
+  const conversationId = currentConversationId.value || stateKey;
+  const isPersistedConversation =
+    Boolean(conversationId) && !conversationId.startsWith("pending-conversation:");
+
+  if (stateKey) {
+    stopConversationStream(stateKey);
+  }
+  if (conversationId && conversationId !== stateKey) {
+    stopConversationStream(conversationId);
+  }
+
+  if (useApiMode.value && isPersistedConversation) {
+    await deleteConversation(
+      conversationId,
+      mergedApiDetailConfig.value.conversationDeleteApi,
+    );
+  }
+
+  if (stateKey) {
+    delete conversationRuntimeStates.value[stateKey];
+  }
+  if (conversationId && conversationId !== stateKey) {
+    delete conversationRuntimeStates.value[conversationId];
+  }
+
+  if (isPersistedConversation) {
+    internalConversations.value = internalConversations.value.filter(
+      (conversation) => conversation.Id !== conversationId,
+    );
+  }
+  internalCurrentConversation.value = undefined;
+  currentConversationStateKey.value = "";
+  mainLayoutRef.value
+    ?.getChatRef()
+    ?.getSenderRef()
+    ?.changeSenderVal("", []);
+  closeFilePreview();
+
+  emit("conversationChange", "");
+  emit("dataLoaded", "chatList", []);
+  emit("dataLoaded", "conversations", internalConversations.value);
+
+  return {
+    success: true,
+    conversationId: isPersistedConversation ? conversationId : "",
+    deletedFromServer: useApiMode.value && isPersistedConversation,
+  };
+};
+
 const handleClose = () => {
   emit("close");
 };
@@ -2153,6 +2205,7 @@ defineExpose({
   loadConversationDetail,
   loadUserInfo,
   loadSystemConfig,
+  clearHistory,
   notifyLoaded: () => mainLayoutRef.value?.notifyLoaded(),
   notifyComplete: () => mainLayoutRef.value?.notifyComplete(),
   openFilePreview,

@@ -154,6 +154,8 @@ const props = withDefaults(defineProps<Props>(), {
   autoLoad: true,
 });
 
+const mainAppRef = ref<InstanceType<typeof MainApp> | null>(null);
+
 const emit = defineEmits<{
   (e: "selectApplication", app: Application): void;
   (e: "selectConversation", conversation: ChatConversation): void;
@@ -522,6 +524,10 @@ const actualSenderI18n = computed(
 
 const actualApiConfig = computed(() => props.apiConfig);
 const actualAutoLoad = computed(() => props.autoLoad);
+
+defineExpose({
+  clearHistory: () => mainAppRef.value?.clearHistory(),
+});
 </script>
 
 <template>
@@ -557,6 +563,7 @@ const actualAutoLoad = computed(() => props.autoLoad);
       :style="panelParkStyle"
     >
       <MainApp
+        ref="mainAppRef"
         :applications="actualApplications"
         :currentApplication="actualCurrentApplication"
         :conversations="actualConversations"

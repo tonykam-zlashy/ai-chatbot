@@ -14,6 +14,7 @@
     config: null,
     configUrl: "",
     accessibility: {},
+    authToken: "",
     onOpenChange: null,
     onOverlayChange: null,
   };
@@ -78,6 +79,26 @@
     );
 
     return result;
+  }
+
+  function withAuthToken(config, token) {
+    var nextConfig = config || {};
+    var apiConfig = Object.assign({}, nextConfig.apiConfig || {});
+    var headers = Object.assign({}, apiConfig.headers || {});
+
+    Object.keys(headers).forEach(function (key) {
+      if (key.toLowerCase() === "authorization") delete headers[key];
+    });
+    if (token) headers.Authorization = "Bearer " + token;
+
+    apiConfig.headers = headers;
+    return mergeConfig(nextConfig, { apiConfig: apiConfig });
+  }
+
+  function normalizeToken(token) {
+    return String(token || "")
+      .trim()
+      .replace(/^Bearer\s+/i, "");
   }
 
   function mapChatbotConfig(config) {
@@ -517,6 +538,7 @@
     var cssUrl = assetBase + "adp-chat-component.css";
     var jsUrl = assetBase + "adp-chat-component.umd.js";
     var config = mergeConfig(built.config, overrideConfig || {});
+    if (state.authToken) config = withAuthToken(config, state.authToken);
 
     state.containerSelector = built.containerSelector;
     state.configUrl = built.configUrl;
@@ -584,6 +606,9 @@
       state.config = withEmbedCallbacks(
         mapChatbotConfig(mergeConfig(state.config || {}, nextConfig)),
       );
+      if (state.authToken) {
+        state.config = withAuthToken(state.config, state.authToken);
+      }
       applyAccessibility(state.accessibility);
       if (window.ADPChatComponent && state.mounted) {
         return window.ADPChatComponent.update(
@@ -602,6 +627,24 @@
     toggle: function () {
       var isOpen = !(state.config && state.config.isOpen);
       return this.update({ isOpen: isOpen });
+    },
+    openAIChatbot: function () {
+      return this.open();
+    },
+    closeAIChatbot: function () {
+      return this.close();
+    },
+    clearHistory: function () {
+      if (
+        !window.ADPChatComponent ||
+        !state.mounted ||
+        typeof window.ADPChatComponent.clearHistory !== "function"
+      ) {
+        return Promise.resolve(false);
+      }
+      return Promise.resolve(
+        window.ADPChatComponent.clearHistory(state.containerSelector),
+      );
     },
     setLanguage: function (language, i18nConfig) {
       var self = this;
@@ -630,6 +673,13 @@
     },
     setTheme: function (theme) {
       return this.update({ theme: theme });
+    },
+    setToken: function (token) {
+      state.authToken = normalizeToken(token);
+      if (!state.config || !state.mounted) return true;
+
+      var nextConfig = withAuthToken(state.config, state.authToken);
+      return this.update({ apiConfig: nextConfig.apiConfig });
     },
     setVoiceInput: function (enabled) {
       return this.update({ enableVoiceInput: !!enabled });

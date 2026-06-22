@@ -38,7 +38,11 @@ import {
 export * from './mounters'
 
 // 存储已初始化的应用配置（用于 update）
-const mountedConfigs: Map<string, { props: ReturnType<typeof ref<Record<string, any>>>, containerId: string }> = new Map()
+const mountedConfigs: Map<string, {
+  props: ReturnType<typeof ref<Record<string, any>>>
+  containerId: string
+  instance: any
+}> = new Map()
 
 function applyChatMountLayout(element: HTMLElement, config?: Partial<ChatConfig>) {
   const isOverlay = config?.isOverlay === true
@@ -96,9 +100,13 @@ function init(container?: string, config?: ChatConfig) {
   // 创建一个包装组件，使用 defineComponent 确保响应式正确追踪
   const WrapperComponent = defineComponent({
     name: 'ADPChatWrapper',
-    setup() {
+    setup(_props, { expose }) {
+      const componentRef = ref<InstanceType<typeof AppComponent> | null>(null)
+      expose({
+        clearHistory: () => componentRef.value?.clearHistory(),
+      })
       // 返回渲染函数，Vue 会自动追踪 propsRef.value 的变化
-      return () => h(AppComponent, { ...propsRef.value })
+      return () => h(AppComponent, { ref: componentRef, ...propsRef.value })
     }
   })
 
@@ -107,7 +115,7 @@ function init(container?: string, config?: ChatConfig) {
   getMountedApps().set(containerId, app)
   
   // 存储配置用于后续 update
-  mountedConfigs.set(container, { props: propsRef, containerId })
+  mountedConfigs.set(container, { props: propsRef, containerId, instance })
   
   return instance
 }
@@ -157,11 +165,33 @@ function getProps(container?: string): Record<string, any> | undefined {
   return mountedConfigs.get(container)?.props.value
 }
 
+async function clearHistory(container?: string) {
+  if (!container) {
+    container = 'body'
+  }
+
+  const mountedConfig = mountedConfigs.get(container)
+  if (!mountedConfig?.instance?.clearHistory) {
+    console.warn(`[ADPChatComponent] No mounted app found for container: ${container}. Please call init() first.`)
+    return false
+  }
+
+  const result = await mountedConfig.instance.clearHistory()
+  mountedConfig.props.value = {
+    ...mountedConfig.props.value,
+    currentConversation: undefined,
+    currentConversationId: '',
+    chatList: [],
+  }
+  return result
+}
+
 // 导出给全局使用
 const ADPChatComponent = {
   init,
   update,
   getProps,
+  clearHistory,
   unmount: unmountComponent,
   AIWarning: AIWarningMounter,
   ApplicationList: ApplicationListMounter,
@@ -190,5 +220,5 @@ if (typeof window !== 'undefined') {
   (window as any).ADPChatComponent = ADPChatComponent
 }
 
-export { init, update, getProps }
+export { init, update, getProps, clearHistory }
 export default ADPChatComponent
